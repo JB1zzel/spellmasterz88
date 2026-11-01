@@ -1,5 +1,5 @@
 ; File:
-{spell62.bin}
+{../bank_files/spell62.bin}
 
 ; Local Areas:
 {
@@ -643,21 +643,43 @@ $B82A
 		 "Names and comments are inferred from what the code does, not original. See NOTES.md for the method, the evidence and what is still unknown."
 		 "Hex digits are written with a leading dollar sign; the equates used here are in spell_names.def."
 		 "Application entry point (set in the QuickEdit DOR: entry $C000, segment 3 = bank $3E = SPELL.62)."
+		 "Immediately jumps to qe_start."
+		 "Spell-Master for the Cambridge Z88 - bank 62 ($3E, SPELL.62). Mostly the QuickEdit application (a text editor with spell checking)."
+		 "Annotated disassembly made with DZasm; the names, comments and constants are in the DZasm project (spell62.clt). It assembles to bytes IDENTICAL to the original bank."
+		 "Names and comments are inferred from what the code does, not original. See NOTES.md for the method, the evidence and what is still unknown."
+		 "Hex digits are written with a leading dollar sign; the equates used here are in spell_names.def."
+		 "Application entry point (set in the QuickEdit DOR: entry $C000, segment 3 = bank $3E = SPELL.62)."
 		 "Immediately jumps to qe_start.")
 	($C005,< "Copy the next packed dictionary record from segment 2 (at dict_pos) into buffer B."
 		 "A record is: one byte (bits 0-3 = how many letters to keep from the previous word, bit 5 = the word takes -S), then the letters"
 		 "(plain letters, tokens of $80 or more, and optionally one inflection class byte $10-$16), up to the first byte that starts the next record"
 		 "(a byte whose value, ignoring bit 5, is below $10). The byte $0F where a record should start marks the end of the section."
+		 "The apostrophe is stored as $40 and is converted to $27. If bit 5 of the first byte is set it is cleared and the word is given inflection class $11 (-S)."
+		 "Copy the next packed dictionary record from segment 2 (at dict_pos) into buffer B."
+		 "A record is: one byte (bits 0-3 = how many letters to keep from the previous word, bit 5 = the word takes -S), then the letters"
+		 "(plain letters, tokens of $80 or more, and optionally one inflection class byte $10-$16), up to the first byte that starts the next record"
+		 "(a byte whose value, ignoring bit 5, is below $10). The byte $0F where a record should start marks the end of the section."
 		 "The apostrophe is stored as $40 and is converted to $27. If bit 5 of the first byte is set it is cleared and the word is given inflection class $11 (-S).")
 	($C03A,< "Advance dict_pos to the next record whose first byte is 0 (a word sharing no letters with the previous one),"
+		 "which is the start of the next group of words with a different third letter. Lets the lookup skip words quickly."
+		 "Advance dict_pos to the next record whose first byte is 0 (a word sharing no letters with the previous one),"
 		 "which is the start of the next group of words with a different third letter. Lets the lookup skip words quickly.")
 	($C051,< "Look a word up in the dictionary. The word is in buffer A. Takes its first two letters, finds that section with find_dictionary_section,"
+		 "then reads the records of the section in order, expanding each (expand_word) and comparing it with the rest of the word."
+		 "Because the words are sorted it stops as soon as a word is greater than the target. Returns carry clear if found."
+		 "Look a word up in the dictionary. The word is in buffer A. Takes its first two letters, finds that section with find_dictionary_section,"
 		 "then reads the records of the section in order, expanding each (expand_word) and comparing it with the rest of the word."
 		 "Because the words are sorted it stops as soon as a word is greater than the target. Returns carry clear if found.")
 	($C093,< "Compare the expanded dictionary word (buffer C) with the target."
 		 "If the stem carries an inflection class (dict_word_flags bit 7) the endings of that class are appended one at a time and compared"
+		 "as well (see inflection_class_table). A bare stem is only accepted when its class is below $13."
+		 "Compare the expanded dictionary word (buffer C) with the target."
+		 "If the stem carries an inflection class (dict_word_flags bit 7) the endings of that class are appended one at a time and compared"
 		 "as well (see inflection_class_table). A bare stem is only accepted when its class is below $13.")
 	($C17E,< "IN: dict_letter1 and dict_letter2 = the first two letters of the word."
+		 "Looks up the first letter in first_letter_index, then searches that letter's list of 3-byte entries for the second letter."
+		 "OUT: IX = the entry, dict_bank and dict_pos set by bind_dictionary_bank. Carry set if there are no words with that prefix."
+		 "IN: dict_letter1 and dict_letter2 = the first two letters of the word."
 		 "Looks up the first letter in first_letter_index, then searches that letter's list of 3-byte entries for the second letter."
 		 "OUT: IX = the entry, dict_bank and dict_pos set by bind_dictionary_bank. Carry set if there are no words with that prefix.")
 	($C1B6,< "Bind one dictionary bank into segment 2."
@@ -665,105 +687,212 @@ $B82A
 		 "(IX+1),(IX+2) = offset within that bank."
 		 "OUT: dict_bank = absolute bank number bound into segment 2, dict_pos = offset."
 		 "BANK-ADDRESSING SITE 1: the ORIGINAL code builds the bank as (running slot bits) OR ($38 + index), i.e. it assumes the"
+		 "eight banks occupy the top of the slot. See NOTES.md 'Bank addressing' (patters' fix makes this relative)."
+		 "Bind one dictionary bank into segment 2."
+		 "IN: IX -> a 3-byte dictionary index entry. Bits 7-5 of (IX+0) select the dictionary bank 0..5 (SPELL.56 to SPELL.61);"
+		 "(IX+1),(IX+2) = offset within that bank."
+		 "OUT: dict_bank = absolute bank number bound into segment 2, dict_pos = offset."
+		 "BANK-ADDRESSING SITE 1: the ORIGINAL code builds the bank as (running slot bits) OR ($38 + index), i.e. it assumes the"
 		 "eight banks occupy the top of the slot. See NOTES.md 'Bank addressing' (patters' fix makes this relative).")
 	($C1E2,< "QuickEdit start-up: creates memory pools (OS_Mop), allocates buffers (OS_Mal), sets the error handler,"
+		 "clears working variables, draws the window, then enters qe_main_loop."
+		 "QuickEdit start-up: creates memory pools (OS_Mop), allocates buffers (OS_Mal), sets the error handler,"
 		 "clears working variables, draws the window, then enters qe_main_loop.")
 	($C286,< "Call a routine in bank 63 (SPELL.63) from this bank."
 		 "IN: A = index into the far-call table in bank 63 (far_call_table, 11 entries)."
 		 "Binds bank 63 into segment 1 and jumps to the stub at $7F80 (file offset $3F80 of SPELL.63)."
+		 "BANK-ADDRESSING SITE 2: the ORIGINAL code computes bank 63 as (running slot bits) OR $3F."
+		 "Call a routine in bank 63 (SPELL.63) from this bank."
+		 "IN: A = index into the far-call table in bank 63 (far_call_table, 11 entries)."
+		 "Binds bank 63 into segment 1 and jumps to the stub at $7F80 (file offset $3F80 of SPELL.63)."
 		 "BANK-ADDRESSING SITE 2: the ORIGINAL code computes bank 63 as (running slot bits) OR $3F.")
-	($C315,< "Window 1, the text window: x=0 y=0, 74 columns by 8 rows, type $81 (bars). Selected and cleared, vertical scroll and cursor on.")
-	($C328,< "Window 2, the side panel: x=75 y=0, 19 columns by 8 rows, type $80. Selected and cleared.")
+	($C315,< "Window 1, the text window: x=0 y=0, 74 columns by 8 rows, type $81 (bars). Selected and cleared, vertical scroll and cursor on."
+		 "Window 1, the text window: x=0 y=0, 74 columns by 8 rows, type $81 (bars). Selected and cleared, vertical scroll and cursor on.")
+	($C328,< "Window 2, the side panel: x=75 y=0, 19 columns by 8 rows, type $80. Selected and cleared."
+		 "Window 2, the side panel: x=75 y=0, 19 columns by 8 rows, type $80. Selected and cleared.")
 	($C336,< "Expand the packed record in buffer B into the full word in buffer C."
+		 "The first byte of buffer B says how many letters to keep from the word already in buffer C; the rest is added after them."
+		 "Bytes of $80 or more are tokens (append_token). A byte below $10 ends the word; $10 to $1F also ends it and is the inflection class"
+		 "(saved with bit 7 set in dict_word_flags). Sets dict_word_length."
+		 "Expand the packed record in buffer B into the full word in buffer C."
 		 "The first byte of buffer B says how many letters to keep from the word already in buffer C; the rest is added after them."
 		 "Bytes of $80 or more are tokens (append_token). A byte below $10 ends the word; $10 to $1F also ends it and is the inflection class"
 		 "(saved with bit 7 set in dict_word_flags). Sets dict_word_length.")
 	($C355,< "IN: A = token number (bit 7 of the packed byte is ignored), HL = where to append."
 		 "Looks up the token string through token_pointer_table and copies it to HL, clearing bit 7 of its characters, until the next"
+		 "token begins (a byte with bit 7 set). Used by expand_word to turn a packed byte of $80 or more into letters."
+		 "IN: A = token number (bit 7 of the packed byte is ignored), HL = where to append."
+		 "Looks up the token string through token_pointer_table and copies it to HL, clearing bit 7 of its characters, until the next"
 		 "token begins (a byte with bit 7 set). Used by expand_word to turn a packed byte of $80 or more into letters.")
 	($C38A,< "The token strings: common groups of letters that the dictionary stores as a single byte ($80 to $FF) to save space."
 		 "Each token starts with a letter that has bit 7 set, followed by the rest of its letters ('TION', then 3-letter tokens such as WAY, ITY,"
 		 "IES, MAN, IAN, ISM, FUL, IAL, ING, then 2-letter tokens). They are not only word endings: AR, OL, BL and so on are used as well."
+		 "See NOTES.md section 13 for the dictionary format."
+		 "The token strings: common groups of letters that the dictionary stores as a single byte ($80 to $FF) to save space."
+		 "Each token starts with a letter that has bit 7 set, followed by the rest of its letters ('TION', then 3-letter tokens such as WAY, ITY,"
+		 "IES, MAN, IAN, ISM, FUL, IAL, ING, then 2-letter tokens). They are not only word endings: AR, OL, BL and so on are used as well."
 		 "See NOTES.md section 13 for the dictionary format.")
 	($C4A4,< "128 words: token number -> address of its string. Token 0 (TION) has four letters, tokens 1 to 35 three letters, 36 to 121 two letters;"
+		 "122 to 127 are not used."
+		 "128 words: token number -> address of its string. Token 0 (TION) has four letters, tokens 1 to 35 three letters, 36 to 121 two letters;"
 		 "122 to 127 are not used.")
-	($C4F0,< "Pointers for the later tokens (the 2-letter tokens, $C3F7 onward); the last six words (tokens 122 to 127) are unused.")
-	($C5B2,< "QuickEdit main loop (entry 0 of the command table: 'no command', just reads the next key).")
-	($C610,< "Command handler: 'Insert real tab' - dispatch code $2D")
-	($C79E,< "Command handler: 'Previous word' - dispatch code $17")
-	($C81D,< "Command handler: 'Next word' - dispatch code $16")
-	($C896,< "Command handler: 'Delete line' - dispatch code $15")
-	($C920,< "Command handler: 'Delete character' - dispatch code $14")
-	($C93F,< "Command handler: 'Rubout' - dispatch code $0B")
-	($CA1E,< "Command handler: 'Join lines' - dispatch code $0D")
-	($CAE0,< "Command handler: 'Swap case' - dispatch code $0C")
-	($CB0A,< "Command handler: 'Start of line' - dispatch code $09")
-	($CB12,< "Command handler: 'End of line' - dispatch code $0A")
-	($CB1B,< "Command handler: 'Bottom of text' - dispatch code $08")
-	($CB53,< "Command handler: 'Top of text' - dispatch code $07")
-	($CB7A,< "Command handler: 'Screen up' - dispatch code $01")
-	($CBAF,< "Command handler: 'Screen down' - dispatch code $02")
-	($CBD0,< "Command handler: 'Cursor down' - dispatch code $05")
-	($CBDA,< "Command handler: 'Cursor up' - dispatch code $06")
-	($CBE5,< "Command handler: 'Cursor right' - dispatch code $04")
-	($CC47,< "Command handler: 'Cursor left' - dispatch code $03")
-	($CCF6,< "Command handler: 'Format paragraph' - dispatch code $0E")
-	($D06F,< "Draw the text window. This is only: A = 7, call far_call_bank63. The work is done by far_redraw_text_window in bank 63.")
+	($C4F0,< "Pointers for the later tokens (the 2-letter tokens, $C3F7 onward); the last six words (tokens 122 to 127) are unused."
+		 "Pointers for the later tokens (the 2-letter tokens, $C3F7 onward); the last six words (tokens 122 to 127) are unused.")
+	($C5B2,< "QuickEdit main loop (entry 0 of the command table: 'no command', just reads the next key)."
+		 "QuickEdit main loop (entry 0 of the command table: 'no command', just reads the next key).")
+	($C610,< "Command handler: 'Insert real tab' - dispatch code $2D"
+		 "Command handler: 'Insert real tab' - dispatch code $2D")
+	($C79E,< "Command handler: 'Previous word' - dispatch code $17"
+		 "Command handler: 'Previous word' - dispatch code $17")
+	($C81D,< "Command handler: 'Next word' - dispatch code $16"
+		 "Command handler: 'Next word' - dispatch code $16")
+	($C896,< "Command handler: 'Delete line' - dispatch code $15"
+		 "Command handler: 'Delete line' - dispatch code $15")
+	($C920,< "Command handler: 'Delete character' - dispatch code $14"
+		 "Command handler: 'Delete character' - dispatch code $14")
+	($C93F,< "Command handler: 'Rubout' - dispatch code $0B"
+		 "Command handler: 'Rubout' - dispatch code $0B")
+	($CA1E,< "Command handler: 'Join lines' - dispatch code $0D"
+		 "Command handler: 'Join lines' - dispatch code $0D")
+	($CAE0,< "Command handler: 'Swap case' - dispatch code $0C"
+		 "Command handler: 'Swap case' - dispatch code $0C")
+	($CB0A,< "Command handler: 'Start of line' - dispatch code $09"
+		 "Command handler: 'Start of line' - dispatch code $09")
+	($CB12,< "Command handler: 'End of line' - dispatch code $0A"
+		 "Command handler: 'End of line' - dispatch code $0A")
+	($CB1B,< "Command handler: 'Bottom of text' - dispatch code $08"
+		 "Command handler: 'Bottom of text' - dispatch code $08")
+	($CB53,< "Command handler: 'Top of text' - dispatch code $07"
+		 "Command handler: 'Top of text' - dispatch code $07")
+	($CB7A,< "Command handler: 'Screen up' - dispatch code $01"
+		 "Command handler: 'Screen up' - dispatch code $01")
+	($CBAF,< "Command handler: 'Screen down' - dispatch code $02"
+		 "Command handler: 'Screen down' - dispatch code $02")
+	($CBD0,< "Command handler: 'Cursor down' - dispatch code $05"
+		 "Command handler: 'Cursor down' - dispatch code $05")
+	($CBDA,< "Command handler: 'Cursor up' - dispatch code $06"
+		 "Command handler: 'Cursor up' - dispatch code $06")
+	($CBE5,< "Command handler: 'Cursor right' - dispatch code $04"
+		 "Command handler: 'Cursor right' - dispatch code $04")
+	($CC47,< "Command handler: 'Cursor left' - dispatch code $03"
+		 "Command handler: 'Cursor left' - dispatch code $03")
+	($CCF6,< "Command handler: 'Format paragraph' - dispatch code $0E"
+		 "Command handler: 'Format paragraph' - dispatch code $0E")
+	($D06F,< "Draw the text window. This is only: A = 7, call far_call_bank63. The work is done by far_redraw_text_window in bank 63."
+		 "Draw the text window. This is only: A = 7, call far_call_bank63. The work is done by far_redraw_text_window in bank 63.")
 	($D089,< "Called after every key read (carry set when the read returned an OZ error, A = error code)."
 		 "RC_Draw: the screen was corrupted by another application - redefine window 1 and redraw."
 		 "RC_Quit: free the three memory pools and leave with OS_Bye."
+		 "Other codes are passed back to the caller."
+		 "Called after every key read (carry set when the read returned an OZ error, A = error code)."
+		 "RC_Draw: the screen was corrupted by another application - redefine window 1 and redraw."
+		 "RC_Quit: free the three memory pools and leave with OS_Bye."
 		 "Other codes are passed back to the caller.")
-	($D0DC,< "Displays 'No Room!' (QuickEdit reports this when it cannot get more memory for the text).")
+	($D0DC,< "Displays 'No Room!' (QuickEdit reports this when it cannot get more memory for the text)."
+		 "Displays 'No Room!' (QuickEdit reports this when it cannot get more memory for the text).")
 	($D0F7,< "Draw the status line in window 2 (the 19-column panel at the right of the screen)."
 		 "Redefines and clears window 2, prints the cursor line number, then in tiny type: row 7 = Insert or Overtype (edit_flags bit 0),"
+		 "row 6 = Check: On or Off (edit_flags bit 4). Finally selects window 1 again (str_select_window1)."
+		 "Draw the status line in window 2 (the 19-column panel at the right of the screen)."
+		 "Redefines and clears window 2, prints the cursor line number, then in tiny type: row 7 = Insert or Overtype (edit_flags bit 0),"
 		 "row 6 = Check: On or Off (edit_flags bit 4). Finally selects window 1 again (str_select_window1).")
-	($D13C,< "Cursor to column 0, row 7 of window 2, tiny type on. Followed by str_insert or str_overtype.")
-	($D156,< "Cursor to column 0, row 6 of window 2, tiny type on, then the text Check: (followed by str_off or str_on).")
-	($D16D,< "Cursor-to prefix: SOH, 3, @. The caller sends the column and row, each plus 32.")
+	($D13C,< "Cursor to column 0, row 7 of window 2, tiny type on. Followed by str_insert or str_overtype."
+		 "Cursor to column 0, row 7 of window 2, tiny type on. Followed by str_insert or str_overtype.")
+	($D156,< "Cursor to column 0, row 6 of window 2, tiny type on, then the text Check: (followed by str_off or str_on)."
+		 "Cursor to column 0, row 6 of window 2, tiny type on, then the text Check: (followed by str_off or str_on).")
+	($D16D,< "Cursor-to prefix: SOH, 3, @. The caller sends the column and row, each plus 32."
+		 "Cursor-to prefix: SOH, 3, @. The caller sends the column and row, each plus 32.")
 	($D171,< "Command jump table: 47 words, indexed by dispatch code 0..46. See cmd_* handlers."
+		 "The main loop does: HL = table + 2*code; JP (HL)."
+		 "Command jump table: 47 words, indexed by dispatch code 0..46. See cmd_* handlers."
 		 "The main loop does: HL = table + 2*code; JP (HL).")
-	($D1CF,< "Command handler: 'Print out text' - dispatch code $2E")
-	($D241,< "Redraw the whole screen: the text window (far call 7 into bank 63), then the status line, then place the cursor.")
+	($D1CF,< "Command handler: 'Print out text' - dispatch code $2E"
+		 "Command handler: 'Print out text' - dispatch code $2E")
+	($D241,< "Redraw the whole screen: the text window (far call 7 into bank 63), then the status line, then place the cursor."
+		 "Redraw the whole screen: the text window (far call 7 into bank 63), then the status line, then place the cursor.")
 	($D247,< "Position the cursor in window 1: x = the smaller of cursor_col_limit and cursor_index, y = cursor_row."
+		 "Both are sent as the coordinate plus SD_COORD (32), after the cursor-to prefix string."
+		 "Position the cursor in window 1: x = the smaller of cursor_col_limit and cursor_index, y = cursor_row."
 		 "Both are sent as the coordinate plus SD_COORD (32), after the cursor-to prefix string.")
 	($D276,< "Maps raw command codes to dispatch codes: $C3 Delete line -> $15, $D3 Delete character -> $14,"
+		 "$F4 Start of line -> $09, $F5 End of line -> $0A, $F8 Previous word -> $17, $F9 Next word -> $16."
+		 "Maps raw command codes to dispatch codes: $C3 Delete line -> $15, $D3 Delete character -> $14,"
 		 "$F4 Start of line -> $09, $F5 End of line -> $0A, $F8 Previous word -> $17, $F9 Next word -> $16.")
-	($D2A0,< "Command handler: 'Check from cursor' - dispatch code $1D")
-	($D2B9,< "Command handler: 'Check marked block' - dispatch code $28")
-	($D3D5,< "Command handler: 'Check all text' - dispatch code $12")
+	($D2A0,< "Command handler: 'Check from cursor' - dispatch code $1D"
+		 "Command handler: 'Check from cursor' - dispatch code $1D")
+	($D2B9,< "Command handler: 'Check marked block' - dispatch code $28"
+		 "Command handler: 'Check marked block' - dispatch code $28")
+	($D3D5,< "Command handler: 'Check all text' - dispatch code $12"
+		 "Command handler: 'Check all text' - dispatch code $12")
 	($D931,< "Command handler: 'Check this word' - dispatch code $0F"
 		 "Command handler: 'Escape' - dispatch code $1B"
+		 "Two dispatch codes share this handler."
+		 "Command handler: 'Check this word' - dispatch code $0F"
+		 "Command handler: 'Escape' - dispatch code $1B"
 		 "Two dispatch codes share this handler.")
-	($D991,< "Command handler: 'Insert/Over' - dispatch code $1C")
-	($DB17,< "Command handler: 'Split line' - dispatch code $13")
-	($DB9F,< "Command handler: 'Search and Replace' - dispatch code $26")
-	($DBF6,< "Command handler: 'Next Match' - dispatch code $2C")
-	($DBFD,< "Command handler: 'Search for string' - dispatch code $25")
-	($DC12,< "Command handler: 'Merge text at cursor' - dispatch code $27")
-	($DC61,< "Command handler: 'Tab' - dispatch code $29")
-	($DD59,< "Command handler: 'Check as you type' - dispatch code $19")
+	($D991,< "Command handler: 'Insert/Over' - dispatch code $1C"
+		 "Command handler: 'Insert/Over' - dispatch code $1C")
+	($DB17,< "Command handler: 'Split line' - dispatch code $13"
+		 "Command handler: 'Split line' - dispatch code $13")
+	($DB9F,< "Command handler: 'Search and Replace' - dispatch code $26"
+		 "Command handler: 'Search and Replace' - dispatch code $26")
+	($DBF6,< "Command handler: 'Next Match' - dispatch code $2C"
+		 "Command handler: 'Next Match' - dispatch code $2C")
+	($DBFD,< "Command handler: 'Search for string' - dispatch code $25"
+		 "Command handler: 'Search for string' - dispatch code $25")
+	($DC12,< "Command handler: 'Merge text at cursor' - dispatch code $27"
+		 "Command handler: 'Merge text at cursor' - dispatch code $27")
+	($DC61,< "Command handler: 'Tab' - dispatch code $29"
+		 "Command handler: 'Tab' - dispatch code $29")
+	($DD59,< "Command handler: 'Check as you type' - dispatch code $19"
+		 "Command handler: 'Check as you type' - dispatch code $19")
 	($DDAF,< "7 words: inflection class $10 to $16 -> list of endings. The list holds endings each starting with a letter that has bit 7 set, ending with $80."
 		 "$10 = ED ING S;  $11 = S;  $12 = ED ES ING;  $13 = E ED ES ING (the stem has lost its final E);  $14 = IES Y;  $15 = E Y;"
+		 "$16 = ISE ISED ISES ISING IZE IZED IZES IZING."
+		 "7 words: inflection class $10 to $16 -> list of endings. The list holds endings each starting with a letter that has bit 7 set, ending with $80."
+		 "$10 = ED ING S;  $11 = S;  $12 = ED ES ING;  $13 = E ED ES ING (the stem has lost its final E);  $14 = IES Y;  $15 = E Y;"
 		 "$16 = ISE ISED ISES ISING IZE IZED IZES IZING.")
-	($E131,< "Command handler: 'Insert marker' - dispatch code $1E")
-	($E169,< "Command handler: 'Remove markers' - dispatch code $20")
-	($E225,< "Command handler: 'Move marked block' - dispatch code $21")
-	($E22D,< "Command handler: 'Copy marked block' - dispatch code $1F")
-	($E5E2,< "Command handler: 'Delete marked block' - dispatch code $18")
-	($E802,< "Command handler: 'Information' - dispatch code $1A")
+	($E131,< "Command handler: 'Insert marker' - dispatch code $1E"
+		 "Command handler: 'Insert marker' - dispatch code $1E")
+	($E169,< "Command handler: 'Remove markers' - dispatch code $20"
+		 "Command handler: 'Remove markers' - dispatch code $20")
+	($E225,< "Command handler: 'Move marked block' - dispatch code $21"
+		 "Command handler: 'Move marked block' - dispatch code $21")
+	($E22D,< "Command handler: 'Copy marked block' - dispatch code $1F"
+		 "Command handler: 'Copy marked block' - dispatch code $1F")
+	($E5E2,< "Command handler: 'Delete marked block' - dispatch code $18"
+		 "Command handler: 'Delete marked block' - dispatch code $18")
+	($E802,< "Command handler: 'Information' - dispatch code $1A"
+		 "Command handler: 'Information' - dispatch code $1A")
 	($E84E,< "26 words, one per first letter A to Z: the address of that letter's list of 3-byte section entries."
 		 "Each entry is [bank*32 + second letter (0 = apostrophe, 1 to 26 = A to Z)] [offset low] [offset high]; offsets are in segment 2 ($8000-$BFFF)."
+		 "A list ends with $FF. There are 302 sections in all."
+		 "26 words, one per first letter A to Z: the address of that letter's list of 3-byte section entries."
+		 "Each entry is [bank*32 + second letter (0 = apostrophe, 1 to 26 = A to Z)] [offset low] [offset high]; offsets are in segment 2 ($8000-$BFFF)."
 		 "A list ends with $FF. There are 302 sections in all.")
-	($EC26,< "Command handler: 'Export text' - dispatch code $2B")
-	($EC30,< "Command handler: 'Save text' - dispatch code $11")
-	($EDC5,< "Command handler: 'Load text' - dispatch code $10")
-	($F167,< "Command handler: 'Save marked block' - dispatch code $24")
-	($F337,< "Command handler: 'Change name' - dispatch code $2A")
-	($FC8E,< "Command handler: 'Save user dictionary' - dispatch code $22")
-	($FD99,< "Command handler: 'Load user dictionary' - dispatch code $23")
-	($FF50,< "Opens dialog window 3 in the RIGHT half of the screen (x=37, 37 columns, 7 rows). Called from several routines (menus and lists).")
-	($FF57,< "Opens dialog window 3 in the LEFT half of the screen (x=0, 37 columns, 7 rows). Called from one place only.")
+	($EC26,< "Command handler: 'Export text' - dispatch code $2B"
+		 "Command handler: 'Export text' - dispatch code $2B")
+	($EC30,< "Command handler: 'Save text' - dispatch code $11"
+		 "Command handler: 'Save text' - dispatch code $11")
+	($EDC5,< "Command handler: 'Load text' - dispatch code $10"
+		 "Command handler: 'Load text' - dispatch code $10")
+	($F167,< "Command handler: 'Save marked block' - dispatch code $24"
+		 "Command handler: 'Save marked block' - dispatch code $24")
+	($F337,< "Command handler: 'Change name' - dispatch code $2A"
+		 "Command handler: 'Change name' - dispatch code $2A")
+	($FC8E,< "Command handler: 'Save user dictionary' - dispatch code $22"
+		 "Command handler: 'Save user dictionary' - dispatch code $22")
+	($FD99,< "Command handler: 'Load user dictionary' - dispatch code $23"
+		 "Command handler: 'Load user dictionary' - dispatch code $23")
+	($FF50,< "Opens dialog window 3 in the RIGHT half of the screen (x=37, 37 columns, 7 rows). Called from several routines (menus and lists)."
+		 "Opens dialog window 3 in the RIGHT half of the screen (x=37, 37 columns, 7 rows). Called from several routines (menus and lists).")
+	($FF57,< "Opens dialog window 3 in the LEFT half of the screen (x=0, 37 columns, 7 rows). Called from one place only."
+		 "Opens dialog window 3 in the LEFT half of the screen (x=0, 37 columns, 7 rows). Called from one place only.")
 	($FF61,< "Open a dialog box with a title bar in window 3."
+		 "IN: HL = the title text, BC = the window description (the outer x,y,w,d, a NUL, then the inner x,y,w,d)."
+		 "Draws the outer window (type $83), prints the title centred, makes the title line reverse across 75 characters,"
+		 "then redefines window 3 as the inner window (type $81) below the title and selects it."
+		 "Open a dialog box with a title bar in window 3."
 		 "IN: HL = the title text, BC = the window description (the outer x,y,w,d, a NUL, then the inner x,y,w,d)."
 		 "Draws the outer window (type $83), prints the title centred, makes the title line reverse across 75 characters,"
 		 "then redefines window 3 as the inner window (type $81) below the title and selects it.")

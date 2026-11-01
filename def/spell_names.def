@@ -37,10 +37,6 @@
         DEFC TEXT_ROWS = 8        ; rows in the text window (window 1)
         DEFC LINE_HDR_SIZE = 7    ; size of a line record header (length, previous link, next link)
 
-; OZ error codes
-        DEFC RC_Draw = $66        ; application pre-empted and screen corrupted: redraw
-        DEFC RC_Quit = $67        ; request the application to quit
-
 ; edit_flags bits
         DEFC EF_OVERTYPE = $01    ; overtype mode (clear = insert)
         DEFC EF_CHECK_ON = $10    ; check-as-you-type is on

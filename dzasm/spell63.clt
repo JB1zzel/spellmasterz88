@@ -1,5 +1,5 @@
 ; File:
-{spell63.bin}
+{../bank_files/spell63.bin}
 
 ; Local Areas:
 {
@@ -624,20 +624,47 @@ $8900
 	($C000,< "Spell-Master for the Cambridge Z88 - bank 63 ($3F, SPELL.63). Card header, front DOR, both application DORs, QuickEdit menu text,"
 		 "the WordFinder application and the routines QuickEdit calls through the far-call table."
 		 "Annotated disassembly made with DZasm (project spell63.clt). It assembles to bytes IDENTICAL to the original bank."
+		 "Offsets $0000-$003A and $0196-$01D0 are the application DORs. Names and comments are inferred, not original. See NOTES.md."
+		 "Spell-Master for the Cambridge Z88 - bank 63 ($3F, SPELL.63). Card header, front DOR, both application DORs, QuickEdit menu text,"
+		 "the WordFinder application and the routines QuickEdit calls through the far-call table."
+		 "Annotated disassembly made with DZasm (project spell63.clt). It assembles to bytes IDENTICAL to the original bank."
 		 "Offsets $0000-$003A and $0196-$01D0 are the application DORs. Names and comments are inferred, not original. See NOTES.md.")
-	($C03B,< "Copy of bank 62 read_dictionary_record (see there).")
-	($C070,< "Copy of bank 62 skip_to_next_letter_group.")
+	($C03B,< "Copy of bank 62 read_dictionary_record (see there)."
+		 "Copy of bank 62 read_dictionary_record (see there).")
+	($C070,< "Copy of bank 62 skip_to_next_letter_group."
+		 "Copy of bank 62 skip_to_next_letter_group.")
 	($C0BF,< "Same routine as in bank 62: bind one dictionary bank into segment 2 (see bank 62 for the description)."
+		 "BANK-ADDRESSING SITE 1 (copy in this bank): original code builds the bank as (running slot bits) OR ($38 + index)."
+		 "Same routine as in bank 62: bind one dictionary bank into segment 2 (see bank 62 for the description)."
 		 "BANK-ADDRESSING SITE 1 (copy in this bank): original code builds the bank as (running slot bits) OR ($38 + index).")
-	($C1D1,< "WordFinder entry point (WordFinder DOR: entry $C1D1, segment 3 = bank $3F = SPELL.63).")
-	($C1D6,< "WordFinder start-up: creates pools, allocates buffers, then falls into the menu.")
-	($C24B,< "Draws the WordFinder window and menu ('Browse through dictionary', 'Find anagrams', 'Find close matches', 'Solve crossword').")
+	($C1D1,< "WordFinder entry point (WordFinder DOR: entry $C1D1, segment 3 = bank $3F = SPELL.63)."
+		 "WordFinder entry point (WordFinder DOR: entry $C1D1, segment 3 = bank $3F = SPELL.63).")
+	($C1D6,< "WordFinder start-up: creates pools, allocates buffers, then falls into the menu."
+		 "WordFinder start-up: creates pools, allocates buffers, then falls into the menu.")
+	($C24B,< "Draws the WordFinder window and menu ('Browse through dictionary', 'Find anagrams', 'Find close matches', 'Solve crossword')."
+		 "Draws the WordFinder window and menu ('Browse through dictionary', 'Find anagrams', 'Find close matches', 'Solve crossword').")
 	($C267,< "WordFinder menu loop: reads keys. Keys 1 to 4 choose an option, Cursor up/down moves wf_menu_sel,"
+		 "Enter runs the selected option, Escape frees the pools and exits (OS_Bye)."
+		 "WordFinder menu loop: reads keys. Keys 1 to 4 choose an option, Cursor up/down moves wf_menu_sel,"
 		 "Enter runs the selected option, Escape frees the pools and exits (OS_Bye).")
-	($C2C7,< "Handles a key typed in the WordFinder menu.")
-	($C506,< "Menu option 4: Solve crossword (window title 'Crossword').")
-	($C62D,< "Menu option 2: Find anagrams (window title 'Anagram'). Asks for a word, checks it is letters only, then searches.")
+	($C2C7,< "Handles a key typed in the WordFinder menu."
+		 "Handles a key typed in the WordFinder menu.")
+	($C506,< "Menu option 4: Solve crossword (window title 'Crossword')."
+		 "Menu option 4: Solve crossword (window title 'Crossword').")
+	($C62D,< "Menu option 2: Find anagrams (window title 'Anagram'). Asks for a word, checks it is letters only, then searches."
+		 "Menu option 2: Find anagrams (window title 'Anagram'). Asks for a word, checks it is letters only, then searches.")
 	($C799,< "Far-call table entry 7."
+		 "Called by draw_text_window (bank 62), which redraw_screen calls. Draws the text in window 1: the cursor line from the edit buffer,"
+		 "then the rows above and below it by following the line records, then the End of text marker and blank rows."
+		 "Redraw the text window (far-call routine 7). The text is a chain of line records in banked memory:"
+		 "+0 = record length (text length + LINE_HDR_SIZE), +1..+3 = previous line (bank, offset low, offset high),"
+		 "+4..+6 = next line (bank, offset low, offset high), +7 = the text."
+		 "The cursor line itself is in the edit buffer. top_line = cursor_line - cursor_row."
+		 "Algorithm: 1) draw the cursor line; 2) walk back from it row by row to find the line for row 0;"
+		 "3) draw rows 0 to 7 in order, copying each line to the window and padding with spaces, following the next-line pointers;"
+		 "4) after the last line draw the End of text marker and blank any rows that remain."
+		 "It appears to check for a waiting key with OS_Xin and stop early if there is one, so typing is not held up by a redraw."
+		 "Far-call table entry 7."
 		 "Called by draw_text_window (bank 62), which redraw_screen calls. Draws the text in window 1: the cursor line from the edit buffer,"
 		 "then the rows above and below it by following the line records, then the End of text marker and blank rows."
 		 "Redraw the text window (far-call routine 7). The text is a chain of line records in banked memory:"
@@ -650,49 +677,96 @@ $8900
 		 "It appears to check for a waiting key with OS_Xin and stop early if there is one, so typing is not held up by a redraw.")
 	($C7C5,< "Draw the cursor line at row cursor_row in window 1, straight from the edit buffer (line_buffer)."
 		 "First works out the horizontal scroll: if cursor_index is at or beyond cursor_col_limit the line is shifted left"
+		 "by cursor_index - cursor_col_limit characters. Then prints the visible part and pads the row with spaces."
+		 "Draw the cursor line at row cursor_row in window 1, straight from the edit buffer (line_buffer)."
+		 "First works out the horizontal scroll: if cursor_index is at or beyond cursor_col_limit the line is shifted left"
 		 "by cursor_index - cursor_col_limit characters. Then prints the visible part and pads the row with spaces.")
-	($C93D,< "Redraw finished: set the redraw state in edit_flags to 4.")
+	($C93D,< "Redraw finished: set the redraw state in edit_flags to 4."
+		 "Redraw finished: set the redraw state in edit_flags to 4.")
 	($C948,< "Print one text character in window 1. Printable characters go straight out with OS_Out."
+		 "A control character (below 32) is shown as the matching letter (code + 64) in reverse video."
+		 "Print one text character in window 1. Printable characters go straight out with OS_Out."
 		 "A control character (below 32) is shown as the matching letter (code + 64) in reverse video.")
-	($C96D,< "Draw the End of text marker row in reverse video ( End of text ), then fall into clear_remaining_rows.")
-	($C992,< "Blank every remaining row of the text window below the End of text marker, up to row 7.")
-	($C9D9,< "Turn reverse video on.")
-	($C9E5,< "Turn reverse video off.")
+	($C96D,< "Draw the End of text marker row in reverse video ( End of text ), then fall into clear_remaining_rows."
+		 "Draw the End of text marker row in reverse video ( End of text ), then fall into clear_remaining_rows.")
+	($C992,< "Blank every remaining row of the text window below the End of text marker, up to row 7."
+		 "Blank every remaining row of the text window below the End of text marker, up to row 7.")
+	($C9D9,< "Turn reverse video on."
+		 "Turn reverse video on.")
+	($C9E5,< "Turn reverse video off."
+		 "Turn reverse video off.")
 	($C9FC,< "Put the block markers in order: if both markers are set and the end comes before the start, swap start and end."
+		 "marker_flags bit 0 = start set, bit 1 = end set; the markers are a line number plus a column."
+		 "Put the block markers in order: if both markers are set and the end comes before the start, swap start and end."
 		 "marker_flags bit 0 = start set, bit 1 = end set; the markers are a line number plus a column.")
-	($CA36,< "Highlight the part of the marked block that falls on the row just drawn, using the toggle-over-N sequence with reverse video.")
-	($CB05,< "Copy of bank 62 expand_word, with append_token inline (its own token table at $CC73).")
-	($CC73,< "Bank 63 copy of the 128-word token pointer table (bank 62: $C4A4).")
+	($CA36,< "Highlight the part of the marked block that falls on the row just drawn, using the toggle-over-N sequence with reverse video."
+		 "Highlight the part of the marked block that falls on the row just drawn, using the toggle-over-N sequence with reverse video.")
+	($CB05,< "Copy of bank 62 expand_word, with append_token inline (its own token table at $CC73)."
+		 "Copy of bank 62 expand_word, with append_token inline (its own token table at $CC73).")
+	($CC73,< "Bank 63 copy of the 128-word token pointer table (bank 62: $C4A4)."
+		 "Bank 63 copy of the 128-word token pointer table (bank 62: $C4A4).")
 	($CD87,< "Far-call table entry 0."
+		 "Called from the QuickEdit handler for Information (command $1A)."
+		 "Shows the Information window ('Currently editing', number of lines, memory, word count, user dictionary)."
+		 "Far-call table entry 0."
 		 "Called from the QuickEdit handler for Information (command $1A)."
 		 "Shows the Information window ('Currently editing', number of lines, memory, word count, user dictionary).")
 	($CFE6,< "Runs far-call routine number A: pops the index, looks it up in far_call_table, calls it, then returns to bank 62."
+		 "Entered from the stub at $7F80 with this bank bound into segment 3."
+		 "Runs far-call routine number A: pops the index, looks it up in far_call_table, calls it, then returns to bank 62."
 		 "Entered from the stub at $7F80 with this bank bound into segment 3.")
 	($D008,< "Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63."
+		 "Index 1 ($D54F) and index 5 ($DB25) are not used by any caller in bank 62."
+		 "Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63."
 		 "Index 1 ($D54F) and index 5 ($DB25) are not used by any caller in bank 62.")
 	($D01E,< "Far-call table entry 8."
+		 "Called from the QuickEdit handler for Tab (command $29)."
+		 "Far-call table entry 8."
 		 "Called from the QuickEdit handler for Tab (command $29).")
 	($D100,< "Far-call table entry 10."
 		 "Called from the QuickEdit handler for Print out text (command $2E)."
+		 "Shows the 'Printing' window and sends the text to the printer."
+		 "Far-call table entry 10."
+		 "Called from the QuickEdit handler for Print out text (command $2E)."
 		 "Shows the 'Printing' window and sends the text to the printer.")
 	($D19D,< "Far-call table entry 3."
+		 "Called from the QuickEdit handler for Search and Replace (command $26)."
+		 "Far-call table entry 3."
 		 "Called from the QuickEdit handler for Search and Replace (command $26).")
 	($D479,< "Far-call table entry 9."
+		 "Called from the QuickEdit handler for Next Match (command $2C)."
+		 "Far-call table entry 9."
 		 "Called from the QuickEdit handler for Next Match (command $2C).")
 	($D498,< "Far-call table entry 2."
+		 "Called from the QuickEdit handler for Search for string (command $25)."
+		 "Far-call table entry 2."
 		 "Called from the QuickEdit handler for Search for string (command $25).")
 	($D880,< "Far-call table entry 6."
+		 "Called from bank 62 at $E076, inside the check-as-you-type code. Purpose not yet identified."
+		 "Far-call table entry 6."
 		 "Called from bank 62 at $E076, inside the check-as-you-type code. Purpose not yet identified.")
 	($D909,< "Far-call table entry 4."
+		 "Called from the QuickEdit handler for Merge text at cursor (command $27)."
+		 "Far-call table entry 4."
 		 "Called from the QuickEdit handler for Merge text at cursor (command $27).")
-	($DCFE,< "Menu option 3: Find close matches (window title 'Find close matches').")
-	($E203,< "Menu option 1: Browse through dictionary.")
-	($E6EB,< "QuickEdit menu topics ('Blocks', 'Cursor', 'Edit', 'Files', 'SPELLING') - kept as raw bytes.")
-	($E728,< "QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See NOTES.md for the full table.")
-	($EBAE,< "Menu commands for the Correction/spelling menu.")
+	($DCFE,< "Menu option 3: Find close matches (window title 'Find close matches')."
+		 "Menu option 3: Find close matches (window title 'Find close matches').")
+	($E203,< "Menu option 1: Browse through dictionary."
+		 "Menu option 1: Browse through dictionary.")
+	($E6EB,< "QuickEdit menu topics ('Blocks', 'Cursor', 'Edit', 'Files', 'SPELLING') - kept as raw bytes."
+		 "QuickEdit menu topics ('Blocks', 'Cursor', 'Edit', 'Files', 'SPELLING') - kept as raw bytes.")
+	($E728,< "QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See NOTES.md for the full table."
+		 "QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See NOTES.md for the full table.")
+	($EBAE,< "Menu commands for the Correction/spelling menu."
+		 "Menu commands for the Correction/spelling menu.")
 	($FF80,< "STUB entered from bank 62 (far_call_bank63): copies the bank bound in segment 1 (this bank) into segment 3"
+		 "and jumps to far_call_dispatch."
+		 "STUB entered from bank 62 (far_call_bank63): copies the bank bound in segment 1 (this bank) into segment 3"
 		 "and jumps to far_call_dispatch.")
 	($FF8B,< "STUB used on the way back: re-binds bank 62 into segment 3, restores the registers saved on the stack, RET."
+		 "BANK-ADDRESSING SITE 3: the ORIGINAL code computes bank 62 as (running slot bits) OR $3E. It is shown here as raw bytes:"
+		 "$0E,$01 LD C,1 / $E7,$5A OS_Mgb / $78 LD A,B / $E6,$C0 AND $C0 / $F6,$3E OR $3E / $47 LD B,A / $0E,$03 LD C,3 / $E7,$5D OS_Mpb / POPs / RET."
+		 "STUB used on the way back: re-binds bank 62 into segment 3, restores the registers saved on the stack, RET."
 		 "BANK-ADDRESSING SITE 3: the ORIGINAL code computes bank 62 as (running slot bits) OR $3E. It is shown here as raw bytes:"
 		 "$0E,$01 LD C,1 / $E7,$5A OS_Mgb / $78 LD A,B / $E6,$C0 AND $C0 / $F6,$3E OR $3E / $47 LD B,A / $0E,$03 LD C,3 / $E7,$5D OS_Mpb / POPs / RET.")
 }
