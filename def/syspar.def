@@ -1,0 +1,275 @@
+lstoff
+
+; **************************************************************************************************
+; Standard Z88 Operating System Manifests
+;
+; This file is part of the Z88 operating system, OZ      0000000000000000      ZZZZZZZZZZZZZZZZZZZ
+;                                                       000000000000000000   ZZZZZZZZZZZZZZZZZZZ
+; OZ is free software; you can redistribute it and/    0000            0000              ZZZZZ
+; or modify it under the terms of the GNU General      0000            0000            ZZZZZ
+; Public License as published by the Free Software     0000            0000          ZZZZZ
+; Foundation; either version 2, or (at your option)    0000            0000        ZZZZZ
+; any later version. OZ is distributed in the hope     0000            0000      ZZZZZ
+; that it will be useful, but WITHOUT ANY WARRANTY;    0000            0000    ZZZZZ
+; without even the implied warranty of MERCHANTA-       000000000000000000   ZZZZZZZZZZZZZZZZZZZZ
+; BILITY or FITNESS FOR A PARTICULAR PURPOSE. See        0000000000000000  ZZZZZZZZZZZZZZZZZZZZ
+; the GNU General Public License for more details.
+; You should have received a copy of the GNU General Public License along with OZ; see the file
+; COPYING. If not, write to:
+;                                  Free Software Foundation, Inc.
+;                                  59 Temple Place-Suite 330,
+;                                  Boston, MA 02111-1307, USA.
+;
+; (C) Jorma Oksanen (jorma.oksanen@aini.fi), 2003
+; (C) Thierry Peycru (pek@users.sf.net), 2005-2007
+; (C) Gunther Strube (hello@bits4fun.net), 2005-2007
+;
+; ***************************************************************************************************
+
+IF !__SYSPAR_DEF__
+     DEFINE __SYSPAR_DEF__
+
+     INCLUDE "macros.def"
+
+; Parameter API
+
+     defc OS_Nq   = $66  ; enquire (fetch) parameter
+     defc OS_Sp   = $69  ; specify (set) parameter
+
+; Enquiries, read by OS_Nq :
+;
+;         <Symbol>  <Value>   <Meaning>
+
+     defc NQ_Wbox  = $8300    ; return window information
+     defc NQ_Wcur  = $8303    ; return cursor information
+     defc NQ_Rds   = $8306    ; read text from screen
+     defc NQ_Scr   = $8309    ; return Screen Information
+
+     defc NQ_Ain   = $8600    ; application enquiry
+     defc NQ_Khn   = $8603    ; read keyboard handle
+     defc NQ_Shn   = $8606    ; read screen handle
+     defc NQ_Phn   = $8609    ; read printer indirected handle
+     defc NQ_Nhn   = $860C    ; read null handle
+     defc NQ_Wai   = $860F    ; Who am I?
+     defc NQ_Com   = $8612    ; read comms handle
+     defc NQ_Ihn   = $8615    ; read IN handle
+     defc NQ_Ohn   = $8618    ; read OUT handle
+     defc NQ_Rhn   = $861B    ; read direct printer handle
+     defc NQ_Thn   = $862A    ; read TTY handle (OZ 5.0 and newer)
+     defc NQ_Voz   = $861E    ; application verifies running OZ version (OZ 4.5 and newer)
+     defc NQ_Roz   = $8621    ; read OZ revision number (OZ 4.5 and newer)
+     defc NQ_Btl   = $8624    ; read battery status (OZ 4.5 and newer)
+     defc NQ_Toz   = $8627    ; read OZ compilation timestamp (OZ 5.0 and newer)
+
+     defc NQ_Mfs   = $8900    ; read free space information
+     defc NQ_Slt   = $8903    ; read slot type information
+     defc NQ_Mfp   = $8906    ; read free RAM space for specified slot, in pages, where 1 page = 256 bytes  (OZ 4.2 and newer)
+     defc NQ_Mup   = $8909    ; read RAM used by pool, in pages (OZ 5.0 and newer)
+     defc NQ_Mnt   = $890C    ; read mounted device (OZ 5.0 and newer)
+
+     defc NQ_Dev   = $8C00    ; fetch current device
+     defc NQ_Dir   = $8C03    ; fetch current directory
+     defc NQ_Fnm   = $8C06    ; fetch current filename match string
+     defc NQ_Dmh   = $8C09    ; fetch Director special memory handle
+     defc NQ_Inp   = $8C0C    ; read std. input handle
+     defc NQ_Out   = $8C0F    ; read std. output handle
+     defc NQ_Prt   = $8C12    ; read printer stream handle
+     defc NQ_Tin   = $8C15    ; read input-T handle
+     defc NQ_Tot   = $8C18    ; read output-T handle
+     defc NQ_Tpr   = $8C1B    ; read printer-T stream handle
+     defc NQ_Chn   = $8C1E    ; read comms handle
+     defc NQ_Prc   = $8C21    ; get process environment (OZ 5.0 and newer)
+     defc NQ_Fmh   = $8C24    ; fetch Filesystem special memory handle (OZ 5.0 and newer)
+     defc NQ_Nam   = $8C27    ; fetch current process name (OZ 5.0 and newer)
+
+; Specifies, set by OS_Sp :
+
+     defc SP_Dev   = $8C00    ; Set current device (OS_Sp only)
+     defc SP_Dir   = $8C03    ; Set current directory (OS_Sp only)
+     defc SP_Fnm   = $8C06    ; Set current name match (OS_Sp only)
+
+; Enquiries and Specifies, read by OS_Nq, set by OS_Sp :
+;
+; Panel definitions (serial port parameters, timeout, defaults, etc.) :
+;
+;         <Symbol>  <Value>   <Meaning>
+
+     defc PA_Gfi   = $8000    ; Install changed settings (OS-Sp only)
+     defc PA_Mct   = $8001    ; Timeout in minutes
+     defc PA_Rep   = $8002    ; Repeat rate
+     defc PA_Kcl   = $8003    ; Keyclick 'Y' or 'N'
+     defc PA_Snd   = $8004    ; Sound 'Y' or 'N'
+     defc PA_Bad   = $8005    ; Default bad process size in K
+     defc PA_Loc   = $8006    ; Country keyboard letter
+
+		defc CL_US = 'A'	  ; United states
+		defc CL_FR = 'F'	  ; France
+		defc CL_DE = 'G'	  ; Germany
+		defc CL_UK = 'U'	  ; England
+		defc CL_DK = 'D'	  ; Denmark
+		defc CL_SE = 'S'	  ; Sweden
+		defc CL_IT = 'I'	  ; Italy
+		defc CL_SP = 'P'	  ; Spain
+		defc CL_JP = 'J'	  ; Japan
+		defc CL_IS = 'C'	  ; Iceland
+		defc CL_NO = 'N'	  ; Norway
+		defc CL_CH = 'W'	  ; Chweiss
+		defc CL_TR = 'T'	  ; Turkey
+		defc CL_FI = 'L'	  ; Finland
+
+     defc PA_Rwd   = $8007    ; Rounded windows (OZ 5.0 and newer)
+     defc PA_Psw   = $8008    ; Lockup password (OZ 5.0 and newer)
+     defc PA_Iov   = $8010    ; Insert/Overtype 'I' or 'O'
+     defc PA_Dat   = $8011    ; Date format 'E' or 'A'
+     defc PA_Map   = $8012    ; PipeDream map 'Y' or 'N'
+     defc PA_Msz   = $8013    ; Map size in pixels
+     defc PA_Dir   = $8014    ; Default directory
+     defc PA_Dev   = $8015    ; Default device
+     defc PA_Txb   = $8016    ; Transmit baud rate - binary
+     defc PA_Rxb   = $8017    ; Receive baud rate - binary
+     defc PA_Xon   = $8018    ; Xon/Xoff 'Y' or 'N'
+     defc PA_Par   = $8019    ; Parity 'O', 'E', 'M', 'S' or 'N'
+
+; Printer parameter definitions :
+
+     defc PA_Ptr   = $8020    ; Printer name
+     defc PA_Alf   = $8021    ; Allow Linefeed, 'Y' or 'N'
+     defc PA_Pon   = $8022    ; Printer On sequence
+     defc PA_Pof   = $8023    ; Printer Off sequence
+     defc PA_Eop   = $8024    ; End of page sequence
+     defc PA_Mip   = $8025    ; HMI prefix sequence
+     defc PA_Mis   = $8026    ; HMI suffix sequence
+     defc PA_Mio   = $8027    ; HMI offset sequence
+
+; The format of each highlight sequence is as follows :
+;         PA_On<n>            Highlight ON sequence
+;         PA_Of<n>            Highlight OFF sequence
+;         PA_Oc<n>            OFF at CR 'Y' or 'N'
+;         PA_Oh<n>            placeholder for wild character (internal)
+
+     defc PA_On1   = $8028    ; Underline
+     defc PA_Of1   = $8029    ;
+     defc PA_Oc1   = $802A    ;
+     defc PA_Oh1   = $802B    ;
+     defc PA_On2   = $802C    ; Bold
+     defc PA_Of2   = $802D    ;
+     defc PA_Oc2   = $802E    ;
+     defc PA_Oh2   = $802F    ;
+     defc PA_On3   = $8030    ; Extended sequence
+     defc PA_Of3   = $8031    ;
+     defc PA_Oc3   = $8032    ;
+     defc PA_Oh3   = $8033    ;
+     defc PA_On4   = $8034    ; Italics
+     defc PA_Of4   = $8035    ;
+     defc PA_Oc4   = $8036    ;
+     defc PA_Oh4   = $8037    ;
+     defc PA_On5   = $8038    ; Subscript
+     defc PA_Of5   = $8039    ;
+     defc PA_Oc5   = $803A    ;
+     defc PA_Oh5   = $803B    ;
+     defc PA_On6   = $803C    ; Superscript
+     defc PA_Of6   = $803D    ;
+     defc PA_Oc6   = $803E    ;
+     defc PA_Oh6   = $803F    ;
+     defc PA_On7   = $8040    ; Alternate font
+     defc PA_Of7   = $8041    ;
+     defc PA_Oc7   = $8042    ;
+     defc PA_Oh7   = $8043    ;
+     defc PA_On8   = $8044    ; User Defined
+     defc PA_Of8   = $8045    ;
+     defc PA_Oc8   = $8046    ;
+     defc PA_Oh8   = $8047    ;
+
+; The format of each translation code sequence is as follows :
+;         PA_Tr<n>            Translate from character
+;         PA_Ts<n>            Translate to sequence
+
+     defc PA_Tr1   = $8048    ; character to be translated
+     defc PA_Ts1   = $8049    ; to sequence
+     defc PA_Tr2   = $804A    ; ...
+     defc PA_Ts2   = $804B    ;
+     defc PA_Tr3   = $804C    ;
+     defc PA_Ts3   = $804D    ;
+     defc PA_Tr4   = $804E    ;
+     defc PA_Ts4   = $804F    ;
+     defc PA_Tr5   = $8050    ;
+     defc PA_Ts5   = $8051    ;
+     defc PA_Tr6   = $8052    ;
+     defc PA_Ts6   = $8053    ;
+     defc PA_Tr7   = $8054    ;
+     defc PA_Ts7   = $8055    ;
+     defc PA_Tr8   = $8056    ;
+     defc PA_Ts8   = $8057    ;
+     defc PA_Tr9   = $8058    ;
+     defc PA_Ts9   = $8059    ;
+
+;
+
+     defc PA_Tr10  = $8080    ;
+     defc PA_Ts10  = $8081    ;
+     defc PA_Tr11  = $8082    ;
+     defc PA_Ts11  = $8083    ;
+     defc PA_Tr12  = $8084    ;
+     defc PA_Ts12  = $8085    ;
+     defc PA_Tr13  = $8086    ;
+     defc PA_Ts13  = $8087    ;
+     defc PA_Tr14  = $8088    ;
+     defc PA_Ts14  = $8089    ;
+     defc PA_Tr15  = $808A    ;
+     defc PA_Ts15  = $808B    ;
+     defc PA_Tr16  = $808C    ;
+     defc PA_Ts16  = $808D    ;
+     defc PA_Tr17  = $808E    ;
+     defc PA_Ts17  = $808F    ;
+     defc PA_Tr18  = $8090    ;
+     defc PA_Ts18  = $8091    ;
+     defc PA_Tr19  = $8092    ;
+     defc PA_Ts19  = $8093    ;
+     defc PA_Tr20  = $8094    ;
+     defc PA_Ts20  = $8095    ;
+     defc PA_Tr21  = $8096    ;
+     defc PA_Ts21  = $8097    ;
+     defc PA_Tr22  = $8098    ;
+     defc PA_Ts22  = $8099    ;
+     defc PA_Tr23  = $809A    ;
+     defc PA_Ts23  = $809B    ;
+     defc PA_Tr24  = $809C    ;
+     defc PA_Ts24  = $809D    ;
+     defc PA_Tr25  = $809E    ;
+     defc PA_Ts25  = $809F    ;
+     defc PA_Tr26  = $80A0    ;
+     defc PA_Ts26  = $80A1    ;
+     defc PA_Tr27  = $80A2    ;
+     defc PA_Ts27  = $80A3    ;
+     defc PA_Tr28  = $80A4    ;
+     defc PA_Ts28  = $80A5    ;
+     defc PA_Tr29  = $80A6    ;
+     defc PA_Ts29  = $80A7    ;
+     defc PA_Tr30  = $80A8    ;
+     defc PA_Ts30  = $80A9    ;
+     defc PA_Tr31  = $80AA    ;
+     defc PA_Ts31  = $80AB    ;
+     defc PA_Tr32  = $80AC    ;
+     defc PA_Ts32  = $80AD    ;
+     defc PA_Tr33  = $80AE    ;
+     defc PA_Ts33  = $80AF    ;
+     defc PA_Tr34  = $80B0    ;
+     defc PA_Ts34  = $80B1    ;
+     defc PA_Tr35  = $80B2    ;
+     defc PA_Ts35  = $80B3    ;
+     defc PA_Tr36  = $80B4    ;
+     defc PA_Ts36  = $80B5    ;
+     defc PA_Tr37  = $80B6    ;
+     defc PA_Ts37  = $80B7    ;
+     defc PA_Tr38  = $80B8    ;
+     defc PA_Ts38  = $80B9    ;
+     defc PA_Tr39  = $80BA    ;
+     defc PA_Ts39  = $80BB    ;
+     defc PA_Tr40  = $80BC    ;
+     defc PA_Ts40  = $80BD    ;
+     defc PA_Tr41  = $80BE    ;
+     defc PA_Ts41  = $80BF    ;
+
+ENDIF
+
+lston

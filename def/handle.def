@@ -1,0 +1,2 @@
+; handle.def - generated from DZasm 0.35 call tables (dz.c): names and values exactly as DZasm prints them
+	DEFC	Os_fn = $7B

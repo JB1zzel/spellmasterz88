@@ -1,0 +1,79 @@
+lstoff
+
+; **************************************************************************************************
+; Standard Z88 Operating System Manifests
+;
+; This file is part of the Z88 operating system, OZ      0000000000000000      ZZZZZZZZZZZZZZZZZZZ
+;                                                       000000000000000000   ZZZZZZZZZZZZZZZZZZZ
+; OZ is free software; you can redistribute it and/    0000            0000              ZZZZZ
+; or modify it under the terms of the GNU General      0000            0000            ZZZZZ
+; Public License as published by the Free Software     0000            0000          ZZZZZ
+; Foundation; either version 2, or (at your option)    0000            0000        ZZZZZ
+; any later version. OZ is distributed in the hope     0000            0000      ZZZZZ
+; that it will be useful, but WITHOUT ANY WARRANTY;    0000            0000    ZZZZZ
+; without even the implied warranty of MERCHANTA-       000000000000000000   ZZZZZZZZZZZZZZZZZZZZ
+; BILITY or FITNESS FOR A PARTICULAR PURPOSE. See        0000000000000000  ZZZZZZZZZZZZZZZZZZZZ
+; the GNU General Public License for more details.
+; You should have received a copy of the GNU General Public License along with OZ; see the file
+; COPYING. If not, write to:
+;                                  Free Software Foundation, Inc.
+;                                  59 Temple Place-Suite 330,
+;                                  Boston, MA 02111-1307, USA.
+;
+; (C) Thierry Peycru, 2017-2019
+;
+; ***************************************************************************************************
+
+; SD card protocol in SPI mode manifests
+; --------------------------------------
+
+; SD commands
+
+        defc    CMD0            = $40 | 0       ; GO_IDLE_STATE
+        defc    CMD1            = $40 | 1       ; SEND_OP_COND
+        defc    CMD8            = $40 | 8       ; SEND_IF_COND
+        defc    CMD9            = $40 | 9       ; SEND_CSD
+        defc    CMD10           = $40 | 10      ; SEND_CID
+        defc    CMD16           = $40 | 16      ; SET_BLOCKLEN
+        defc    CMD17           = $40 | 17      ; READ_SINGLE_BLOCK
+        defc    CMD24           = $40 | 24      ; WRITE_BLOCK
+        defc    CMD55           = $40 | 55      ; APP_CMD
+        defc    CMD58           = $40 | 58      ; READ_EXTR_MULTI
+        defc    ACMD41          = $40 | 41      ; SD_APP_OP_COND
+
+; SD response
+
+        defc    R1_B_IDLE       = 0             ; in idle state
+        defc    R1_B_ERASE      = 1             ; erase reset
+        defc    R1_B_ILLEGAL    = 2             ; illegal command
+        defc    R1_B_CRC        = 3             ; command CRC error
+        defc    R1_B_ERER       = 4             ; erase sequence error
+        defc    R1_B_ADDRER     = 5             ; address error
+        defc    R1_B_PARER      = 6             ; parameter error
+        ; bit 7, always zero
+
+        defc    R1_IDLE         = $01           ; initializing...
+        defc    R1_ILLEGAL      = $05           ; unsupported command
+
+; Data token, Data response
+
+        defc    DAT_TKN         = $FE           ; returned after CID and CSD, before Single block i/o commands
+        defc    DAT_OK          = @00000101     ; returned after block write
+
+; CID response
+
+        defc    CID_MID         = 0             ; manufacturer id
+        defc    CID_OID         = 1             ; OEM id, 2 chars
+        defc    CID_PNM         = 3             ; product name, 5 chars
+        defc    CID_PRV         = 8             ; product revision, BCD n.m
+        defc    CID_PSN         = 9             ; product serial number, 4 bytes
+        defc    CID_MDT         = 13            ; manufacture date, 12 bits over 2 bytes
+        defc    CID_CRC         = 15            ; CRC7 + stop bit
+        defc    CID_SIZEOF      = 16
+
+
+; SD sector
+
+        defc    SEC_SIZEOF      = $0200         ; constant, 512 bytes
+
+lston

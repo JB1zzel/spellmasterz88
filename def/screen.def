@@ -1,0 +1,66 @@
+lstoff
+
+; **************************************************************************************************
+; Standard Z88 Operating System Manifests
+;
+; This file is part of the Z88 operating system, OZ      0000000000000000      ZZZZZZZZZZZZZZZZZZZ
+;                                                       000000000000000000   ZZZZZZZZZZZZZZZZZZZ
+; OZ is free software; you can redistribute it and/    0000            0000              ZZZZZ
+; or modify it under the terms of the GNU General      0000            0000            ZZZZZ
+; Public License as published by the Free Software     0000            0000          ZZZZZ
+; Foundation; either version 2, or (at your option)    0000            0000        ZZZZZ
+; any later version. OZ is distributed in the hope     0000            0000      ZZZZZ
+; that it will be useful, but WITHOUT ANY WARRANTY;    0000            0000    ZZZZZ
+; without even the implied warranty of MERCHANTA-       000000000000000000   ZZZZZZZZZZZZZZZZZZZZ
+; BILITY or FITNESS FOR A PARTICULAR PURPOSE. See        0000000000000000  ZZZZZZZZZZZZZZZZZZZZ
+; the GNU General Public License for more details.
+; You should have received a copy of the GNU General Public License along with OZ; see the file
+; COPYING. If not, write to:
+;                                  Free Software Foundation, Inc.
+;                                  59 Temple Place-Suite 330,
+;                                  Boston, MA 02111-1307, USA.
+;
+; (C) Jorma Oksanen (jorma.oksanen@aini.fi), 2003
+; (C) Thierry Peycru (pek@users.sf.net), 2005-2007
+; (C) Gunther Strube (hello@bits4fun.net), 2005-2007
+;
+; ***************************************************************************************************
+
+; Screen control:
+
+IF !__SCREEN_DEF__
+DEFINE __SCREEN_DEF__
+
+INCLUDE "macros.def"
+INCLUDE "oz.def"
+INCLUDE "memory.def"
+
+;       Screen calls     
+DEFC    OS_Off                  = $EC06         ; switch machine (screen) off
+DEFC    OS_Sci                  = $D406         ; alter screen info
+; arguments:
+    DEFC    SC_LR0              = $01           ; LORES0 (512 byte granularity)
+    DEFC    SC_LR1              = $02           ; LORES1 (4K granularity)
+    DEFC    SC_HR0              = $03           ; HIRES0 (8K granularity)
+    DEFC    SC_HR1              = $04           ; HIRES1 (2K granularity)
+    DEFC    SC_SBR              = $05           ; SBF (2K granularity)
+    DEFC    SC_GSR              = $06           ; Get default Screen System RAM Config of BL_SCW, BL_SCH resolution (O3 only) 
+    DEFC    SC_SYS              = $07           ; Install default SBF of BL_SCW, BL_SCH resolution (O3 only)
+    
+DEFC    OS_Isq                  = $D006         ; Initialize prefix sequence (internal)
+DEFC    OS_Wsq                  = $CE06         ; Write to prefix sequence (internal)
+
+;       Window Definition Block
+defvars 0
+        WDB_ID                  ds.b    1
+        WDB_XORG                ds.b    1
+        WDB_YORG                ds.b    1
+        WDB_WDTH                ds.b    1
+        WDB_HGHT                ds.b    1
+        WDB_BNR_LSB             ds.b    1
+        WDB_BNR_MSB             ds.b    1
+enddef
+
+ENDIF
+
+lston

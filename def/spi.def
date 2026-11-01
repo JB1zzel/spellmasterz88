@@ -1,0 +1,132 @@
+lstoff
+
+; **************************************************************************************************
+; Standard Z88 Operating System Manifests
+;
+; This file is part of the Z88 operating system, OZ      0000000000000000      ZZZZZZZZZZZZZZZZZZZ
+;                                                       000000000000000000   ZZZZZZZZZZZZZZZZZZZ
+; OZ is free software; you can redistribute it and/    0000            0000              ZZZZZ
+; or modify it under the terms of the GNU General      0000            0000            ZZZZZ
+; Public License as published by the Free Software     0000            0000          ZZZZZ
+; Foundation; either version 2, or (at your option)    0000            0000        ZZZZZ
+; any later version. OZ is distributed in the hope     0000            0000      ZZZZZ
+; that it will be useful, but WITHOUT ANY WARRANTY;    0000            0000    ZZZZZ
+; without even the implied warranty of MERCHANTA-       000000000000000000   ZZZZZZZZZZZZZZZZZZZZ
+; BILITY or FITNESS FOR A PARTICULAR PURPOSE. See        0000000000000000  ZZZZZZZZZZZZZZZZZZZZ
+; the GNU General Public License for more details.
+; You should have received a copy of the GNU General Public License along with OZ; see the file
+; COPYING. If not, write to:
+;                                  Free Software Foundation, Inc.
+;                                  59 Temple Place-Suite 330,
+;                                  Boston, MA 02111-1307, USA.
+;
+; (C) Thierry Peycru, 2017
+;
+; ***************************************************************************************************
+
+; Z88 FPGA - BLINK DATASHEET ADD-ON
+; ---------------------------------
+; 
+; The SPI controller
+; ------------------
+; 
+; I/O Ports :
+; 
+; Controller 0 : wired to serial flash (used for FPGA configuration)
+;     ($F0) Status/Control (read 8 bits, write 16 bits)
+;     ($F1) Data (read and write)
+; 
+; Controller 1 : wired to SD card
+;     ($F2) Status/Control (read 8 bits, write 16 bits)
+;     ($F3) Data (read and write)
+; 
+; Status register bits
+;     0   SPI_B_SS    slave select status, 1 when SPI controller has selected a slave
+;     1   SPI_B_ACT   active, 1 when SPI controller is sending/receiving data
+;     2-7     -       unused
+; 
+; Control register bits
+;     0     SPI_B_SS    slave select enable, 1 to enable I/O with slave
+;     1-3               read select
+;           000   SPI_DAT         read data
+;           010   SPI_CRC16_LSB   read CRC16 LSB
+;           011   SPI_CRC16_MSB   read CRC16 MSB
+;           100   SPI_CRC32_BY0   read CRC32 byte 0 (LSB)
+;           101   SPI_CRC32_BY1   read CRC32 byte 1
+;           110   SPI_CRC32_BY2   read CRC32 byte 2
+;           111   SPI_CRC32_BY3   read CRC32 byte 3 (MSB)
+; 
+;     4     SPI_B_CLR   clear CRC16/32
+;     5     SPI_B_DIR   direction, select CRC on read or write stream
+;     6     SPI_B_CRC16 enable CRC16 computation
+;     7     SPI_B_CRC32 enable CRC32 computation
+;     8     SPI_B_WWT   write wait enable
+;     9     SPI_B_RWT   read wait enable
+;     10_15             clock divider (0-63)
+; 
+; Notes:
+; - Communication with the slave is active when SPI_B_SS = 1
+; - Read and write wait flags control Z80 CPU wait state
+; - When enabled, Z80 CPU is put in wait state until I/O operation is finished
+; - Controller 0 is not wired on DE1 board (reserved for Flea Ohm board)
+; - Clock divider is useful to slow SPI when polling or initializing SD card
+; - Control register is 16 bits wide, addressed by OUT (C),r with B holding bits 8 to 15
+; - CRC computation only can be performed when SPI_B_SS = 0
+; - CRC16 and CRC32 are both available (if activated) at the same time
+
+; MANIFESTS:
+
+; Additional blink ports:
+
+; hardware identification
+        defc    BL_HWI          = $B0           ; read hardware identification, subtype in A15-A8
+
+        ; id subtype
+        defc    HWI_BOARD       = $00           ; read platform version
+        defc    HWI_CPU         = $10           ; read CPU type
+        defc    HWI_BLINK       = $20           ; read blink version
+
+; Controller 0 : wired to serial flash (used for FPGA configuration)
+        defc    BL_SPS0         = $F0           ; Status/Control (read 8 bits, write 16 bits)
+        defc    BL_SPD0         = $F1           ; Data (read and write)
+
+; Controller 1 : wired to SD card
+        defc    BL_SPS1         = $F2           ; Status/Control (read 8 bits, write 16 bits)
+        defc    BL_SPD1         = $F3           ; Data (read and write)
+
+; Status register bits (read)
+        defc    SPI_B_SS        = 0             ; slave select status, 1 when SPI controller has selected a slave
+        defc    SPI_B_ACT       = 1             ; active, 1 when SPI controller is sending/receiving data
+
+; Control register bits (write)
+        defc    SPI_SS          = 1             ; slave select enable, 1 to enable I/O with slave
+        
+        ; bits 1-3 : read select (ORed with other bits)
+        defc    SPI_RD_DAT      = @0000         ; read data
+        defc    SPI_CRC16_LSB   = @0100         ; read CRC16 LSB
+        defc    SPI_CRC16_MSB   = @0110         ; read CRC16 MSB
+        defc    SPI_CRC32_BY0   = @1000         ; read CRC32 byte 0 (LSB)
+        defc    SPI_CRC32_BY1   = @1010         ; read CRC32 byte 1
+        defc    SPI_CRC32_BY2   = @1100         ; read CRC32 byte 2
+        defc    SPI_CRC32_BY3   = @1110         ; read CRC32 byte 3 (MSB)
+
+        ; bits 4-15 : controls
+
+        defc    SPI_B_CLR       = 4             ; clear CRC16/32
+        defc    SPI_B_DIR       = 5             ; direction, select CRC on read or write stream
+        defc    SPI_B_CRC16     = 6             ; enable CRC16 computation
+        defc    SPI_B_CRC32     = 7             ; enable CRC32 computation
+        defc    SPI_B_WWT       = 0             ; bit 8, write wait enable
+        defc    SPI_B_RWT       = 1             ; bit 9, read wait enable
+
+        defc    SPI_CLR         = $10           ; clear CRC16/32
+        defc    SPI_DIR         = $20           ; direction, select CRC on read or write stream
+        defc    SPI_CRC16       = $40           ; enable CRC16 computation
+        defc    SPI_CRC32       = $80           ; enable CRC32 computation
+        defc    SPI_WWT         = $01           ; write wait enable
+        defc    SPI_RWT         = $02           ; read wait enable
+        defc    SPI_SLOW        = @11111100     ; clock divider by 63 (adjusted according main clock, less than 400KHz)
+        ;defc    SPI_SLOW        = @10000000     ; clock divider by 32 (adjusted according main clock, less than 400KHz)
+        defc    SPI_FAST        = @00000000     ; no clock divider
+
+lston

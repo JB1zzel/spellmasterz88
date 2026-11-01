@@ -1,0 +1,102 @@
+lstoff
+
+; **************************************************************************************************
+; Standard Z88 Operating System Manifests
+;
+; This file is part of the Z88 operating system, OZ      0000000000000000      ZZZZZZZZZZZZZZZZZZZ
+;                                                       000000000000000000   ZZZZZZZZZZZZZZZZZZZ
+; OZ is free software; you can redistribute it and/    0000            0000              ZZZZZ
+; or modify it under the terms of the GNU General      0000            0000            ZZZZZ
+; Public License as published by the Free Software     0000            0000          ZZZZZ
+; Foundation; either version 2, or (at your option)    0000            0000        ZZZZZ
+; any later version. OZ is distributed in the hope     0000            0000      ZZZZZ
+; that it will be useful, but WITHOUT ANY WARRANTY;    0000            0000    ZZZZZ
+; without even the implied warranty of MERCHANTA-       000000000000000000   ZZZZZZZZZZZZZZZZZZZZ
+; BILITY or FITNESS FOR A PARTICULAR PURPOSE. See        0000000000000000  ZZZZZZZZZZZZZZZZZZZZ
+; the GNU General Public License for more details.
+; You should have received a copy of the GNU General Public License along with OZ; see the file
+; COPYING. If not, write to:
+;                                  Free Software Foundation, Inc.
+;                                  59 Temple Place-Suite 330,
+;                                  Boston, MA 02111-1307, USA.
+;
+; (C) Jorma Oksanen (jorma.oksanen@aini.fi), 2003
+; (C) Thierry Peycru (pek@users.sf.net), 2005-2007
+; (C) Gunther Strube (hello@bits4fun.net), 2005-2007
+;
+; ***************************************************************************************************
+
+; Director/CLI low level access:
+
+IF !__DIRECTOR_DEF__
+     DEFINE __DIRECTOR_DEF__
+
+     INCLUDE "macros.def"
+
+     defc DC_Alt = $1A0C           ; Pass an alternative character
+     defc DC_Bye = $080C           ; Exiting current application (internal)
+     defc DC_Ent = $0A0C           ; Enter new application (internal)
+     defc DC_Env = $2A0C           ; System variable environment                   (OZ 5.0 and newer)
+     ; arguments
+          defc EV_Set    = $00     ; Set variable
+          defc EV_Uns    = $02     ; Unset (delete) variable
+          defc EV_Get    = $04     ; Get variable
+          defc EV_Idx    = $06     ; Get first global environment variable pointer
+          defc EV_Loc    = $08     ; Get first local environment variable pointer
+          defc EV_Nxt    = $0A     ; Get next environment variable pointer
+          defc EV_Exp    = $0C     ; Expand environment variables in a string
+
+     defc DC_Gen = $200C           ; Screen driver call (internal)
+     defc DC_Icl = $140C           ; Invoke new CLI
+     defc DC_In  = $0E0C           ; Read from CLI (internal)
+     defc DC_Ini = $060C           ; Initialize the Director (internal)
+     defc DC_Lck = $2E0C           ; Lockup box (internal)                         (OZ 5.0 and newer)
+     defc DC_Nam = $0C0C           ; Name current application
+     defc DC_Nq  = $160C           ; Handle Director/CLI enquiries (internal)
+     ; arguments
+          defc DQ_Dev    = $00     ; Get default device
+          defc DQ_Dir    = $03     ; Get default directory
+          defc DQ_Fnm    = $06     ; Get filename match string
+          defc DQ_Dmh    = $09     ; Get the director memory handle
+          defc DQ_Inp    = $0C     ; Returns NQ_Ihn
+          defc DQ_Out    = $0F     ; Returns NQ_Ohn
+          defc DQ_Prt    = $12     ; Returns NQ_Phn
+          defc DQ_Tin    = $15     ; Get input-T handle
+          defc DQ_Tot    = $18     ; Get output-T handle
+          defc DQ_Tpr    = $1B     ; Get printer-T handle
+          defc DQ_Chn    = $1E     ; Reset serial port and get NQ_Chn
+          defc DQ_Prc    = $21     ; Get process env. with Pid A                   (OZ 5.0 and newer)
+          defc DQ_Fmh    = $24     ; Get filesystem memory handle                  (OZ 5.0 and newer)
+          defc DQ_Nam    = $27     ; Get process name with Pid A                   (OZ 5.0 and newer)
+
+     defc DC_Out = $100C           ; Write to CLI (internal)
+     defc DC_Pol = $220C           ; Poll for card usage (internal)
+     defc DC_Scn = $240C           ; Scan for card usage (internal)
+     defc DC_Prt = $120C           ; Print to CLI (internal)
+
+     defc DC_Rbd = $1C0C           ; Rebind streams
+     ; arguments:
+          defc RB_IN     = $00     ; input stream - new source of input
+          defc RB_OUT    = $01     ; output stream - new destination for output
+          defc RB_PRT    = $02     ; printer stream - new destination for output
+          defc RB_INT    = $03     ; input stream T - copy of input
+          defc RB_OPT    = $04     ; output stream T - copy of output
+          defc RB_PTT    = $05     ; printer stream T -  copy of output
+
+     defc DC_Sp  = $180C           ; Handle Director/CLI settings (internal)
+     defc DC_Tty = $2C0C           ; Terminal output                               (OZ 5.0 and newer)
+     defc DC_Xin = $1E0C           ; Examine CLI input (internal)
+
+     defc OS_Bye = $21             ; Application exit
+     defc OS_Cli = $84             ; return CLI status
+     defc OS_Ent = $FA06           ; Enter an application (internal)
+     defc OS_Exit= $F606           ; Quit process (internal)
+     defc OS_Ploz= $C606           ; Poll for running OZ card usage                (OZ 4.2 and newer)
+     defc OS_Poll= $FC06           ; Poll for an application (internal)
+     defc OS_Stk = $F806           ; Stack file current process (internal)
+     defc OS_Uash= $BE06           ; Update application static handle (internal)   (OZ 4.6 and newer)
+     defc OS_Use = $EE06           ; Fetch information about process card usage (internal)
+
+ENDIF
+
+lston

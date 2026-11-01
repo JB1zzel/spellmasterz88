@@ -1,0 +1,46 @@
+lstoff
+
+; **************************************************************************************************
+; Standard Z88 Operating System Manifests
+;
+; This file is part of the Z88 operating system, OZ      0000000000000000      ZZZZZZZZZZZZZZZZZZZ
+;                                                       000000000000000000   ZZZZZZZZZZZZZZZZZZZ
+; OZ is free software; you can redistribute it and/    0000            0000              ZZZZZ
+; or modify it under the terms of the GNU General      0000            0000            ZZZZZ
+; Public License as published by the Free Software     0000            0000          ZZZZZ
+; Foundation; either version 2, or (at your option)    0000            0000        ZZZZZ
+; any later version. OZ is distributed in the hope     0000            0000      ZZZZZ
+; that it will be useful, but WITHOUT ANY WARRANTY;    0000            0000    ZZZZZ
+; without even the implied warranty of MERCHANTA-       000000000000000000   ZZZZZZZZZZZZZZZZZZZZ
+; BILITY or FITNESS FOR A PARTICULAR PURPOSE. See        0000000000000000  ZZZZZZZZZZZZZZZZZZZZ
+; the GNU General Public License for more details.
+; You should have received a copy of the GNU General Public License along with OZ; see the file
+; COPYING. If not, write to:
+;                                  Free Software Foundation, Inc.
+;                                  59 Temple Place-Suite 330,
+;                                  Boston, MA 02111-1307, USA.
+;
+; (C) Gunther Strube (hello@bits4fun.net), 2014
+;
+; ***************************************************************************************************
+
+; Cyclic redundancy check for memory area, RAM files and File Entries on File Cards (CRC-32 algorithm)
+; Implementation is based on CRC-32 in UnZip / Zip appplications, (C) Garry Lancaster 1999-2006
+
+IF !__CRC32_DEF__
+	DEFINE __CRC32_DEF__
+
+    INCLUDE "macros.def"
+
+
+    defc Gn_Crc           = $7C09               ; CRC-32 main system call
+   	defc CRC_MEMA         = 0                   ; iterate CRC-32 on memory area
+   	defc CRC_FILE         = 1                   ; iterate CRC-32 on complete RAM File
+   	defc CRC_PARTFILEBYTE = 2                   ; iterate CRC-32 partially on RAM file (from file pointer onwards), using OS_Gb
+   	defc CRC_PARTFILEBUF  = 3                   ; Iterate CRC-32 partially (buffered) on RAM file (from file pointer onwards), using OS_Mv
+   	defc CRC_EPFILE       = 4                   ; iterate CRC-32 on File Entry in File (Area) Card
+   	defc CRC_PARTEPFILE   = 5                   ; Iterate CRC-32 partially on File Entry (File Card)
+
+ENDIF
+
+lston

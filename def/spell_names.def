@@ -1,0 +1,49 @@
+; Names used by the annotated Spell-Master sources (generated).
+
+; Application workspace variables (segment 0)
+        DEFC dict_pos = $1F82  ; Position (offset) within the current dictionary bank; loaded from the dictionary index entry
+        DEFC dict_bank = $1F84  ; Absolute bank number of the dictionary bank currently bound into segment 2
+        DEFC dict_target_length = $1F85  ; Length of the word being looked up (two is subtracted once its first two letters select the section)
+        DEFC dict_letter1 = $1F86  ; First letter of the word being looked up (ASCII)
+        DEFC dict_letter2 = $1F87  ; Second letter of the word being looked up (ASCII, or apostrophe)
+        DEFC dict_word_length = $1F88  ; Length of the dictionary word just expanded into buffer C
+        DEFC dict_word_flags = $1F89  ; Inflection class of the expanded word: bit 7 set plus $10-$16, or 0 for none
+        DEFC dict_ending_ptr = $1F8A  ; Pointer into the current inflection class ending list
+        DEFC dict_stem_length = $1F8C  ; Length of the stem before an ending is appended
+        DEFC ptr_buffer_b = $1F8D  ; Pointer to a 0x42-byte work buffer (second part of the 0xC2-byte block)
+        DEFC ptr_buffer_c = $1F8F  ; Pointer to a 0x40-byte work buffer (third part of the 0xC2-byte block)
+        DEFC ptr_buffer_a = $1F91  ; Pointer to a 0x40-byte work buffer (first part of the 0xC2-byte block; also the typed word in WordFinder)
+        DEFC pool_buffers = $1F93  ; Memory pool handle for the 0xC2-byte buffer block
+        DEFC line_buffer = $1F99  ; Pointer to the current-line edit buffer (0xF8 bytes, allocated at start-up)
+        DEFC line_buffer_bank = $1F9B  ; Bank of the current-line edit buffer
+        DEFC cursor_row = $1FA2  ; Screen row (0 to 7) of the cursor line in window 1
+        DEFC cursor_col_limit = $1FA4  ; Screen column at which the cursor stops while the line scrolls sideways; also the number of columns drawn per row
+        DEFC cursor_index = $1FA5  ; Cursor position as a character index within the current line
+        DEFC line_length = $1FA6  ; Length of the current line in characters
+        DEFC pool_main = $1FA7  ; Memory pool handle #1 (created first with OS_Mop)
+        DEFC pool_second = $1FA9  ; Memory pool handle #2 (created second with OS_Mop)
+        DEFC edit_flags = $1FAB  ; QuickEdit flags: bit 0 = overtype mode (toggled by Insert/Over), bit 4 = check-as-you-type on, bits 1-3 (mask $0E) = screen redraw state (2 = redraw requested, 4 = redraw finished)
+        DEFC block_start_line = $1FC8  ; Block start marker: line number
+        DEFC block_start_col = $1FCA  ; Block start marker: column
+        DEFC block_end_line = $1FCB  ; Block end marker: line number
+        DEFC block_end_col = $1FCD  ; Block end marker: column
+        DEFC marker_flags = $1FCE  ; Bit 0 = start marker set, bit 1 = end marker set (value 3 = both)
+        DEFC cursor_line = $1FCF  ; Number of the line the cursor is on
+        DEFC top_line = $1FD1  ; Number of the line shown on row 0 of the text window
+        DEFC wf_menu_sel = $1FD3  ; WordFinder: currently selected menu line (0 to 3)
+
+; Screen driver
+        DEFC SD_COORD = 32        ; added to every window/cursor coordinate sent to the screen driver
+        DEFC TEXT_ROWS = 8        ; rows in the text window (window 1)
+        DEFC LINE_HDR_SIZE = 7    ; size of a line record header (length, previous link, next link)
+
+; OZ error codes
+        DEFC RC_Draw = $66        ; application pre-empted and screen corrupted: redraw
+        DEFC RC_Quit = $67        ; request the application to quit
+
+; edit_flags bits
+        DEFC EF_OVERTYPE = $01    ; overtype mode (clear = insert)
+        DEFC EF_CHECK_ON = $10    ; check-as-you-type is on
+        DEFC EF_STATE_KEEP = $F1  ; mask that clears the redraw state (bits 1-3)
+        DEFC EF_REDRAW_REQUEST = $02  ; redraw state: redraw requested
+        DEFC EF_REDRAW_DONE = $04     ; redraw state: redraw finished

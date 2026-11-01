@@ -1,0 +1,144 @@
+lstoff
+
+; **************************************************************************************************
+; Standard Z88 Operating System Manifests
+;
+; This file is part of the Z88 operating system, OZ      0000000000000000      ZZZZZZZZZZZZZZZZZZZ
+;                                                       000000000000000000   ZZZZZZZZZZZZZZZZZZZ
+; OZ is free software; you can redistribute it and/    0000            0000              ZZZZZ
+; or modify it under the terms of the GNU General      0000            0000            ZZZZZ
+; Public License as published by the Free Software     0000            0000          ZZZZZ
+; Foundation; either version 2, or (at your option)    0000            0000        ZZZZZ
+; any later version. OZ is distributed in the hope     0000            0000      ZZZZZ
+; that it will be useful, but WITHOUT ANY WARRANTY;    0000            0000    ZZZZZ
+; without even the implied warranty of MERCHANTA-       000000000000000000   ZZZZZZZZZZZZZZZZZZZZ
+; BILITY or FITNESS FOR A PARTICULAR PURPOSE. See        0000000000000000  ZZZZZZZZZZZZZZZZZZZZ
+; the GNU General Public License for more details.
+; You should have received a copy of the GNU General Public License along with OZ; see the file
+; COPYING. If not, write to:
+;                                  Free Software Foundation, Inc.
+;                                  59 Temple Place-Suite 330,
+;                                  Boston, MA 02111-1307, USA.
+;
+; (C) Jorma Oksanen (jorma.oksanen@aini.fi), 2003
+; (C) Thierry Peycru (pek@users.sf.net), 2005-2007
+; (C) Gunther Strube (hello@bits4fun.net), 2005-2007
+;
+; ***************************************************************************************************
+
+IF !__DOR_DEF__
+     DEFINE __DOR_DEF__
+
+     defc OS_Dor = $87             ; DOR interface
+
+     ; DOR codes when using OS_Dor :
+     
+          defc DR_Get    = $01     ; Get handle for a DOR name (internal use)
+          defc DR_Dup    = $02     ; Duplicate DOR
+          defc DR_Sib    = $03     ; Return brother DOR
+          defc DR_Son    = $04     ; Return child DOR
+          defc DR_Fre    = $05     ; Free (release) DOR handle
+          defc DR_Cre    = $06     ; Create blank DOR
+          defc DR_Del    = $07     ; Delete DOR
+          defc DR_Ins    = $08     ; Insert DOR
+          defc DR_Rd     = $09     ; Read DOR record
+          defc DR_Wr     = $0A     ; Write DOR record
+          defc DR_Op     = $0B     ; Get handle for an explicit filename (OZ 5.0 and newer)
+          defc DR_Use    = $0C     ; Handle in use (OZ 5.0 and newer)
+          defc DR_Gxf    = $0D     ; Guess explicit filename (OZ 5.0 and newer)
+
+     ; Major DOR types:
+
+          defc Dm_Dev    = $81     ; File Device
+          defc Dm_Chd    = $82     ; Character Device
+          defc Dm_Rom    = $83     ; ROM information
+          defc Dm_Epr    = $84     ; EPR Device
+
+     ; Minor DOR types:
+
+          defc Dn_Fil    = $11     ; File type
+          defc Dn_Dir    = $12     ; Directory type
+          defc Dn_Apl    = $13     ; Application front DOR type
+          defc Dn_Epr    = $14     ; Eprom entry type
+          defc Dn_Del    = $7F     ; Deleted Entry type
+
+     ; Record DOR types:
+
+          defc Dt_Nam    = 'N'     ; Name (up to 17 bytes)
+          defc Dt_Cre    = 'C'     ; Creation time (6 bytes)
+          defc Dt_Upd    = 'U'     ; Update time (6 bytes)
+          defc Dt_Ext    = 'X'     ; eXtent, file length (4 bytes)
+          defc Dt_Atr    = 'A'     ; Attribute flags (3 bytes)
+          defc Dt_Inf    = '@'     ; Information (18 bytes)
+          defc Dt_Hlp    = 'H'     ; Help type (12 bytes)
+          defc Dt_Efs    = 'E'     ; Eprom file entry (4 bytes)
+
+; Application type 1:
+
+     defc AT_Good = 1              ; (BIT 0) well behaved
+     defc AT_Bad  = 2              ; (BIT 1) not well behaved, not killed on pre-emption
+     defc AT_Ugly = 4              ; (BIT 2) not well behaved, killed on pre-emption
+     defc AT_Popd = 8              ; (BIT 3) popdown (if not set then an application)
+     defc AT_Ones = 16             ; (BIT 4) only one application instance allowed
+     defc AT_Draw = 32             ; (BIT 5) OZ to redraw screen is possible (2K file)
+     defc AT_Film = 64             ; (BIT 6) File Manager Application (internal usage)
+     defc AT_Boot = 128            ; (BIT 7) Application Auto Boot (after soft reset)
+
+     defc AT_B_Boot = 7
+     defc AT_B_Film = 6
+     defc AT_B_Draw = 5
+     defc AT_B_Ones = 4
+     defc AT_B_Popd = 3
+     defc AT_B_Ugly = 2
+     defc AT_B_Bad  = 1
+     defc AT_B_Good = 0
+
+; Application type 2: (Bits 3 - 6 are ignored - should be reset)
+
+     defc AT2_Cl  = 1              ; (BIT 0) Set Caps Lock on creation entry
+     defc AT2_Icl = 2              ; (BIT 1) Set 'inverted' Caps Lock on creation entry
+     defc AT2_Ie  = 128            ; (BIT 7) Ignore error returns (should be avoided).
+
+; MTH interface
+
+     defc OS_Mth = $AA06           ; MTH interface (OZ 5.0 and newer)
+
+     ; MTH reason codes:
+
+          defc SM_SET    = 0       ; set MTH pointers
+          defc SM_GET    = 1       ; get MTH pointers
+          defc SM_RES    = 2       ; reset MTH pointers
+          defc SM_HLP    = 3       ; enter HELP interface
+          defc SM_MEN    = 4       ; enter MENU interface
+
+; MTH Delimiters
+
+     defc TPC_MARK       = 0       ; beginning and end markers of a topic block
+     defc TPC_SEP        = 1       ; topic separator inside block
+     defc CMD_MARK       = 0       ; beginning and end markers of a command block
+
+; MTH TOPIC FLAGS: (Bits 2, 3, 5, 6, 7 unused)
+
+     defc TPCF_B_AN      = 0       ; 'An ' instead 'A '
+     defc TPCF_B_INFO    = 1       ; Set for an INFO Topic
+     defc TPCF_B_HELP    = 4       ; has a help page
+
+     defc TPCF_AN        = $01
+     defc TPCF_INFO      = $02
+     defc TPCF_HELP      = $10
+
+; MTH COMMAND FLAGS: (Bits 1, 5, 6, 7 are unused)
+
+     defc CMDF_B_COLUMN  = 0        ; First entry in a new column
+     defc CMDF_B_HIDDEN  = 2        ; Command is hidden
+     defc CMDF_B_SAFE    = 3        ; Command is safe
+     defc CMDF_B_HELP    = 4        ; has a help page
+
+     defc CMDF_COLUMN    = $01
+     defc CMDF_HIDDEN    = $04
+     defc CMDF_SAFE      = $08
+     defc CMDF_HELP      = $10
+
+ENDIF
+
+lston

@@ -1,0 +1,169 @@
+; Spell-Master annotation commands for DZasm (bank 63)
+di "spell_names.def"
+rem C000 < Spell-Master for the Cambridge Z88 - bank 63 ($3F, SPELL.63). Card header, front DOR, both application DORs, QuickEdit menu text,
+rem C000 < the WordFinder application and the routines QuickEdit calls through the far-call table.
+rem C000 < Annotated disassembly made with DZasm (project spell63.clt). It assembles to bytes IDENTICAL to the original bank.
+rem C000 < Offsets $0000-$003A and $0196-$01D0 are the application DORs. Names and comments are inferred, not original. See NOTES.md.
+dc 1F82 dict_pos
+dc 1F84 dict_bank
+dc 1F85 dict_target_length
+dc 1F86 dict_letter1
+dc 1F87 dict_letter2
+dc 1F88 dict_word_length
+dc 1F89 dict_word_flags
+dc 1F8A dict_ending_ptr
+dc 1F8C dict_stem_length
+dc 1F8D ptr_buffer_b
+dc 1F8F ptr_buffer_c
+dc 1F91 ptr_buffer_a
+dc 1F93 pool_buffers
+dc 1F99 line_buffer
+dc 1F9B line_buffer_bank
+dc 1FA2 cursor_row
+dc 1FA4 cursor_col_limit
+dc 1FA5 cursor_index
+dc 1FA6 line_length
+dc 1FA7 pool_main
+dc 1FA9 pool_second
+dc 1FAB edit_flags
+dc 1FC8 block_start_line
+dc 1FCA block_start_col
+dc 1FCB block_end_line
+dc 1FCD block_end_col
+dc 1FCE marker_flags
+dc 1FCF cursor_line
+dc 1FD1 top_line
+dc 1FD3 wf_menu_sel
+dl D008 far_call_table
+rem D008 < Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63.
+rem D008 < Index 1 ($D54F) and index 5 ($DB25) are not used by any caller in bank 62.
+dl CD87 far_information
+rem CD87 < Far-call table entry 0.
+rem CD87 < Called from the QuickEdit handler for Information (command $1A).
+rem CD87 < Shows the Information window ('Currently editing', number of lines, memory, word count, user dictionary).
+dl D498 far_search_for_string
+rem D498 < Far-call table entry 2.
+rem D498 < Called from the QuickEdit handler for Search for string (command $25).
+dl D19D far_search_and_replace
+rem D19D < Far-call table entry 3.
+rem D19D < Called from the QuickEdit handler for Search and Replace (command $26).
+dl D909 far_load_text_at_cursor
+rem D909 < Far-call table entry 4.
+rem D909 < Called from the QuickEdit handler for Merge text at cursor (command $27).
+dl D880 far_call_6
+rem D880 < Far-call table entry 6.
+rem D880 < Called from bank 62 at $E076, inside the check-as-you-type code. Purpose not yet identified.
+dl C799 far_redraw_text_window
+rem C799 < Far-call table entry 7.
+rem C799 < Called by draw_text_window (bank 62), which redraw_screen calls. Draws the text in window 1: the cursor line from the edit buffer,
+rem C799 < then the rows above and below it by following the line records, then the End of text marker and blank rows.
+dl D01E far_tab
+rem D01E < Far-call table entry 8.
+rem D01E < Called from the QuickEdit handler for Tab (command $29).
+dl D479 far_next_match
+rem D479 < Far-call table entry 9.
+rem D479 < Called from the QuickEdit handler for Next Match (command $2C).
+dl D100 far_print_text
+rem D100 < Far-call table entry 10.
+rem D100 < Called from the QuickEdit handler for Print out text (command $2E).
+rem D100 < Shows the 'Printing' window and sends the text to the printer.
+dl C03B read_dictionary_record
+rem C03B < Copy of bank 62 read_dictionary_record (see there).
+dl C070 skip_to_next_letter_group
+rem C070 < Copy of bank 62 skip_to_next_letter_group.
+dl CB05 expand_word
+rem CB05 < Copy of bank 62 expand_word, with append_token inline (its own token table at $CC73).
+dl CC73 token_pointer_table
+rem CC73 < Bank 63 copy of the 128-word token pointer table (bank 62: $C4A4).
+dl C0BF bind_dictionary_bank
+rem C0BF < Same routine as in bank 62: bind one dictionary bank into segment 2 (see bank 62 for the description).
+rem C0BF < BANK-ADDRESSING SITE 1 (copy in this bank): original code builds the bank as (running slot bits) OR ($38 + index).
+rem C1D1 < WordFinder entry point (WordFinder DOR: entry $C1D1, segment 3 = bank $3F = SPELL.63).
+dl C1D6 wf_start
+rem C1D6 < WordFinder start-up: creates pools, allocates buffers, then falls into the menu.
+dl C24B wf_show_menu
+rem C24B < Draws the WordFinder window and menu ('Browse through dictionary', 'Find anagrams', 'Find close matches', 'Solve crossword').
+dl C267 wf_menu_loop
+rem C267 < WordFinder menu loop: reads keys. Keys 1 to 4 choose an option, Cursor up/down moves wf_menu_sel,
+rem C267 < Enter runs the selected option, Escape frees the pools and exits (OS_Bye).
+dl C2C7 wf_menu_key
+rem C2C7 < Handles a key typed in the WordFinder menu.
+dl E203 wf_option_1_browse_dictionary
+rem E203 < Menu option 1: Browse through dictionary.
+dl C62D wf_option_2_find_anagrams
+rem C62D < Menu option 2: Find anagrams (window title 'Anagram'). Asks for a word, checks it is letters only, then searches.
+dl DCFE wf_option_3_find_close_matches
+rem DCFE < Menu option 3: Find close matches (window title 'Find close matches').
+dl C506 wf_option_4_solve_crossword
+rem C506 < Menu option 4: Solve crossword (window title 'Crossword').
+dl CFE6 far_call_dispatch
+rem CFE6 < Runs far-call routine number A: pops the index, looks it up in far_call_table, calls it, then returns to bank 62.
+rem CFE6 < Entered from the stub at $7F80 with this bank bound into segment 3.
+rem FF80 < STUB entered from bank 62 (far_call_bank63): copies the bank bound in segment 1 (this bank) into segment 3
+rem FF80 < and jumps to far_call_dispatch.
+rem FF8B < STUB used on the way back: re-binds bank 62 into segment 3, restores the registers saved on the stack, RET.
+rem FF8B < BANK-ADDRESSING SITE 3: the ORIGINAL code computes bank 62 as (running slot bits) OR $3E. It is shown here as raw bytes:
+rem FF8B < $0E,$01 LD C,1 / $E7,$5A OS_Mgb / $78 LD A,B / $E6,$C0 AND $C0 / $F6,$3E OR $3E / $47 LD B,A / $0E,$03 LD C,3 / $E7,$5D OS_Mpb / POPs / RET.
+rem E6EB < QuickEdit menu topics ('Blocks', 'Cursor', 'Edit', 'Files', 'SPELLING') - kept as raw bytes.
+rem E728 < QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See NOTES.md for the full table.
+rem EBAE < Menu commands for the Correction/spelling menu.
+dl C7C5 draw_cursor_line
+dl C948 put_text_char
+dl C96D draw_end_of_text_marker
+dl C992 clear_remaining_rows
+dl C93D redraw_done
+dl C9D9 reverse_on
+dl C9E5 reverse_off
+dl C9F8 str_cursor_to_prefix
+dl C9BC str_end_of_text
+dl C9F3 str_reverse_on
+dl C9EE str_reverse_off
+dl C9FC order_block_markers
+dl CA36 highlight_block_on_row
+dl C191 str_cursor_to_prefix_b
+dl CACB str_toggle_over_n
+rem C7C5 < Draw the cursor line at row cursor_row in window 1, straight from the edit buffer (line_buffer).
+rem C7C5 < First works out the horizontal scroll: if cursor_index is at or beyond cursor_col_limit the line is shifted left
+rem C7C5 < by cursor_index - cursor_col_limit characters. Then prints the visible part and pads the row with spaces.
+rem C948 < Print one text character in window 1. Printable characters go straight out with OS_Out.
+rem C948 < A control character (below 32) is shown as the matching letter (code + 64) in reverse video.
+rem C96D < Draw the End of text marker row in reverse video ( End of text ), then fall into clear_remaining_rows.
+rem C992 < Blank every remaining row of the text window below the End of text marker, up to row 7.
+rem C93D < Redraw finished: set the redraw state in edit_flags to 4.
+rem C9D9 < Turn reverse video on.
+rem C9E5 < Turn reverse video off.
+rem C9FC < Put the block markers in order: if both markers are set and the end comes before the start, swap start and end.
+rem C9FC < marker_flags bit 0 = start set, bit 1 = end set; the markers are a line number plus a column.
+rem CA36 < Highlight the part of the marked block that falls on the row just drawn, using the toggle-over-N sequence with reverse video.
+rem C799 < Redraw the text window (far-call routine 7). The text is a chain of line records in banked memory:
+rem C799 <   +0 = record length (text length + LINE_HDR_SIZE), +1..+3 = previous line (bank, offset low, offset high),
+rem C799 <   +4..+6 = next line (bank, offset low, offset high), +7 = the text.
+rem C799 < The cursor line itself is in the edit buffer. top_line = cursor_line - cursor_row.
+rem C799 < Algorithm: 1) draw the cursor line; 2) walk back from it row by row to find the line for row 0;
+rem C799 < 3) draw rows 0 to 7 in order, copying each line to the window and padding with spaces, following the next-line pointers;
+rem C799 < 4) after the last line draw the End of text marker and blank any rows that remain.
+rem C799 < It appears to check for a waiting key with OS_Xin and stop early if there is one, so typing is not held up by a redraw.
+de C7CF "SD_COORD"
+de C7D6 "SD_COORD"
+de C808 "SD_COORD"
+de C890 "SD_COORD"
+de C897 "SD_COORD"
+de C8B1 "LINE_HDR_SIZE"
+de C8D2 "SD_COORD"
+de C912 "TEXT_ROWS"
+de C91E "TEXT_ROWS-1"
+de C971 "TEXT_ROWS"
+de C97B "SD_COORD"
+de C982 "SD_COORD"
+de C99A "TEXT_ROWS"
+de C9A5 "SD_COORD"
+de C9AC "SD_COORD"
+de C9B4 "SD_COORD"
+de CA56 "SD_COORD"
+de CA5D "SD_COORD"
+de CA80 "SD_COORD"
+de CA87 "SD_COORD"
+de CA9F "SD_COORD"
+de CAFA "SD_COORD"
+de CB01 "SD_COORD"
+ca

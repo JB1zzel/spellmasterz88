@@ -1,0 +1,253 @@
+lstoff
+
+; **************************************************************************************************
+; Standard Z88 Operating System Manifests
+;
+; This file is part of the Z88 operating system, OZ      0000000000000000      ZZZZZZZZZZZZZZZZZZZ
+;                                                       000000000000000000   ZZZZZZZZZZZZZZZZZZZ
+; OZ is free software; you can redistribute it and/    0000            0000              ZZZZZ
+; or modify it under the terms of the GNU General      0000            0000            ZZZZZ
+; Public License as published by the Free Software     0000            0000          ZZZZZ
+; Foundation; either version 2, or (at your option)    0000            0000        ZZZZZ
+; any later version. OZ is distributed in the hope     0000            0000      ZZZZZ
+; that it will be useful, but WITHOUT ANY WARRANTY;    0000            0000    ZZZZZ
+; without even the implied warranty of MERCHANTA-       000000000000000000   ZZZZZZZZZZZZZZZZZZZZ
+; BILITY or FITNESS FOR A PARTICULAR PURPOSE. See        0000000000000000  ZZZZZZZZZZZZZZZZZZZZ
+; the GNU General Public License for more details.
+; You should have received a copy of the GNU General Public License along with OZ; see the file
+; COPYING. If not, write to:
+;                                  Free Software Foundation, Inc.
+;                                  59 Temple Place-Suite 330,
+;                                  Boston, MA 02111-1307, USA.
+;
+; (C) Jorma Oksanen (jorma.oksanen@aini.fi), 2003
+; (C) Thierry Peycru (pek@users.sf.net), 2005-2007
+; (C) Gunther Strube (hello@bits4fun.net), 2005-2007
+;
+; ***************************************************************************************************
+
+; Standard I/O calls:
+
+IF !__STDIO_DEF__
+     DEFINE __STDIO_DEF__
+
+     INCLUDE "macros.def"
+
+; STDIO related API
+
+     defc  OS_In     = $2A         ; read a byte from std. input (keyboard)
+     defc  OS_Tin    = $2D         ; read a byte from std. input, with timeout
+     defc  OS_Kin    = $9C         ; read a key with timeout (OZ 5.0 or newer)
+     defc  OS_Out    = $27         ; write a byte to std. output
+     defc  OS_Bout   = $90         ; send a block of bytes from local or extended address to std. output (OZ 4.2 or newer)
+     defc  OS_Pout   = $93         ; send embedded string at (PC) to std. output (OZ 4.2 or newer)
+     defc  OS_Hout   = $96         ; write a hexadecimal byte to std. output (OZ 4.5 or newer)
+     defc  OS_Sout   = $99         ; write string to std. output (OZ 5.0 or newer)
+     defc  OS_Nln    = $9F         ; send newline (CR/LF) to std. output (OZ 5.0 or newer)
+     defc  GN_Nln    = $2E09       ; send newline (CR/LF) to std. output
+     defc  GN_Sop    = $3A09       ; write string to std. output (deprecated, use OS_Sout)
+     defc  GN_Soe    = $3C09       ; write string from extended address (deprecated, use OS_Bout)
+     defc  GN_Sip    = $3809       ; system input line routine
+     defc  GN_Win    = $7A09       ; Create window (OZ 4.2 or newer)
+     defc  OS_Pur    = $33         ; purge keyboard buffer (and reset timeout)
+     defc  OS_Blp    = $D806       ; Bleep
+     defc  OS_Xin    = $30         ; examine input
+     defc  OS_Iso    = $B806       ; ISO conversion (OZ 5.0 or newer)
+
+; GN_Sip option flags
+
+     defc  SIP_B_DATA     = 0      ; buffer already contains data to be edited
+     defc  SIP_B_FORCEIO  = 1      ; force insert/overwrite mode
+     defc  SIP_B_OVERWR   = 2      ; 0 : insert / 1 : overwrite
+     defc  SIP_B_SPEC     = 3      ; return special character, else ignore
+     defc  SIP_B_WRAP     = 4      ; return if wrap occurs
+     defc  SIP_B_LOCK     = 5      ; single line lock control
+     defc  SIP_B_REVERSE  = 6      ; display in reverse video
+     defc  SIP_B_IOSPEC   = 7      ; insert/overwrite return if A3=1
+
+     defc  SIP_DATA       = $01
+     defc  SIP_FORCEIO    = $02
+     defc  SIP_OVERWR     = $04
+     defc  SIP_SPEC       = $08
+     defc  SIP_WRAP       = $10
+     defc  SIP_LOCK       = $20
+     defc  SIP_REVERSE    = $40
+     defc  SIP_IOSPEC     = $80
+
+; Standard input key definitions
+; ------------------------------
+;
+; Returned by OS_IN, OS_TIN and GN_SIP
+;
+; The following codes are NOT zero prefixed:
+; IN_ESC, IN_ENT, IN_TAB, IN_SPC & IN_DEL
+;
+; Codes below are returned with NUL prefix:
+
+     defc IN_SHI  = $D8
+     defc IN_DIA  = $C8
+     defc IN_SQU  = $B8
+     defc IN_CAPS = $E8
+
+;         ENTER          TAB            DELETE
+     defc IN_ENT  = $0D, IN_TAB  = $09, IN_DEL  = $7F
+     defc IN_SENT = $D1, IN_STAB = $D2, IN_SDEL = $D3                   ; SHIFT
+     defc IN_DENT = $C1, IN_DTAB = $C2, IN_DDEL = $C3                   ; DIAMOND
+     defc IN_AENT = $B1, IN_ATAB = $B2, IN_ADEL = $B3                   ; SQUARE
+     defc IN_ENTER= $E1, IN_TAB0 = $E2, IN_DELX = $E3                   ; used in MTH routines
+
+;         LEFT           RIGHT          DOWN           UP
+     defc IN_LFT  = $FC, IN_RGT  = $FD, IN_DWN  = $FE, IN_UP   = $FF
+     defc IN_SLFT = $F8, IN_SRGT = $F9, IN_SDWN = $FA, IN_SUP  = $FB    ; SHIFT
+     defc IN_DLFT = $F4, IN_DRGT = $F5, IN_DDWN = $F6, IN_DUP  = $F7    ; DIAMOND
+     defc IN_ALFT = $F0, IN_ARGT = $F1, IN_ADWN = $F2, IN_AUP  = $F3    ; SQUARE
+
+;         SPACE          ESCAPE
+     defc IN_SPC  = $20, IN_ESC  = $1B
+     defc IN_SSPC = $D0, IN_SESC = $D4                                  ; SHIFT
+     defc IN_DSPC = $C0, IN_DESC = $C4                                  ; DIAMOND
+     defc IN_ASPC = $B0, IN_AESC = $B4                                  ; SQUARE
+
+;         MENU           INDEX          HELP
+     defc IN_MEN  = $E5, IN_IDX  = $E6, IN_HLP  = $E7
+     defc IN_SMEN = $D5, IN_SIDX = $D6, IN_SHEL = $D7                   ; SHIFT
+     defc IN_DMEN = $C5, IN_DIDX = $C6, IN_DHEL = $C7                   ; DIAMOND
+     defc IN_AMEN = $B5, IN_AIDX = $B6, IN_AHEL = $B7                   ; SQUARE
+
+; ASCII control characters:
+; -------------------------
+
+     defc NUL       = 0
+     defc SOH       = 1
+     defc STX       = 2
+     defc ETX       = 3
+     defc EOT       = 4
+     defc ENQ       = 5
+     defc ACK       = 6
+     defc BEL       = 7
+     defc BS        = 8
+     defc HT        = 9
+     defc LF        = 10
+     defc VT        = 11
+     defc FF        = 12
+     defc CR        = 13
+     defc SO        = 14
+     defc SI        = 15
+     defc DLE       = 16
+     defc DC1       = 17
+     defc DC2       = 18
+     defc DC3       = 19
+     defc DC4       = 20
+     defc NAK       = 21
+     defc SYN       = 22
+     defc ETB       = 23
+     defc CAN       = 24
+     defc EM        = 25
+     defc SUB       = 26
+     defc ESC       = 27
+     defc FS        = 28
+     defc GS        = 29
+     defc RS        = 30
+     defc US        = 31
+     defc DEL       = 127
+
+; Serial interface codes:
+     defc XON       = 17           ; same as DC1
+     defc XOFF      = 19           ; same as DC3
+
+; C1 control codes:
+     defc CSI       = 155          ; Control Sequence Introducer (ESC+[ or $9B)
+     defc STT       = 156          ; String Terminator           (ESC+\ or $9C)
+     defc OSC       = 157          ; Operating System Command    (ESC+] or $9D)
+
+; ISO characters:
+     defc EXS       = $A0          ; exact space, beginning of ISO
+
+; Menu exception codes:
+; ---------------------
+
+     defc MU_SPC    = $E0
+     defc MU_ENT    = $E1
+     defc MU_TAB    = $E2
+     defc MU_DEL    = $E3
+
+; OZ screen driver icons:
+; -----------------------
+;
+; The following SD_ codes are SOH prefixed
+
+     defc SD_EXSP   = $20          ; Exact space
+     defc SD_BLL    = $21          ; Bell
+     defc SD_GRV    = $27          ; Grave accent
+     defc SD_SQUA   = $2A          ; Square
+     defc SD_DIAM   = $2B          ; Diamond
+     defc SD_SHFT   = $2D          ; Shift
+     defc SD_VBAR   = $7C          ; Unbroken vertical bar
+
+     defc SD_ENT    = $E1
+     defc SD_TAB    = $E2
+     defc SD_SPC    = $E0
+     defc SD_DEL    = $E3
+     defc SD_ESC    = $E4
+     defc SD_MNU    = $E5
+     defc SD_INX    = $E6
+     defc SD_HLP    = $E7
+
+; Outlined icons:
+     defc SD_OLFT   = $F0
+     defc SD_ORGT   = $F1
+     defc SD_OUP    = $F3
+     defc SD_ODWN   = $F2
+
+; bullet icons:
+     defc SD_BLFT   = $F4
+     defc SD_BRGT   = $F5
+     defc SD_BDWN   = $F6
+     defc SD_BUP    = $F7
+
+; pointer icons:
+     defc SD_PLFT   = $F8
+     defc SD_PRGT   = $F9
+     defc SD_PDWN   = $FA
+     defc SD_PUP    = $FB
+
+; Miscellaneous screen driver codes:
+     defc SD_DTS    = $7F          ; Delete toggle settings
+     defc SD_UP     = $FE          ; Scroll screen upwards
+     defc SD_DWN    = $FF          ; Scroll screen downwards
+
+; Special ALT codes:
+; ------------------
+
+     defc ALT_PLUS  = $80          ; []+
+     defc ALT_MINUS = $9F          ; []-
+     defc ALT_A     = $81
+     defc ALT_B     = $82
+     defc ALT_C     = $83
+     defc ALT_D     = $84
+     defc ALT_E     = $85
+     defc ALT_F     = $86
+     defc ALT_G     = $87
+     defc ALT_H     = $88
+     defc ALT_I     = $89          ; []I
+     defc ALT_J     = $8A
+     defc ALT_K     = $8B
+     defc ALT_L     = $8C
+     defc ALT_M     = $8D
+     defc ALT_N     = $8E
+     defc ALT_O     = $8F
+     defc ALT_P     = $90
+     defc ALT_Q     = $91
+     defc ALT_R     = $92
+     defc ALT_S     = $93
+     defc ALT_T     = $94
+     defc ALT_U     = $95
+     defc ALT_V     = $96
+     defc ALT_W     = $97
+     defc ALT_X     = $98
+     defc ALT_Y     = $99
+     defc ALT_Z     = $9A
+
+ENDIF
+
+lston

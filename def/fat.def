@@ -1,0 +1,147 @@
+lstoff
+
+; **************************************************************************************************
+; FAT32 definitions
+;
+; This file is part of the Z88 operating system, OZ.
+;
+; OZ is free software; you can redistribute it and/or modify it under the terms of the GNU General
+; Public License as published by the Free Software Foundation; either version 2, or (at your option)
+; any later version. OZ is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY
+; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+; See the GNU General Public License for more details.
+;
+; (C) Thierry Peycru, 2018-26
+;
+; ***************************************************************************************************
+
+;       FAT32 API
+;       ---------
+
+
+IF !__FAT32_DEF__
+     DEFINE __FAT32_DEF__
+
+defc    OS_Fat  =   $B603                       ; SD card FAT32 and low level API
+
+; reasons
+    defc    FS_Mount    = $00                   ; mount
+    defc    FS_Umnt     = $03                   ; unmounted
+    defc    FS_Fetch    = $06                   ; fetch file
+    defc    FS_Save     = $09                   ; save file
+    defc    FS_Dir      = $0C                   ; create directory
+    defc    FS_Del      = $0F                   ; delete file
+    defc    FS_Ren      = $12                   ; rename file
+    defc    FS_Free     = $15                   ; free space
+    defc    FS_Size     = $18                   ; size of partition
+    defc    FS_Fmt      = $1B                   ; format
+    defc    FS_Req      = $1E                   ; SD card request
+    defc    FS_Read     = $21                   ; read FAT sector
+    defc    FS_Write    = $24                   ; write FAT sector
+    defc    FS_Next     = $27                   ; next FAT sector
+    defc    SD_Init     = $2A                   ; initialize SD card
+    defc    SD_SecRd    = $2D                   ; read sector
+    defc    SD_SecWr    = $30                   ; write sector
+    defc    SD_Csd      = $33                   ; read the CSD register
+
+;       FAT32 low level manifests (internal)
+;       ------------------------------------
+
+;       MBR
+
+defc    MBR_SIG =   $01FE                       ; offset in sector 0
+defc    MBR_PT1 =   $01BE                       ; offset of partition 1, 16 bytes
+defc    MBR_TYP =   $01C2                       ; offset of partition 1 type
+defc    MBR_LBA =   $01C6                       ; offset of partition 1 LBA (VolumeId LBA)
+
+;       Identification values
+
+defc    FAT_SIG =   $AA55
+defc    FAT_32L =   $0C                         ; FAT32 type (LBA)
+defc    FAT_32C =   $0B                         ; FAT32 type (CHS)
+
+;       VolumeID
+
+defc    VID_BPS =   $0B                         ; Bytes Per Sectors, 16 bits, should always be 512
+defc    VID_SPC =   $0D                         ; Sectors Per Cluster, 8 bits, always 1,2,4,8,16,32,64 or 128
+defc    VID_RSC =   $0E                         ; Reserved Sectors Count, 16 bits, usually 20
+defc    VID_NF  =   $10                         ; Number of Fats, 8 bits, should always be 2
+defc    VID_NS  =   $20                         ; Number of Sectors, 32 bits
+defc    VID_SPF =   $24                         ; Sectors Per Fat, 32 bits
+defc    VID_RCL =   $2C                         ; Root Cluster, 32 bits, should always be 2
+defc    VID_FSI =   $30                         ; FSInfo sector, 16 bits, relative to the VolumeID
+defc    VID_CHK =   $41                         ; CHKDSK flags (bit7-2:0, bit1:bad sectors, bit0:dirty=not unmounted)
+defc    VID_SER =   $43                         ; serial number, 32 bits
+defc    VID_NAM =   $47                         ; Volume Name of Partition
+defc    VID_SIG =   $01FE                       ; signature offset
+
+;       FSInfo sector (fatgen103.pdf page 21)
+;
+;       The free cluster count is a cache, the spec says it "is not necessarily correct" and must
+;       be range checked.  $FFFFFFFF in either long means unknown.
+
+defc    FSI_LEAD  = $0000                       ; lead signature, "RRaA" ($41615252)
+defc    FSI_STRUC = $01E4                       ; structure signature, "rrAa" ($61417272)
+defc    FSI_FREE  = $01E8                       ; last known free cluster count, 32 bits
+defc    FSI_NEXT  = $01EC                       ; hint, where to start looking, 32 bits
+defc    FSI_TRAIL = $01FC                       ; trail signature, $00 $00 $55 $AA
+
+;       Directory Entry
+
+defc    DEN_SIZ =   $20                         ; 32 bytes per entry
+defc    DEN_DEL =   $E5                         ; deleted entry identifier
+defc    DEN_DOT =   '.'                         ; . or .. entry identifier
+defc    DEN_ATR =   $0B                         ; attibute byte offset, flags below
+defc    DEN_NTR =   $0C                         ; NT Reserved (bit3 : name is lowercase, bit4 : ext is lowercase)
+defc    DEN_CTT =   $0D                         ; creation time in tenth of seconds (0-199)
+defc    DEN_CTI =   $0E                         ; creation time (bits 0-4 2 seconds, 5-10 minutes, 11-15 hours)
+defc    DEN_CDA =   $10                         ; creation date (bits 0-4 day, 5-8 month, 9-15 year+1980)
+defc    DEN_LAD =   $12                         ; last access date
+defc    DEN_CLH =   $14                         ; cluster high word offset
+defc    DEN_UTI =   $16                         ; update time (bits 0-4 2 seconds, 5-10 minutes, 11-15 hours)
+defc    DEN_UDA =   $18                         ; update date (bits 0-4 day, 5-8 month, 9-15 year+1980)
+defc    DEN_CLL =   $1A                         ; cluster low word offset
+defc    DEN_FSZ =   $1C                         ; filesize offset (long)
+
+;       DOS attributes flags and patterns (DEN_ATR)
+
+defc    ATR_RO  =   $01                         ; read-only
+defc    ATR_HID =   $02                         ; hidden
+defc    ATR_SYS =   $04                         ; system
+defc    ATR_VOL =   $08                         ; volume label
+defc    ATR_DIR =   $10                         ; sub-directory
+defc    ATR_ARC =   $20                         ; archive
+defc    ATR_DEV =   $40                         ; device
+defc    ATR_RSV =   $80                         ; reserved
+defc    ATR_LFN =   $0F                         ; long filename pattern
+
+defc    ATR_B_RO  = 0                           ; read-only
+defc    ATR_B_HID = 1                           ; hidden
+defc    ATR_B_SYS = 2                           ; system
+defc    ATR_B_VOL = 3                           ; volume label
+defc    ATR_B_DIR = 4                           ; sub-directory
+defc    ATR_B_ARC = 5                           ; archive
+defc    ATR_B_DEV = 6                           ; device
+defc    ATR_B_RSV = 7                           ; reserved
+
+;       NT reserved byte (DEN_NTR), the Windows lower case flags, honoured by Linux vfat
+;       they hold a name Lfn would otherwise be needed for, and cost no directory slot
+
+defc    NTR_NAME  = $08                         ; the name component is lower case
+defc    NTR_EXT   = $10                         ; the extension is lower case
+
+defc    NTR_B_NAME = 3                          ; the name component is lower case
+defc    NTR_B_EXT  = 4                          ; the extension is lower case
+
+;       FID, File IDentifier : where a directory record physically sits, see fatio.asm
+;
+;               b31 - b28 : index of the entry in its sector, 0 to 15
+;               b27 - b0  : absolute sector holding it
+
+defc    FID_INDEX  = @11110000                  ; mask of the entry index, in D
+defc    FID_SECTOR = @00001111                  ; mask of the sector, in D
+defc    FID_MAXSEC = $10000000                  ; 2^28 sectors, 137 GB, the ceiling FatMount checks
+
+ENDIF
+
+lston

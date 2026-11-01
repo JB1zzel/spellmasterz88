@@ -1,0 +1,74 @@
+lstoff
+
+; **************************************************************************************************
+; Standard Z88 Operating System Manifests
+;
+; This file is part of the Z88 operating system, OZ      0000000000000000      ZZZZZZZZZZZZZZZZZZZ
+;                                                       000000000000000000   ZZZZZZZZZZZZZZZZZZZ
+; OZ is free software; you can redistribute it and/    0000            0000              ZZZZZ
+; or modify it under the terms of the GNU General      0000            0000            ZZZZZ
+; Public License as published by the Free Software     0000            0000          ZZZZZ
+; Foundation; either version 2, or (at your option)    0000            0000        ZZZZZ
+; any later version. OZ is distributed in the hope     0000            0000      ZZZZZ
+; that it will be useful, but WITHOUT ANY WARRANTY;    0000            0000    ZZZZZ
+; without even the implied warranty of MERCHANTA-       000000000000000000   ZZZZZZZZZZZZZZZZZZZZ
+; BILITY or FITNESS FOR A PARTICULAR PURPOSE. See        0000000000000000  ZZZZZZZZZZZZZZZZZZZZ
+; the GNU General Public License for more details.
+; You should have received a copy of the GNU General Public License along with OZ; see the file
+; COPYING. If not, write to:
+;                                  Free Software Foundation, Inc.
+;                                  59 Temple Place-Suite 330,
+;                                  Boston, MA 02111-1307, USA.
+;
+; (C) Thierry Peycru, 2017
+;
+; ***************************************************************************************************
+
+IF !__DEBUG_DEF__
+define __DEBUG_DEF__
+
+defc    OS_Dbg                  = $B203         ; debug
+defc    OS_Dis                  = $B003         ; disassemble
+
+        ; input options
+        defc    DI_FLW          = $80           ; follow instruction option
+        defc    DI_BYE          = $40           ; catch OS_BYE
+        defc    DI_LWR          = $20           ; low ram protection
+        defc    DI_ABS          = $10           ; absolute address
+
+        defc    DI_B_FLW        = 7
+        defc    DI_B_BYE        = 6
+        defc    DI_B_LWR        = 5
+        defc    DI_B_ABS        = 4
+
+        ; output type of instruction
+        defc    DO_CALL         = $80           ; call instruction
+        defc    DO_RET          = $40           ; ret instruction
+        defc    DO_JMP          = $20           ; jump (relative or absolute instruction)
+        defc    DO_FALSE        = $10           ; condition is false when set
+        defc    DO_OZCALL       = $01           ; rst 20h system call
+
+        defc    DO_B_CALL       = 7
+        defc    DO_B_RET        = 6
+        defc    DO_B_JMP        = 5
+        defc    DO_B_FALSE      = 4
+        defc    DO_B_OZCALL     = 0
+
+defc    OS_Bp                   = $AE03         ; break point interface
+
+        ; input options
+        defc    BP_SET          = 0
+        defc    BP_RMV          = 1
+
+        ; internal options
+        defc    BP_USRSCR       = $80           ; (internal)
+        defc    BP_CALL         = $40           ; (internal)
+        defc    BP_INUSE        = $01           ; (internal)
+
+        defc    BP_B_USRSCR     = 7       
+        defc    BP_B_ZCALL      = 6
+        defc    BP_B_INUSE      = 0
+
+ENDIF
+
+lston

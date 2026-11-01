@@ -1,0 +1,123 @@
+lstoff
+
+; **************************************************************************************************
+; Standard Z88 Operating System Manifests
+;
+; This file is part of the Z88 operating system, OZ      0000000000000000      ZZZZZZZZZZZZZZZZZZZ
+;                                                       000000000000000000   ZZZZZZZZZZZZZZZZZZZ
+; OZ is free software; you can redistribute it and/    0000            0000              ZZZZZ
+; or modify it under the terms of the GNU General      0000            0000            ZZZZZ
+; Public License as published by the Free Software     0000            0000          ZZZZZ
+; Foundation; either version 2, or (at your option)    0000            0000        ZZZZZ
+; any later version. OZ is distributed in the hope     0000            0000      ZZZZZ
+; that it will be useful, but WITHOUT ANY WARRANTY;    0000            0000    ZZZZZ
+; without even the implied warranty of MERCHANTA-       000000000000000000   ZZZZZZZZZZZZZZZZZZZZ
+; BILITY or FITNESS FOR A PARTICULAR PURPOSE. See        0000000000000000  ZZZZZZZZZZZZZZZZZZZZ
+; the GNU General Public License for more details.
+; You should have received a copy of the GNU General Public License along with OZ; see the file
+; COPYING. If not, write to:
+;                                  Free Software Foundation, Inc.
+;                                  59 Temple Place-Suite 330,
+;                                  Boston, MA 02111-1307, USA.
+;
+; (C) Martin 'M1' Sky, 2019
+;
+; ***************************************************************************************************
+;
+; Z88MMC v3 card ports
+; --------------------
+;
+; OUTPUT :
+; --------
+;
+; A12   LED (RED)
+; A11   LED (BLUE)
+; A10   Power on/off
+; A9    CS
+; A8    CLK
+; A7    MOSI (data to card)
+;
+; D7    Loopback out
+;
+; INPUT :
+; -------
+;
+; D0    Loopback in
+; D5    Card powered on
+; D6    Card detect
+; D7    MISO (data form card)
+;
+
+include "memory.def"
+
+; Bits definitions :
+; ------------------
+
+; Bank and addressing
+
+        defc    MMC_BANK        = @01011111     ; A21-20 slot 1 for OZ, A19 low (lower half) A18-17 high always
+        defc    MMC_S0          = MMC_BANK <<8 | MS_S0
+
+; Address MSB, AND bits
+
+        defc    MMC_RED_ON      = @11101111     ; red led on
+        defc    MMC_BLUE_ON     = @11110111     ; blue led on
+        defc    MMC_SWITCH_ON   = @11111011     ; SD fet power on
+        defc    MMC_CS_LOW      = @11111101     ; CS low
+        defc    MMC_CLK_LOW     = @11111110     ; CLK low
+
+; Address MSB, OR bits
+
+        defc    MMC_BASE        = @00100000     ; base port, use address space 2000-3FFF for Z88MMC card (card is bound to segment 0)
+        defc    MMC_RED_MASK    = @00010000
+        defc    MMC_BLUE_MASK   = @00001000
+        defc    MMC_SWITCH_MASK = @00000100
+        defc    MMC_CS_MASK     = @00000010     ; CS hi
+        defc    MMC_CLK_MASK    = @00000001     ; CLK hi
+
+; Address LSB
+
+        defc    MMC_MOSI_HI     = @11111111     ; MOSI hi (D7 = 1)
+        defc    MMC_MOSI_LO     = @01111111     ; MOSI lo (D7 = 0)
+
+; Data write
+
+        defc    MMC_LOOP_0      = @00000000     ; MMC card present test, D7 = 0
+        defc    MMC_LOOP_1      = @10000000     ; MMC card present test, D7 = 1
+
+; Data read
+
+        defc    MMC_MISO        = @10000000     ; MISO mask
+        defc    MMC_SD_IN       = @01000000     ; card detect mask
+        defc    MMC_POWERED     = @00100000     ; power feedback
+        defc    MMC_LOOPBACK    = @00000001     ; loopback mask
+
+; Bits configurations :
+; ---------------------
+
+        ; card wake up (CLK, CS, LEDs, MOSI hi / SWITCH low)
+        defc    MMC_SD_ON       = (MMC_BASE | MMC_BLUE_MASK | MMC_RED_MASK | MMC_CS_MASK | MMC_CLK_MASK) <<8 | MMC_MOSI_HI
+
+        ; card goes off (CLK, CS, MOSI low / SWITCH, LEDs hi)
+        defc    MMC_SD_OFF      = (MMC_BASE | MMC_SWITCH_MASK | MMC_BLUE_MASK | MMC_RED_MASK) <<8 | MMC_MOSI_LO
+
+        ; power on, card is active (CS low, CLK hi, LEDs hi)
+        defc    MMC_SD_CS       = (MMC_BASE | MMC_BLUE_MASK | MMC_RED_MASK | MMC_CLK_MASK) <<8 | MMC_MOSI_HI
+
+        ; wake up + LEDs
+        defc    MMC_SD_ON_RED   = MMC_SD_ON & (MMC_RED_ON  <<8 | $FF)
+        defc    MMC_SD_ON_BLUE  = MMC_SD_ON & (MMC_BLUE_ON <<8 | $FF)
+
+        ; active + LEDs
+        defc    MMC_SD_CS_RED   = MMC_SD_CS & (MMC_RED_ON  <<8 | $FF)
+        defc    MMC_SD_CS_BLUE  = MMC_SD_CS & (MMC_BLUE_ON <<8 | $FF)
+
+        ; reading
+        defc    MMC_RD_CLKH     = ((MMC_BASE | MMC_BLUE_MASK | MMC_RED_MASK | MMC_CLK_MASK) & MMC_BLUE_ON) <<8 | MMC_MOSI_HI
+        defc    MMC_RD_CLKL     = ((MMC_BASE | MMC_BLUE_MASK | MMC_RED_MASK               ) & MMC_BLUE_ON) <<8 | MMC_MOSI_HI
+
+        ; writing (MSB only)
+        defc    MMC_WR_CLKH     =  (MMC_BASE | MMC_BLUE_MASK | MMC_RED_MASK | MMC_CLK_MASK) & MMC_RED_ON
+        defc    MMC_SD_CLKL     =  (MMC_BASE | MMC_BLUE_MASK | MMC_RED_MASK               ) & MMC_RED_ON
+
+lston

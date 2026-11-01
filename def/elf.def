@@ -1,0 +1,203 @@
+lstoff
+
+; **************************************************************************************************
+; Standard Z88 Operating System Manifests
+;
+; This file is part of the Z88 operating system, OZ      0000000000000000      ZZZZZZZZZZZZZZZZZZZ
+;                                                       000000000000000000   ZZZZZZZZZZZZZZZZZZZ
+; OZ is free software; you can redistribute it and/    0000            0000              ZZZZZ
+; or modify it under the terms of the GNU General      0000            0000            ZZZZZ
+; Public License as published by the Free Software     0000            0000          ZZZZZ
+; Foundation; either version 2, or (at your option)    0000            0000        ZZZZZ
+; any later version. OZ is distributed in the hope     0000            0000      ZZZZZ
+; that it will be useful, but WITHOUT ANY WARRANTY;    0000            0000    ZZZZZ
+; without even the implied warranty of MERCHANTA-       000000000000000000   ZZZZZZZZZZZZZZZZZZZZ
+; BILITY or FITNESS FOR A PARTICULAR PURPOSE. See        0000000000000000  ZZZZZZZZZZZZZZZZZZZZ
+; the GNU General Public License for more details.
+; You should have received a copy of the GNU General Public License along with OZ; see the file
+; COPYING. If not, write to:
+;                                  Free Software Foundation, Inc.
+;                                  59 Temple Place-Suite 330,
+;                                  Boston, MA 02111-1307, USA.
+;
+; (C) Jorma Oksanen (jorma.oksanen@aini.fi), 2003
+; (C) Thierry Peycru (pek@users.sf.net), 2005-2007
+; (C) Gunther Strube (hello@bits4fun.net), 2005-2007
+;
+; ***************************************************************************************************
+
+IF !__ELF_DEF__
+        define  __ELF_DEF__
+        include "macros.def"
+
+; ***************************************************************************************************
+;
+; 32 bits ELF for OZ
+;
+; ***************************************************************************************************
+
+; API
+
+        defc    GN_Elf          = $8209         ; execute ELF binary (OZ 5.0 and newer)
+
+; ***************************************************************************************************
+;
+; INTERNAL OPERATING SYSTEM USAGE ONLY
+;
+; 32 bits ELF Manifests
+;
+; Naming convention :
+;               ELF Header (EH)
+;               Program Header Table (PHT)
+;               Section Header Table (SHT)
+;
+; ELF binary structure :
+;               EH > PHT(1) > PHT(2) > ... > Binary(1) > Binary(2) > SHT(1) > SHT(2) > ... > SHT(N)
+;               An EH and at least one PHT are mandatory, SHT is optional.
+;
+; ***************************************************************************************************
+
+; Operating system interface
+
+        defc    DC_Elf          = $260C         ; low level interface
+        defc    DC_Rte          = $280C         ; return from elf program
+
+; Reason calls
+        defc    EL_OP           = $00           ; open ELF, get a handle
+        defc    EL_HI           = $02           ; get header information
+        defc    EL_PI           = $04           ; get program information
+        defc    EL_LD           = $06           ; load program
+        defc    EL_EX           = $08           ; enter program
+        defc    EL_CL           = $0A           ; close ELF, release handle
+
+; -----------------------------------------------------------------------------
+; ELF Header (EH)
+; -----------------------------------------------------------------------------
+
+defvars 0
+        e_ident         ds.b    16              ; identification
+        e_type          ds.w    1               ; elf type
+        e_machine       ds.w    1               ; machine architecture
+        e_version       ds.l    1               ; always CURRENT
+        e_entry         ds.l    1               ; entry address
+        e_phoff         ds.l    1               ; program header offset (PHTs after EH)
+        e_shoff         ds.l    1               ; section header offset (SHTs at EOF after the sections)
+        e_flags         ds.l    1               ; processor specific flags
+        e_ehsize        ds.w    1               ; elf header size in bytes (52)
+        e_phentsize     ds.w    1               ; program header entry size (32)
+        e_phnum         ds.w    1               ; number of program header entries
+        e_shentsize     ds.w    1               ; section header entry size (40)
+        e_shnum         ds.w    1               ; number of section header entries
+        e_shstrndx      ds.w    1               ; section name string index
+enddef
+
+;   sizeof
+defc    EH_SIZEOF       = 52                    ; always
+
+;   e_ident
+defc    ELFMAG0         = $7F                   ; magic                 e_ident[EI_MAG0]
+defc    ELFMAG1         = 'E'                   ;                       e_ident[EI_MAG1]
+defc    ELFMAG2         = 'L'                   ;                       e_ident[EI_MAG2]
+defc    ELFMAG3         = 'F'                   ;                       e_ident[EI_MAG3]
+defc    ELFCLASS32      = 1                     ; 32-bit objects        e_ident[EI_CLASS]
+defc    ELFDATA2LSB     = 1                     ; little endian         e_ident[EI_DATA]
+defc    ELFOSABI_NONE   = 0                     ; unspecified           e_ident[EI_OSABI]
+defc    ELFOSABI_OZ     = 88                    ; OZ specific
+defc    ELFABIVERSION   = 0                     ; unspecified
+defc    EI_NIDENT       = 16                    ; sizeof e_ident
+
+;   e_type
+defc    ET_NONE         = 0                     ; No file type
+defc    ET_REL          = 1                     ; Relocatable file
+defc    ET_EXEC         = 2                     ; Executable file
+defc    ET_DYN          = 3                     ; Shared object file or PIE (position independant executable)
+defc    ET_CORE         = 4                     ; Core file
+
+;   e_machine
+defc    EM_Z80          = 220                   ; Zilog Z80
+
+;   e_version
+defc    EV_NONE         = 0                     ; Invalid version
+defc    EV_CURRENT      = 1                     ; Current version
+
+;   e_shstrndx
+defc    SHN_UNDEF       = 0                     ; no section name
+
+; -----------------------------------------------------------------------------
+; Program Header Table (PHT)
+; This header refers to a binary part of the program
+; -----------------------------------------------------------------------------
+
+defvars 0
+        p_type          ds.l    1               ; program type (see below)
+        p_offset        ds.l    1               ; offset in the file
+        p_vaddr         ds.l    1               ; virtual address
+        p_paddr         ds.l    1               ; physical address
+        p_filesz        ds.l    1               ; program size
+        p_memsz         ds.l    1               ; requested memory size
+        p_flags         ds.l    1               ; flags (see below)
+        p_align         ds.l    1               ; alignement ($4000 always)
+enddef
+
+;   sizeof
+defc    PHT_SIZEOF      = 32                    ; always
+
+;   p_type
+defc    PT_NULL         = 0                     ; ignored entry
+defc    PT_LOAD         = 1                     ; load segment to memory
+defc    PT_DYNAMIC      = 2                     ; dynamic linking information
+defc    PT_INTERP       = 3                     ; location of interpreter
+defc    PT_NOTE         = 4                     ; auxiliary information
+defc    PT_SHLIB        = 5                     ; reserved (not conform)
+defc    PT_PHDR         = 6                     ; location the PHT itself (duplicate), only once in a file
+defc    PT_TLS          = 7                     ; Thread-Local Storage template
+
+;   p_flags (ORed)
+defc    PF_X            = 1                     ; Execute
+defc    PF_W            = 2                     ; Write
+defc    PF_R            = 4                     ; Read
+
+; -----------------------------------------------------------------------------
+; Sections Header Table (SHT)
+; This header refers to a section
+; -----------------------------------------------------------------------------
+
+defvars 0
+        sh_name         ds.l    1               ; relative offset in name section
+        sh_type         ds.l    1               ; SHT_ (.text .rodata 1 - .shrtrtab 3)
+        sh_flags        ds.l    1               ; SHF_ (allocated, executable)
+        sh_addr         ds.l    1               ; address for static
+        sh_offset       ds.l    1               ; offset in the file
+        sh_size         ds.l    1               ; size of the section
+        sh_link         ds.l    1               ; unused
+        sh_info         ds.l    1               ; unused
+        sh_addralign    ds.l    1               ; unused
+        sh_entsize      ds.l    1               ; unused
+enddef
+
+;   sizeof
+defc    SHT_SIZEOF      = 40                    ; always
+
+;   sh_types
+defc    SHT_NULL        = 0                     ; no entry
+defc    SHT_PROGBITS    = 1                     ; program data
+defc    SHT_SYMTAB      = 2                     ; symbol table
+defc    SHT_STRTAB      = 3                     ; string table
+defc    SHT_RELA        = 4                     ; relocation entries with addends
+defc    SHT_HASH        = 5                     ; symbol hash table
+defc    SHT_DYNAMIC     = 6                     ; dynamic linking information
+defc    SHT_NOTE        = 7                     ; notes
+defc    SHT_NOBITS      = 8                     ; Program space with no data (bss)
+defc    SHT_REL         = 9                     ; relocation entries, no addends
+defc    SHT_SHLIB       = 10                    ; reserved
+defc    SHT_DYNSYM      = 11                    ; dynamic linker symbol table
+
+;   sh_flags (ORed)
+defc    SHF_W           = 1                     ; writable
+defc    SHF_A           = 2                     ; allocated, occupies memory during execution
+defc    SHF_X           = 4                     ; executable
+
+ENDIF
+
+lston
+
