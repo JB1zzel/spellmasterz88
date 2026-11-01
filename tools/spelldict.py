@@ -4,8 +4,8 @@ spelldict.py - read the Spell-Master (Cambridge Z88) dictionary from the ROM ban
 
 Usage:  python3 spelldict.py DIR [--stems | --forms | --stats] [--section XY]
 
-DIR must contain the original bank files SPELL.56 to SPELL.62 (the dictionary is in 56-61,
-the index and the tables it needs are in SPELL.62). Output goes to standard output.
+DIR must contain the original bank files spell56.bin to spell56.bin (the dictionary is in 56-61,
+the index and the tables it needs are in spell62.bin). Output goes to standard output.
 
   (default)  one headword per line (the stored word; stems such as SIZZL are shown as stored)
   --stems    headword, inflection class and the -S flag
@@ -19,7 +19,7 @@ The format is described in NOTES.md (section 13) of the annotated source.
 import sys, os, collections
 
 def load(d):
-    rd=lambda n: open(os.path.join(d,'SPELL.%d'%n),'rb').read()
+    rd=lambda n: open(os.path.join(d,'spell%d.bin'%n),'rb').read()
     return rd(62),[rd(56+k) for k in range(6)]
 
 def le(b,a): return b[a-0xC000]|(b[a-0xC000+1]<<8)
