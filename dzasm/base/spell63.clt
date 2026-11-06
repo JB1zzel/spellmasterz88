@@ -1,0 +1,632 @@
+; File:
+{../bank_files/spell63.bin}
+
+; Local Areas:
+{
+($C000, $C000 defb), ($C001, $C03A appldor)
+($C03B, $C15B program), ($C15C, $C195 defb)
+($C196, $C1D0 appldor), ($C1D1, $C1D3 program)
+($C1D4, $C1D5 defb), ($C1D6, $C2E1 program)
+($C2E2, $C2E3 defb), ($C2E4, $C338 program)
+($C339, $C342 string), ($C343, $C345 defb)
+($C346, $C361 string), ($C362, $C362 defb)
+($C363, $C37B string), ($C37C, $C37C defb)
+($C37D, $C395 string), ($C396, $C396 defb)
+($C397, $C3AF string), ($C3B0, $C3B6 defb)
+($C3B7, $C3C6 string), ($C3C7, $C3C9 defb)
+($C3CA, $C3D6 string), ($C3D7, $C3D7 defb)
+($C3D8, $C484 program), ($C485, $C48B defb)
+($C48C, $C4A4 string), ($C4A5, $C4AB defb)
+($C4AC, $C4B6 string), ($C4B7, $C4B7 defb)
+($C4B8, $C4E3 program), ($C4E4, $C4E7 defb)
+($C4E8, $C500 string), ($C501, $C505 defb)
+($C506, $C708 program), ($C709, $C711 defb)
+($C712, $C736 program), ($C737, $C73F string)
+($C740, $C748 defb), ($C749, $C75A string)
+($C75B, $C776 defb), ($C777, $C790 program)
+($C791, $C798 defb), ($C799, $C9BB program)
+($C9BC, $C9BC defb), ($C9BD, $C9CC string)
+($C9CD, $C9D8 defb), ($C9D9, $C9E1 program)
+($C9E2, $C9E4 defb), ($C9E5, $C9ED program)
+($C9EE, $C9F0 defb), ($C9F1, $CACA program)
+($CACB, $CACE defb), ($CACF, $CB58 program)
+($CB59, $CC09 defb), ($CC0A, $CC12 program)
+($CC13, $CC35 defb), ($CC36, $CC38 program)
+($CC39, $CD72 defb), ($CD73, $CD83 string)
+($CD84, $CD86 defb), ($CD87, $CEEA program)
+($CEEB, $CEFD string), ($CEFE, $CEFF defb)
+($CF00, $CF12 string), ($CF13, $CF14 defb)
+($CF15, $CF27 string), ($CF28, $CF29 defb)
+($CF2A, $CF3C string), ($CF3D, $CF3E defb)
+($CF3F, $CF51 string), ($CF52, $CF63 defb)
+($CF64, $CF6B string), ($CF6C, $CF6F defb)
+($CF70, $CF71 program), ($CF72, $CF7C string)
+($CF7D, $CFD9 program), ($CFDA, $CFE5 defb)
+($CFE6, $D007 program), ($D008, $D01D addrtable)
+($D01E, $D179 program), ($D17A, $D186 defb)
+($D187, $D192 string), ($D193, $D19C defb)
+($D19D, $D511 program), ($D512, $D518 defb)
+($D519, $D52A string), ($D52B, $D54E defb)
+($D54F, $D755 program), ($D756, $D788 defb)
+($D789, $D7A4 string), ($D7A5, $D7A9 defb)
+($D7AA, $D808 program), ($D809, $D861 defb)
+($D862, $D874 program), ($D875, $D87F defb)
+($D880, $D9BF program), ($D9C0, $D9C3 defb)
+($D9C4, $DA04 program), ($DA05, $DA0E defb)
+($DA0F, $DA21 string), ($DA22, $DA22 defb)
+($DA23, $DA30 program), ($DA31, $DA40 defb)
+($DA41, $DA4B string), ($DA4C, $DA55 defb)
+($DA56, $DB0C program), ($DB0D, $DB16 defb)
+($DB17, $DB21 string), ($DB22, $DB24 defb)
+($DB25, $DE2A program), ($DE2B, $E202 defb)
+($E203, $E428 program), ($E429, $E432 defb)
+($E433, $E6D4 program), ($E6D5, $E6E0 defb)
+($E6E1, $E6E7 program), ($E6E8, $E6EA defb)
+($E6EB, $E719 defb), ($E71A, $E721 string)
+($E722, $E72C defb), ($E72D, $E739 string)
+($E73A, $E740 defb), ($E741, $E751 string)
+($E752, $E758 defb), ($E759, $E769 string)
+($E76A, $E770 defb), ($E771, $E783 string)
+($E784, $E78B defb), ($E78C, $E79C string)
+($E79D, $E7A4 defb), ($E7A5, $E7AE string)
+($E7AF, $E7B6 defb), ($E7B7, $E7C8 string)
+($E7C9, $E7CE defb), ($E7CF, $E7DC string)
+($E7DD, $E7E3 defb), ($E7E4, $E7EC string)
+($E7ED, $E7F2 defb), ($E7F3, $E7FD string)
+($E7FE, $E803 defb), ($E804, $E80E string)
+($E80F, $E814 defb), ($E815, $E820 string)
+($E821, $E826 defb), ($E827, $E82F string)
+($E830, $E835 defb), ($E836, $E840 string)
+($E841, $E846 defb), ($E847, $E851 string)
+($E852, $E857 defb), ($E858, $E865 string)
+($E866, $E86B defb), ($E86C, $E878 string)
+($E879, $E87E defb), ($E87F, $E889 string)
+($E88A, $E88F defb), ($E890, $E898 string)
+($E899, $E89E defb), ($E89F, $E8AB string)
+($E8AC, $E8B1 defb), ($E8B2, $E8BC string)
+($E8BD, $E8D7 defb), ($E8D8, $E8E6 string)
+($E8E7, $E8F9 defb), ($E8FA, $E909 string)
+($E90A, $E90F defb), ($E910, $E91A string)
+($E91B, $E920 defb), ($E921, $E929 string)
+($E92A, $E931 defb), ($E932, $E93B string)
+($E93C, $E943 defb), ($E944, $E94D string)
+($E94E, $E953 defb), ($E954, $E963 string)
+($E964, $E969 defb), ($E96A, $E974 string)
+($E975, $E97C defb), ($E97D, $E985 string)
+($E986, $E98C defb), ($E98D, $E995 string)
+($E996, $E99D defb), ($E99E, $E9AE string)
+($E9AF, $E9B6 defb), ($E9B7, $E9CA string)
+($E9CB, $E9D2 defb), ($E9D3, $E9E6 string)
+($E9E7, $E9EE defb), ($E9EF, $EA02 string)
+($EA03, $EA09 defb), ($EA0A, $EA14 string)
+($EA15, $EA1C defb), ($EA1D, $EA27 string)
+($EA28, $EA2E defb), ($EA2F, $EA3C string)
+($EA3D, $EA44 defb), ($EA45, $EA52 string)
+($EA53, $EA59 defb), ($EA5A, $EA6A string)
+($EA6B, $EA71 defb), ($EA72, $EA80 string)
+($EA81, $EA87 defb), ($EA88, $EA99 string)
+($EA9A, $EAA0 defb), ($EAA1, $EAB1 string)
+($EAB2, $EAB4 defb), ($EAB5, $EABF string)
+($EAC0, $EAC0 defb), ($EAC1, $EAD5 string)
+($EAD6, $EAD6 defb), ($EAD7, $EAFF string)
+($EB00, $EB00 defb), ($EB01, $EB16 string)
+($EB17, $EB28 defb), ($EB29, $EB40 string)
+($EB41, $EB41 defb), ($EB42, $EB5B string)
+($EB5C, $EB5C defb), ($EB5D, $EB72 string)
+($EB73, $EB73 defb), ($EB74, $EB8A string)
+($EB8B, $EB8B defb), ($EB8C, $EB9E string)
+($EB9F, $EB9F defb), ($EBA0, $EBB2 defb)
+($EBB3, $EBBD string), ($EBBE, $EBC3 defb)
+($EBC4, $EBCF string), ($EBD0, $EBD5 defb)
+($EBD6, $EBDE string), ($EBDF, $EBE4 defb)
+($EBE5, $EBEF string), ($EBF0, $EBF5 defb)
+($EBF6, $EC02 string), ($EC03, $EC08 defb)
+($EC09, $EC17 string), ($EC18, $EC1D defb)
+($EC1E, $EC34 string), ($EC35, $EC3A defb)
+($EC3B, $EC4D string), ($EC4E, $EC5C defb)
+($EC5D, $EC75 program), ($EC76, $EC81 defb)
+($EC82, $EC88 program), ($EC89, $EC8F defb)
+($EC90, $ECBA program), ($ECBB, $ED58 defb)
+($ED59, $FF7F defs), ($FF80, $FF8A program)
+($FF8B, $FF9D defb), ($FF9E, $FFBF defs)
+($FFC0, $FFD2 frontdor), ($FFD3, $FFF7 defb)
+($FFF8, $FFFF romhdr)
+}
+
+; External Areas:
+{
+($0000, $BFFF void)
+}
+
+; Local Label References:
+{
+$4C17 QuickEdit_help_page29, $4E1A QuickEdit_help_page12
+$4E1D QuickEdit_help_page11, $4E20 QuickEdit_help_page50
+$5027 QuickEdit_help_page60, $5028 QuickEdit_help_page34
+$5129 QuickEdit_help_page53, $5329 QuickEdit_help_page54
+$581A QuickEdit_help_page44, $591A QuickEdit_help_page35
+$591C QuickEdit_help_page10, $5A23 QuickEdit_help_page37
+$5A27 QuickEdit_help_page48, $5B1A QuickEdit_help_page61
+$5B1D QuickEdit_help_page36, $5D19 QuickEdit_help_page49
+$5D28 QuickEdit_help_page13, $5D2E QuickEdit_help_page58
+$5E1A QuickEdit_help_page33, $6025 QuickEdit_help_page55
+$6029 QuickEdit_help_page30, $6223 QuickEdit_help_page56
+$6329 QuickEdit_help_page47, $C000 QuickEdit_entry
+$C001 applDor_QuickEdit, $C03B
+$C048, $C051
+$C06B, $C06E
+$C070, $C073
+$C081, $C087
+$C0A8, $C0AA
+$C0AB, $C0BD
+$C0BF, $C0EB
+$C126, $C138
+$C142, $C149
+$C14B, $C154
+$C159, $C196 applDor_WordFinder
+$C1D1 WordFinder_entry, $C1D6
+$C24B, $C24C
+$C267, $C291
+$C2A5, $C2B1
+$C2C7, $C2D0
+$C2E4, $C2EA
+$C2F0, $C2F6
+$C2FC, $C302
+$C308, $C30E
+$C312, $C31B
+$C332, $C334
+$C3D8, $C3E6
+$C3EE, $C3F6
+$C401, $C410
+$C421, $C42A
+$C433, $C445
+$C448, $C469
+$C46E, $C476
+$C4B8, $C4D0
+$C4DB, $C506
+$C522, $C539
+$C547, $C555
+$C55A, $C56B
+$C576, $C59D
+$C5A9, $C5B1
+$C5B7, $C5BA
+$C5C4, $C5E0
+$C5E4, $C5F1
+$C607, $C610
+$C62D, $C649
+$C66E, $C678
+$C6A0, $C6BF
+$C6CE, $C6D7
+$C6F4, $C712
+$C719, $C722
+$C777, $C799
+$C7B1, $C7C5
+$C7E7, $C7F7
+$C802, $C809
+$C80E, $C822
+$C831, $C83E
+$C859, $C881
+$C8B6, $C8BF
+$C8CC, $C8D1
+$C8D8, $C90A
+$C90E, $C91F
+$C93D, $C948
+$C959, $C968
+$C969, $C96D
+$C992, $C9B2
+$C9B5, $C9D9
+$C9E5, $C9F1
+$C9FC, $CA19
+$CA36, $CA44
+$CA4F, $CA67
+$CA8A, $CA93
+$CAA5, $CAC0
+$CACF, $CAD6
+$CADB, $CAE5
+$CAE8, $CAF9
+$CB05, $CB11
+$CB24, $CB34
+$CB40, $CB45
+$CB52, $CC0A
+$CC0E, $CC36
+$CD87, $CDDD
+$CDE6, $CDF0
+$CDF7, $CE05
+$CE1D, $CE33
+$CE36, $CE43
+$CE47, $CE4F
+$CE60, $CE6F
+$CE80, $CE88
+$CE9B, $CEA7
+$CEA8, $CEB4
+$CEBF, $CECD
+$CED7, $CEE5
+$CEE8, $CF70
+$CF8B, $CF8C
+$CF9A, $CFA2
+$CFA5, $CFAD
+$CFBB, $CFC8
+$CFCF, $CFD5
+$CFE6, $D007
+$D01E, $D029
+$D03C, $D04F
+$D052, $D068
+$D09C, $D0B3
+$D0B5, $D0BE
+$D0CF, $D0D5
+$D0DE, $D0ED
+$D0EF, $D0F5
+$D100, $D11F
+$D121, $D126
+$D13B, $D144
+$D155, $D174
+$D19D, $D1B7
+$D1C3, $D1D2
+$D1E1, $D1F5
+$D1FD, $D215
+$D231, $D23D
+$D24B, $D268
+$D26C, $D26E
+$D27A, $D27F
+$D288, $D295
+$D29E, $D2E0
+$D2EB, $D2F4
+$D2F9, $D302
+$D313, $D327
+$D329, $D32C
+$D345, $D354
+$D375, $D378
+$D399, $D3B1
+$D3B3, $D3BE
+$D3DD, $D3EC
+$D3F3, $D42E
+$D438, $D448
+$D454, $D460
+$D466, $D479
+$D495, $D498
+$D4A5, $D4B9
+$D4D5, $D4D8
+$D4FD, $D50A
+$D50C, $D54F
+$D55D, $D578
+$D5A9, $D5B5
+$D5BB, $D5D9
+$D5DB, $D5EB
+$D600, $D617
+$D61A, $D640
+$D645, $D651
+$D68A, $D6AD
+$D6E3, $D704
+$D728, $D730
+$D738, $D7AA
+$D7AD, $D7CE
+$D7DD, $D7F2
+$D7FB, $D800
+$D862, $D880
+$D8C1, $D8D5
+$D8FA, $D909
+$D91B, $D925
+$D939, $D96F
+$D97D, $D996
+$D9AE, $D9B9
+$D9C4, $D9D8
+$D9DA, $D9E5
+$D9F6, $D9FE
+$DA23, $DA56
+$DA68, $DA84
+$DAB7, $DACF
+$DAD1, $DAE1
+$DAF2, $DAF6
+$DB01, $DB06
+$DB25, $DB3E
+$DB53, $DB71
+$DB74, $DB88
+$DBA2, $DBB5
+$DBD6, $DBE2
+$DBF5, $DC0B
+$DC12, $DC17
+$DC26, $DC4B
+$DC53, $DC5D
+$DC77, $DC87
+$DC8E, $DC90
+$DCA8, $DCD2
+$DCF8, $DCFE
+$DD17, $DD35
+$DD53, $DD64
+$DD6D, $DD8A
+$DDAD, $DDB4
+$DDB8, $DDBA
+$DDC9, $DDCD
+$DDD3, $DDE4
+$DDE9, $DDF8
+$DE02, $DE09
+$DE19, $DE24
+$E203, $E237
+$E23A, $E23D
+$E246, $E26D
+$E27D, $E281
+$E28C, $E2A0
+$E2AA, $E2B1
+$E2D0, $E2E3
+$E2E8, $E2EB
+$E2F3, $E30D
+$E320, $E325
+$E32C, $E33A
+$E33D, $E348
+$E34C, $E35A
+$E36D, $E375
+$E37E, $E39A
+$E3A3, $E3BF
+$E3C5, $E3D6
+$E3E3, $E3FC
+$E3FE, $E40C
+$E413, $E433
+$E43C, $E447
+$E459, $E468
+$E476, $E48B
+$E492, $E49B
+$E4B3, $E4C0
+$E4D3, $E4E0
+$E4E8, $E502
+$E508, $E51B
+$E537, $E540
+$E547, $E553
+$E556, $E567
+$E570, $E58D
+$E595, $E59B
+$E5AA, $E5B4
+$E5C3, $E5D9
+$E5DB, $E5E5
+$E603, $E616
+$E62E, $E649
+$E653, $E669
+$E674, $E685
+$E692, $E695
+$E6A0, $E6AC
+$E6AF, $E6D0
+$E6E1, $E6EB QuickEdit_topics
+$E6EC QuickEdit_tpc1, $E6F7 QuickEdit_tpc1_end
+$E6F8 QuickEdit_tpc2, $E703 QuickEdit_tpc2_end
+$E704 QuickEdit_tpc3, $E70D QuickEdit_tpc3_end
+$E70E QuickEdit_tpc4, $E718 QuickEdit_tpc4_end
+$E719 QuickEdit_tpc5, $E726 QuickEdit_tpc5_end
+$E728 QuickEdit_commands, $E729 QuickEdit_cmd1
+$E73B QuickEdit_cmd1_end, $E73C QuickEdit_cmd2
+$E753 QuickEdit_cmd2_end, $E754 QuickEdit_cmd3
+$E76B QuickEdit_cmd3_end, $E76C QuickEdit_cmd4
+$E785 QuickEdit_cmd4_end, $E786 QuickEdit_cmd5
+$E79E QuickEdit_cmd5_end, $E79F QuickEdit_cmd6
+$E7B0 QuickEdit_cmd6_end, $E7B1 QuickEdit_cmd7
+$E7CA QuickEdit_cmd7_end, $E7CB QuickEdit_cmd8
+$E7DE QuickEdit_cmd8_end, $E7E0 QuickEdit_cmd9
+$E7EE QuickEdit_cmd9_end, $E7EF QuickEdit_cmd10
+$E7FF QuickEdit_cmd10_end, $E800 QuickEdit_cmd11
+$E80B, $E810 QuickEdit_cmd11_end
+$E811 QuickEdit_cmd12, $E822 QuickEdit_cmd12_end
+$E823 QuickEdit_cmd13, $E831 QuickEdit_cmd13_end
+$E832 QuickEdit_cmd14, $E842 QuickEdit_cmd14_end
+$E843 QuickEdit_cmd15, $E853 QuickEdit_cmd15_end
+$E854 QuickEdit_cmd16, $E867 QuickEdit_cmd16_end
+$E868 QuickEdit_cmd17, $E87A QuickEdit_cmd17_end
+$E87B QuickEdit_cmd18, $E88B QuickEdit_cmd18_end
+$E88C QuickEdit_cmd19, $E89A QuickEdit_cmd19_end
+$E89B QuickEdit_cmd20, $E8AD QuickEdit_cmd20_end
+$E8AE QuickEdit_cmd21, $E8BE QuickEdit_cmd21_end
+$E8BF QuickEdit_cmd22, $E8CA QuickEdit_cmd22_end
+$E8CB QuickEdit_cmd23, $E8D3 QuickEdit_cmd23_end
+$E8D4 QuickEdit_cmd24, $E8E8 QuickEdit_cmd24_end
+$E8EA QuickEdit_cmd25, $E8F5 QuickEdit_cmd25_end
+$E8F6 QuickEdit_cmd26, $E90B QuickEdit_cmd26_end
+$E90C QuickEdit_cmd27, $E90D
+$E91C QuickEdit_cmd27_end, $E91D QuickEdit_cmd28
+$E92B QuickEdit_cmd28_end, $E92C QuickEdit_cmd29
+$E93D QuickEdit_cmd29_end, $E93E QuickEdit_cmd30
+$E94F QuickEdit_cmd30_end, $E950 QuickEdit_cmd31
+$E965 QuickEdit_cmd31_end, $E966 QuickEdit_cmd32
+$E976 QuickEdit_cmd32_end, $E978 QuickEdit_cmd33
+$E987 QuickEdit_cmd33_end, $E988 QuickEdit_cmd34
+$E997 QuickEdit_cmd34_end, $E998 QuickEdit_cmd35
+$E9B0 QuickEdit_cmd35_end, $E9B1 QuickEdit_cmd36
+$E9CC QuickEdit_cmd36_end, $E9CD QuickEdit_cmd37
+$E9E8 QuickEdit_cmd37_end, $E9E9 QuickEdit_cmd38
+$EA04 QuickEdit_cmd38_end, $EA05 QuickEdit_cmd39
+$EA16 QuickEdit_cmd39_end, $EA17 QuickEdit_cmd40
+$EA29 QuickEdit_cmd40_end, $EA2A QuickEdit_cmd41
+$EA3E QuickEdit_cmd41_end, $EA40 QuickEdit_cmd42
+$EA54 QuickEdit_cmd42_end, $EA55 QuickEdit_cmd43
+$EA6C QuickEdit_cmd43_end, $EA6D QuickEdit_cmd44
+$EA82 QuickEdit_cmd44_end, $EA83 QuickEdit_cmd45
+$EA9B QuickEdit_cmd45_end, $EA9C QuickEdit_cmd46
+$EAB3 QuickEdit_cmd46_end, $EAB5 QuickEdit_help
+$EB29 QuickEdit_help_page2, $EB42 QuickEdit_help_page3
+$EB5D QuickEdit_help_page4, $EB74 QuickEdit_help_page5
+$EB8C QuickEdit_help_page1, $EBA0 WordFinder_topics
+$EBA1 WordFinder_tpc1, $EBAC WordFinder_tpc1_end
+$EBAE WordFinder_commands, $EBAF WordFinder_cmd1
+$EBB5, $EBB8
+$EBB9, $EBBF WordFinder_cmd1_end
+$EBC0 WordFinder_cmd2, $EBCF
+$EBD1 WordFinder_cmd2_end, $EBD2 WordFinder_cmd3
+$EBD8, $EBE0 WordFinder_cmd3_end
+$EBE1 WordFinder_cmd4, $EBE7
+$EBF1 WordFinder_cmd4_end, $EBF2 WordFinder_cmd5
+$EBFB, $EC00
+$EC04 WordFinder_cmd5_end, $EC05 WordFinder_cmd6
+$EC19 WordFinder_cmd6_end, $EC1A WordFinder_cmd7
+$EC27, $EC36 WordFinder_cmd7_end
+$EC37 WordFinder_cmd8, $EC3E
+$EC4F WordFinder_cmd8_end, $EC50 WordFinder_cmd9
+$EC51, $EC53
+$EC5B WordFinder_cmd9_end, $EC5D
+$EC5F, $EC62
+$EC67, $EC6C
+$EC70, $EC71
+$EC74, $EC82
+$EC90, $EC91
+$EC9C, $ECAA
+$ECB5, $ED62
+$ED71, $ED76
+$EDAC, $EE38
+$F1E0, $F4DF
+$F938, $FFC0 frontdor
+$FFD3 frontdor_end, $FFF8 romhdr
+}
+
+; External Label References:
+{
+$00C3, $2E18
+$4400, $7F8B
+}
+
+; Local Data References:
+{
+$C191, $C339
+$C344, $C346
+$C363, $C37D
+$C397, $C3B7
+$C3CA, $C485
+$C48C, $C4AC
+$C4E4, $C4E8
+$C737, $C741
+$C749, $C75C
+$C791, $C9BC
+$C9BD, $C9EE
+$C9F3, $C9F8
+$CACB, $CC73
+$CD73, $CEEB
+$CF00, $CF15
+$CF2A, $CF3F
+$CF53, $CF59
+$CF5F, $CF64
+$CF6D, $CF72
+$CF7E, $CFDA
+$D008, $D17A
+$D187, $D512
+$D519, $D52C
+$D53C, $D766
+$D783, $D789
+$D809, $D84D
+$D854, $D87A
+$DA05, $DA0F
+$DA31, $DA41
+$DB0D, $DB17
+$DE2B, $E429
+$E6D5, $E6DC
+$E6E8, $E71A
+$E72D, $E741
+$E759, $E771
+$E78C, $E7A5
+$E7B7, $E7CF
+$E7E4, $E7F3
+$E804, $E815
+$E827, $E836
+$E847, $E858
+$E86C, $E87F
+$E890, $E89F
+$E8B2, $E8D8
+$E8FA, $E910
+$E921, $E932
+$E944, $E954
+$E96A, $E97D
+$E98D, $E99E
+$E9B7, $E9D3
+$E9EF, $EA0A
+$EA1D, $EA2F
+$EA45, $EA5A
+$EA72, $EA88
+$EAA1, $EAC1
+$EAD7, $EB01
+$EBB3, $EBC4
+$EBD6, $EBE5
+$EBF6, $EC09
+$EC1E, $EC3B
+$ECBB, $ECC5
+$ECDA, $ECDF
+$ECEF, $ECF9
+$ED03, $ED0D
+$ED17, $ED3D
+$ED4B, $FD12
+$FEFE
+}
+
+; External Data References:
+{
+$0000, $0004
+$0007, $0040
+$0042, $00C2
+$00F8, $0113
+$1F82, $1F84
+$1F85, $1F86
+$1F87, $1F88
+$1F89, $1F8A
+$1F8C, $1F8D
+$1F8F, $1F91
+$1F93, $1F95
+$1F97, $1F99
+$1F9B, $1F9C
+$1F9E, $1F9F
+$1FA1, $1FA2
+$1FA3, $1FA4
+$1FA5, $1FA6
+$1FA7, $1FA9
+$1FAB, $1FAC
+$1FAE, $1FAF
+$1FB3, $1FBC
+$1FBD, $1FBE
+$1FBF, $1FC1
+$1FC2, $1FC4
+$1FC8, $1FCA
+$1FCB, $1FCD
+$1FCE, $1FCF
+$1FD1, $1FD3
+$1FD4, $1FD6
+$1FD7, $1FD9
+$1FDD, $1FDF
+$1FE0, $1FE2
+$1FE4, $1FE5
+$1FE8, $1FEA
+$1FEB, $2B32
+$4033, $5832
+$8900
+}
+
+; Include files referenced in code:
+{
+	+ ; 'stdio.def'
+	+ ; 'fileio.def'
+	+ ; 'director.def'
+	+ ; 'memory.def'
+	- ; 'dor.def'
+	+ ; 'syspar.def'
+	- ; 'saverst.def'
+	+ ; 'fpp.def'
+	- ; 'integer.def'
+	- ; 'serintfc.def'
+	- ; 'screen.def'
+	- ; 'time.def'
+	- ; 'char.def'
+	+ ; 'error.def'
+	- ; 'map.def'
+	- ; 'alarm.def'
+	- ; 'filter.def'
+	- ; 'tokens.def'
+	- ; 'interrpt.def'
+	+ ; 'printer.def'
+}
+
+; Explicit Include files:
+{
+}
+
+; Comments added to code:
+{
+}
+
+; Expressions added to code:
+{
+}
+
+; Global constants:
+{
+
+}

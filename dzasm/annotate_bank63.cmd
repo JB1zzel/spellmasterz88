@@ -1,8 +1,22 @@
 ; Spell-Master annotation commands for DZasm (bank 63)
 di "spell_names.def"
+dm defb C001 C03A
+dm defb C196 C1D0
+rem C001 < QuickEdit application DOR. Kept as raw bytes because DZasm V0.36 masks the topic, command and help pointers with $3FFF, but this card stores them as full $Cxxx addresses.
+rem C001 < $C001 parent link 00 00 00; brother link 96 01 3F = offset $0196, bank $3F (the WordFinder DOR); son link 00 00 00.
+rem C001 < $83 = application ROM DOR, length $2F. '@' = info section, length $12:
+rem C001 < reserved 00 00; key letter 'Q'; contiguous RAM size $FF (only used by bad applications); overhead 0; unsafe workspace $001A; safe workspace $0062;
+rem C001 < entry point $C000; bindings S0 to S3 = 00 00 00 3E (code bank $3E = SPELL.62 in segment 3); type 1 = $01 (AT_GOOD, an ordinary application); type 2 = $00.
+rem C001 < 'H' = help section, length $0C: topics $E6EB, commands $E728, application help $EAB5 (all bank $3F), tokens 00 00 00 (none).
+rem C001 < 'N' = name section, length 10: QuickEdit, 0. Then $FF ends the DOR.
+rem C196 < WordFinder application DOR (raw bytes for the same reason as the QuickEdit DOR).
+rem C196 < $C196 parent link 0; brother link 0 (last application on the card); son link 0. $83 = application ROM DOR, length $30. '@' = info section, length $12:
+rem C196 < reserved 00 00; key letter 'W'; contiguous RAM size 0; overhead 0; unsafe workspace $007C; safe workspace 0; entry point $C1D1;
+rem C196 < bindings S0 to S3 = 00 00 00 3F (code bank $3F = SPELL.63 in segment 3); type 1 = $09 (AT_GOOD + AT_POPD: a popdown, closed when you switch application); type 2 = $02 (AT2_ICL: inverted caps lock on entry).
+rem C196 < 'H' = help section: topics $EBA0, commands $EBAE, application help $EAB5 (shared with QuickEdit), tokens none. 'N' = name section: WordFinder, 0. Then $FF.
 rem C000 < Spell-Master for the Cambridge Z88 - bank 63 ($3F, SPELL.63). Card header, front DOR, both application DORs, QuickEdit menu text,
 rem C000 < the WordFinder application and the routines QuickEdit calls through the far-call table.
-rem C000 < Annotated disassembly made with DZasm (project spell63.clt). It assembles to bytes IDENTICAL to the original bank.
+rem C000 < Annotated disassembly made with DZasm (project spell63.clt). It assembles to bytes IDENTICAL to bank_files/spell63.bin (the original ROM bank with the bank-addressing fix: 7 bytes changed).
 rem C000 < Offsets $0000-$003A and $0196-$01D0 are the application DORs. Names and comments are inferred, not original. See NOTES.md.
 dc 1F82 dict_pos
 dc 1F84 dict_bank
@@ -77,7 +91,7 @@ dl CC73 token_pointer_table
 rem CC73 < Bank 63 copy of the 128-word token pointer table (bank 62: $C4A4).
 dl C0BF bind_dictionary_bank
 rem C0BF < Same routine as in bank 62: bind one dictionary bank into segment 2 (see bank 62 for the description).
-rem C0BF < BANK-ADDRESSING SITE 1 (copy in this bank): original code builds the bank as (running slot bits) OR ($38 + index).
+rem C0BF < BANK-ADDRESSING SITE 1 (patched, copy in this bank): ADD A,D / SUB $3F, where D = $38 + index. The ORIGINAL ROM had AND $C0 / OR D.
 rem C1D1 < WordFinder entry point (WordFinder DOR: entry $C1D1, segment 3 = bank $3F = SPELL.63).
 dl C1D6 wf_start
 rem C1D6 < WordFinder start-up: creates pools, allocates buffers, then falls into the menu.
@@ -102,8 +116,8 @@ rem CFE6 < Entered from the stub at $7F80 with this bank bound into segment 3.
 rem FF80 < STUB entered from bank 62 (far_call_bank63): copies the bank bound in segment 1 (this bank) into segment 3
 rem FF80 < and jumps to far_call_dispatch.
 rem FF8B < STUB used on the way back: re-binds bank 62 into segment 3, restores the registers saved on the stack, RET.
-rem FF8B < BANK-ADDRESSING SITE 3: the ORIGINAL code computes bank 62 as (running slot bits) OR $3E. It is shown here as raw bytes:
-rem FF8B < $0E,$01 LD C,1 / $E7,$5A OS_Mgb / $78 LD A,B / $E6,$C0 AND $C0 / $F6,$3E OR $3E / $47 LD B,A / $0E,$03 LD C,3 / $E7,$5D OS_Mpb / POPs / RET.
+rem FF8B < BANK-ADDRESSING SITE 3 (patched): bank 62 is the bank before bank 63, so DEC A replaces the original AND $C0 / OR $3E. Shown here as raw bytes:
+rem FF8B < $0E,$01 LD C,1 / $E7,$5A OS_Mgb / $78 LD A,B / $3D DEC A / $00,$00,$00 NOPs (ORIGINAL: $E6,$C0 AND $C0 / $F6,$3E OR $3E) / $47 LD B,A / $0E,$03 LD C,3 / $E7,$5D OS_Mpb / POPs / RET.
 rem E6EB < QuickEdit menu topics ('Blocks', 'Cursor', 'Edit', 'Files', 'SPELLING') - kept as raw bytes.
 rem E728 < QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See NOTES.md for the full table.
 rem EBAE < Menu commands for the Correction/spelling menu.

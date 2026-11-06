@@ -1,7 +1,7 @@
 ; Spell-Master annotation commands for DZasm (bank 62)
 di "spell_names.def"
 rem C000 < Spell-Master for the Cambridge Z88 - bank 62 ($3E, SPELL.62). Mostly the QuickEdit application (a text editor with spell checking).
-rem C000 < Annotated disassembly made with DZasm; the names, comments and constants are in the DZasm project (spell62.clt). It assembles to bytes IDENTICAL to the original bank.
+rem C000 < Annotated disassembly made with DZasm; the names, comments and constants are in the DZasm project (spell62.clt). It assembles to bytes IDENTICAL to bank_files/spell62.bin (the original ROM bank with the bank-addressing fix: 7 bytes changed).
 rem C000 < Names and comments are inferred from what the code does, not original. See NOTES.md for the method, the evidence and what is still unknown.
 rem C000 < Hex digits are written with a leading dollar sign; the equates used here are in spell_names.def.
 dc 1F82 dict_pos
@@ -135,8 +135,8 @@ rem C1B6 < Bind one dictionary bank into segment 2.
 rem C1B6 < IN: IX -> a 3-byte dictionary index entry. Bits 7-5 of (IX+0) select the dictionary bank 0..5 (SPELL.56 to SPELL.61);
 rem C1B6 <     (IX+1),(IX+2) = offset within that bank.
 rem C1B6 < OUT: dict_bank = absolute bank number bound into segment 2, dict_pos = offset.
-rem C1B6 < BANK-ADDRESSING SITE 1: the ORIGINAL code builds the bank as (running slot bits) OR ($38 + index), i.e. it assumes the
-rem C1B6 < eight banks occupy the top of the slot. See NOTES.md 'Bank addressing' (patters' fix makes this relative).
+rem C1B6 < BANK-ADDRESSING SITE 1 (patched, as patters): the bank is worked out relative to the running bank: ADD A,D / SUB $3E, where D = $38 + index.
+rem C1B6 < The ORIGINAL ROM had AND $C0 / OR D (the slot bits of the running bank OR the fixed number), which only works when the eight banks are the top of a slot. See NOTES.md 'Bank addressing'.
 dl C1E2 qe_start
 rem C1E2 < QuickEdit start-up: creates memory pools (OS_Mop), allocates buffers (OS_Mal), sets the error handler,
 rem C1E2 < clears working variables, draws the window, then enters qe_main_loop.
@@ -144,7 +144,7 @@ dl C286 far_call_bank63
 rem C286 < Call a routine in bank 63 (SPELL.63) from this bank.
 rem C286 < IN: A = index into the far-call table in bank 63 (far_call_table, 11 entries).
 rem C286 < Binds bank 63 into segment 1 and jumps to the stub at $7F80 (file offset $3F80 of SPELL.63).
-rem C286 < BANK-ADDRESSING SITE 2: the ORIGINAL code computes bank 63 as (running slot bits) OR $3F.
+rem C286 < BANK-ADDRESSING SITE 2 (patched): INC A after OS_Mgb gives the bank after the running one, bank 63. The ORIGINAL ROM had AND $C0 / OR $3F.
 rem D171 < Command jump table: 47 words, indexed by dispatch code 0..46. See cmd_* handlers.
 rem D171 < The main loop does: HL = table + 2*code; JP (HL).
 dl D276 translate_key_code

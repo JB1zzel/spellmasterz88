@@ -2,7 +2,7 @@
 
 These notes accompany an annotated disassembly of the two code banks of Spell-Master, the spelling checker card for the Cambridge Z88. They record what could be established from the ROM and how sure we are of each point. The sources are `spell62.asm` and `spell63.asm`.
 
-**Status.** Both files assemble with Mpm 2.1.1 to bytes identical to the original `SPELL.62` and `SPELL.63`. The card has been loaded as a 128K image in OZvm under OZ 5 (slot 1) and runs. Nothing described here about behaviour has been observed directly: it is read from the code. Every name and comment is an inference, not an original label.
+**Status.** Both files assemble with Mpm 2.1.1 to bytes identical to `bank_files/spell62.bin` and `spell63.bin`. Those are the original ROM banks with the bank-addressing fix described in section 5 (7 bytes changed in each); the other six banks are untouched. The card has been loaded as a 128K image in OZvm under OZ 5 (slot 1) and runs. Nothing described here about behaviour has been observed directly: it is read from the code. Every name and comment is an inference, not an original label.
 
 **Where the annotations live.** The names, comments, workspace names and operand expressions are DZasm commands (`dl`, `rem`, `dc`, `de`), stored in the DZasm collect files (`dzasm/spell62.clt`, `dzasm/spell63.clt`) and listed in `dzasm/annotate_bank62.cmd` and `annotate_bank63.cmd`. The equates they use are in `defs/spell_names.def`.
 
@@ -66,7 +66,7 @@ The dictionary index entries are three bytes. Bits 7-5 of the first byte select 
 | 2 | bank 62 $C286 | bank 63 = slot bits OR $3F |
 | 3 | bank 63 $FF8B (inside the stub) | bank 62 = slot bits OR $3E |
 
-patters has published patches that make these relative to the running bank ("Spell-Master Fix Patches" on the Cambridge Z88 developer wiki); with them the card works in any slot and any eight consecutive banks. He notes that RAM-app support in OZ 4.6 to 5.0 does not guarantee consecutive banks, so it must run as a card application there. The sources here are the original code; the places are marked.
+patters has published patches that make these relative to the running bank ("Spell-Master Fix Patches" on the Cambridge Z88 developer wiki); with them the card works in any slot and any eight consecutive banks. He notes that RAM-app support in OZ 4.6 to 5.0 does not guarantee consecutive banks, so it must run as a card application there. The banks in `bank_files/` already contain this fix, so the listing shows the patched instructions and the comment at each site gives the original ones. The changed bytes are: bank 62 `$C1CB-$C1CD` and `$C28C-$C28F`; bank 63 `$C0D4-$C0D6` and `$FF90-$FF93`.
 
 ## 6. Dictionary tokens
 
@@ -86,9 +86,9 @@ From reading the OZ ROM (`ozs0-7e93476`) and the developer notes; untested.
 
 ## 9. How this was produced
 
-1. The banks were disassembled with DZasm 0.35 and reassembled with Mpm 2.1.1 at every step; a region was accepted as code only if the result stayed byte-identical. (Mpm was built on Linux with a compiler overflow check switched off, because the stock build aborts on the `oz` macro. The sources avoid that macro.)
+1. The banks were disassembled with DZasm and reassembled with Mpm 2.1.1 at every step; a region was accepted as code only if the result stayed byte-identical. (The first analysis used DZasm 0.35; the sources are now generated with DZasm 0.36 and its OZ V5 definition files in `def/`.)
 2. The command table, jump tables and far-call table were found by reading the code and the menu structures.
-3. The annotations were added with DZasm commands and the source regenerated with `ca`. A small script (`fixmpm.py`) then makes three adjustments: it writes the apostrophe character as `$27`, expands the `oz` and `fpp` calls to plain `rst` and the call number, and keeps the topic and command pointers as the card stores them.
+3. The annotations were added with DZasm commands and the source regenerated with `ca`. No post-processing is needed: the output assembles with `mpm -b -Idef`. The one workaround is that the two application DORs are kept as raw bytes (`dm defb`), because DZasm 0.36 writes their topic, command and help pointers with a `& $3FFF` mask, but this card stores them as full `$Cxxx` addresses (see `docs/dzasm-issues.md`). The project files in `dzasm/base/` are the un-annotated starting point; `dzasm/genasm.sh` (or `.bat`) copies them and applies the annotation commands once.
 4. Names are given only where the evidence is direct: the table entry, the text a routine prints, the OZ calls it makes, or how its callers use it.
 
 ## 10. What is still unknown
