@@ -24,6 +24,7 @@ dc 1F9E prev_line_bank
 dc 1F9F next_line_ptr
 dc 1FA1 next_line_bank
 dc 1FA2 cursor_row
+dc 1FA3 wrap_column
 dc 1FA4 cursor_col_limit
 dc 1FA5 cursor_index
 dc 1FA6 line_length
@@ -32,7 +33,12 @@ dc 1FA9 pool_second
 dc 1FAB edit_flags
 dc 1FAC user_dict_ptr
 dc 1FAE user_dict_bank
+dc 1FAF browse_pos
+dc 1FB1 typing_word_pending
+dc 1FB4 saved_word_bank
+dc 1FB5 saved_word_ptr
 dc 1FB7 scan_chars_left
+dc 1FB8 scan_ptr
 dc 1FBA word_start_ptr
 dc 1FC2 guess_list_ptr
 dc 1FC4 guess_list_bank
@@ -48,6 +54,7 @@ dc 1FD7 user_dict_name_ptr
 dc 1FD9 user_dict_name_bank
 dc 1FDA ignore_list_ptr
 dc 1FDC ignore_list_bank
+dc 1FE5 line_counter
 dc 1FE8 line_rec_ptr
 dc 1FEA line_rec_bank
 rem F88C < Word lists. The user dictionary (user_dict_ptr/bank) and the ignored words (ignore_list_ptr/bank) have the same structure:
@@ -132,6 +139,69 @@ rem E090 < Z set (a guess) when they differ by one edit: same length with one le
 rem E090 < typed word one letter shorter, i.e. a letter missing ($E0EF); typed word one letter longer, i.e. an extra letter ($E10F). Lengths further apart are rejected.
 dl DFF5 free_guess_list
 rem DFF5 < Frees every record of the guess list and clears guess_list_ptr.
+dl DC74 typing_check_command
+rem DC74 < Check as you type, command hook: called by the main loop with the dispatch code in A before every command (A preserved). Does nothing unless EF_CHECK_ON is set.
+rem DC74 < Rubout ($0B) and Delete character ($14) mark the word as pending (it is being edited). If a word is pending, the cursor movements
+rem DC74 < (codes $01-$0A: screen/cursor up, down, left, right, top/bottom of text, start/end of line; $16/$17: next/previous word) check it first (typing_check_word).
+dl DCA2 typing_check_char
+rem DCA2 < Check as you type, character hook: called after a typed character has been put in the line (A = the character, from $1FE4). Does nothing unless EF_CHECK_ON is set.
+rem DCA2 < A letter or apostrophe sets typing_word_pending; any other character (space, punctuation, digit) ends the word and checks it (typing_check_word).
+rem DCA2 < Enter ($0D) does not come here: the main loop sends it straight to the new-line code at $C756, so the word before an Enter is not checked.
+dl DCBD typing_check_word
+rem DCBD < If typing_word_pending is set: clears it, finds the word before the cursor (find_word_start_at_cursor), copies it to buffer A in upper case,
+rem DCBD < drops a final 'S or apostrophe, and looks it up (dictionary_lookup, which also tries the user dictionary and the ignored words).
+rem DCBD < Words of fewer than 3 letters are not checked. If the word is not found the only response is a beep (BEL, 7, through OS_Out): no menu is shown.
+dl DD22 find_word_start_at_cursor
+rem DD22 < Like find_word_start but without clamping cursor_index: moves back from the character before the cursor to the start of that word.
+rem DD22 < Returns at once (Z) if cursor_index is 0, leaving HL unchanged.
+dl D8C4 next_word_to_buffer_b
+rem D8C4 < next_word_from_text, but the word goes to buffer B. Used by replace_word_everywhere to find later copies of the word.
+rem D643 < Correction menu option 4 'Change word'.
+dl D64A change_word
+rem D64A < Opens 'Replace with', puts the word as it stands in the text into buffer C (leaving out a final 'S or apostrophe, which stays in the text)
+rem D64A < and edits it with GN_Sip (40 bytes, 20 columns). Enter: letters are made upper case (is_word_char) and replace_word_everywhere runs. Escape: back to the menu.
+dl D6D8 replace_word_everywhere
+rem D6D8 < Shows 'Replacing...' and replaces the word just checked (buffer A, dict_target_length letters, ending at scan_ptr) with the word in buffer C (dict_word_length letters).
+rem D6D8 < Also used when a guess is chosen with Enter. Closes or opens the gap in the line and moves the block markers on this line to match.
+rem D6D8 < Each letter takes its case from the letter at the same position in the old word ($D7A5: AND $20 of the old character, OR the new upper-case letter), so 'teh' -> 'the', 'Teh' -> 'The'.
+rem D6D8 < It then carries on to the end of the text ($D7BD), replacing every later word that matches the old one (compared in upper case, so in any capitalisation),
+rem D6D8 < counting the lines it moves forward in line_counter, and finally walks back to the original line.
+dl DA65 save_typed_word
+rem DA65 < Copies the word in buffer A (dict_target_length letters) into a small record from pool_main (saved_word_ptr/bank), so Browse can use buffer A. Carry set if no room.
+dl DA91 restore_typed_word
+rem DA91 < Copies the saved word back into buffer A and dict_target_length, and frees the record.
+rem D5E0 < Correction menu option 5 'Browse through dictionary': save_typed_word, browse_dictionary, restore_typed_word.
+dl F399 browse_dictionary
+rem F399 < Browse through dictionary (Correction menu option 5). Window 'Browse'. The typed word (up to 64 letters) is copied to a work record ($1FBF/$1FC1)
+rem F399 < and its length kept in wf_menu_sel (borrowed); browse_seek_prefix finds the first dictionary word at or after it and draw_browse_page shows the words around it.
+rem F399 < Plain keys: a letter (or an apostrophe after the first letter) is added to the prefix and the list seeks again; Enter takes the highlighted word; any other key clears the prefix.
+rem F399 < Extended keys (0 then a code) first clear the prefix: up/down ($FF/$FE) move one word (browse_prev_word, browse_next_word); $01/$02 (Screen up/down) = previous/next
+rem F399 < two-letter section; $07/$08 (Top/Bottom of text) = previous/next first letter (wrapping Z/A); $1B and $FC cancel (edit_flags bit 6 = nothing chosen).
+rem F399 < A $7F code (at $F4FD) would remove the last prefix letter, but the prefix has already been cleared on that path, so it appears to do nothing.
+dl F518 next_section_letters
+rem F518 < Steps dict_letter1/dict_letter2 to the next two-letter section (second letter apostrophe, A-Z; then the next first letter, Z wraps to A).
+dl F53D prev_section_letters
+rem F53D < Steps dict_letter1/dict_letter2 back to the previous two-letter section (A wraps to Z).
+dl F562 draw_browse_page
+rem F562 < Clears the window and draws the five words after the current one, then walks back so the current word is highlighted with its neighbours around it.
+dl F5D6 print_current_word
+rem F5D6 < Prints the whole current word (buffer C - 2, dict_word_length letters) and a CR.
+dl F5EA browse_next_word
+rem F5EA < Moves to the next word for Browse: the next ending of the current stem, or the next record, with any user dictionary word that falls in between (L_F9DF).
+rem F5EA < browse_pos keeps the dictionary position of the current word. $1FB3 bit 1 is set while the current word comes from the user dictionary.
+dl F676 browse_prev_word
+rem F676 < Moves to the previous word for Browse (previous ending, or back one record from browse_pos), with any user dictionary word in between (L_FADE).
+dl F7D1 browse_seek_prefix
+rem F7D1 < Finds the first word at or after the typed prefix: its first two letters select the section (stepping back with prev_section_letters if there is none), then words are read forward.
+dl CD44 wrap_from_cursor_line
+rem CD44 < Clears line_counter, then wrap_cursor_line. Called by Format paragraph, by the main loop when typing takes the line past wrap_column (word wrap as you type),
+rem CD44 < after Search and Replace (which rewraps every line from the top, $DBD3), and after Copy and Delete marked block.
+dl CD49 wrap_cursor_line
+rem CD49 < If the cursor line, ignoring trailing spaces, is longer than wrap_column, splits it at the last space at or before that column (or at the column if there is no space):
+rem CD49 < the first part becomes a new line record above (alloc_line_record), the rest stays in the edit buffer, block markers move with the text, line_counter and cursor_line go up by one, and it repeats.
+rem CD49 < If the line fits ($CE14), it pulls up the next line, or as many words of it as fit, unless the next line is empty or starts with a space (the end of the paragraph).
+rem CCF6 < Format paragraph: rewraps the cursor line and each following line (store, take the next, wrap again) until a line that is empty or starts with a space.
+rem CCF6 < line_counter counts the lines moved down; cursor_row is moved down by that much (back to row 3 if it would leave the window).
 dl D922 is_word_char
 rem D922 < Z set if A is a letter or an apostrophe. A letter is returned in upper case (AND $DF); an apostrophe is returned unchanged.
 rem FE15 < Load user dictionary: each run of word characters (is_word_char, at most 64) is one word; any other byte ends it. Words of fewer than 3 characters are skipped.

@@ -1023,7 +1023,7 @@ L_C809:
         jr      nz,L_C809
 L_C80E:
         ld      a,(cursor_row)
-        ld      ($1FE5),a
+        ld      (line_counter),a
         ld      c,$00
         ld      a,(cursor_col_limit)
         ld      e,a
@@ -1051,21 +1051,21 @@ L_C831:
         ret     nc
 L_C83E:
         ld      a,(cursor_row)
-        ld      ($1FE5),a
+        ld      (line_counter),a
         cp      $00
         jp      z,L_C90E
         ld      a,(prev_line_bank)
         ld      hl,(prev_line_ptr)
         ld      (line_rec_bank),a
         ld      (line_rec_ptr),hl
-        ld      hl,$1FE5
+        ld      hl,line_counter
         dec     (hl)
 L_C859:
         ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         cp      $00
         jr      z,L_C881
         ld      ix,(line_rec_ptr)
@@ -1074,7 +1074,7 @@ L_C859:
         ld      h,(ix+3)
         ld      (line_rec_bank),a
         ld      (line_rec_ptr),hl
-        ld      hl,$1FE5
+        ld      hl,line_counter
         dec     (hl)
         jr      L_C859
 L_C881:
@@ -1086,10 +1086,10 @@ L_C881:
         oz      Gn_sop
         ld      a,SD_COORD
         oz      Os_out
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         add     a,SD_COORD
         oz      Os_out
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         ld      c,a
         ld      b,$00
         ld      hl,(top_line)
@@ -1131,7 +1131,7 @@ L_C8D1:
 L_C8D8:
         ld      c,$00
         call    highlight_block_on_row
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         inc     a
         ld      b,a
         ld      a,(cursor_row)
@@ -1152,10 +1152,10 @@ L_C8D8:
         oz      Os_xin
         ret     nc
 L_C90A:
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         inc     a
 L_C90E:
-        ld      ($1FE5),a
+        ld      (line_counter),a
         cp      TEXT_ROWS
         jr      nc,redraw_done
         ld      b,a
@@ -1166,7 +1166,7 @@ L_C90E:
 L_C91F:
         jr      z,redraw_done
         inc     a
-        ld      ($1FE5),a
+        ld      (line_counter),a
         ld      hl,(next_line_ptr)
         ld      a,h
         or      l
@@ -1210,18 +1210,18 @@ L_C959:
 L_C968:
         ret
 L_C969:
-        ld      hl,$1FE5
+        ld      hl,line_counter
         inc     (hl)
 draw_end_of_text_marker:
 ; Draw the End of text marker row in reverse video ( End of text ), then fall into clear_remaining_rows.
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         cp      TEXT_ROWS
         jr      nc,redraw_done
         ld      hl,str_cursor_to_prefix
         oz      Gn_sop
         ld      a,SD_COORD
         oz      Os_out
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         add     a,SD_COORD
         oz      Os_out
         ld      hl,str_end_of_text
@@ -1231,16 +1231,16 @@ draw_end_of_text_marker:
         jr      L_C9B2
 clear_remaining_rows:
 ; Blank every remaining row of the text window below the End of text marker, up to row 7.
-        ld      hl,$1FE5
+        ld      hl,line_counter
         inc     (hl)
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         cp      TEXT_ROWS
         jp      nc,redraw_done
         ld      hl,str_cursor_to_prefix
         oz      Gn_sop
         ld      a,SD_COORD
         oz      Os_out
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         add     a,SD_COORD
         oz      Os_out
         ld      a,(cursor_col_limit)
@@ -1340,7 +1340,7 @@ L_CA4F:
         oz      Gn_sop
         ld      a,SD_COORD
         oz      Os_out
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         add     a,SD_COORD
         oz      Os_out
         ld      a,$00
@@ -1352,7 +1352,7 @@ L_CA67:
         sub     c
         jr      c,L_CA4F
         ld      b,a
-        ld      a,($1FA3)
+        ld      a,(wrap_column)
         cp      b
         ret     c
         ret     z
@@ -1362,7 +1362,7 @@ L_CA67:
         ld      ($1FE4),a
         add     a,SD_COORD
         oz      Os_out
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         add     a,SD_COORD
         oz      Os_out
 L_CA8A:
@@ -1844,7 +1844,7 @@ L_CFAD:
         inc     hl
         ld      b,(hl)
         inc     hl
-        ld      ($1FE5),hl
+        ld      (line_counter),hl
         ld      a,b
         or      c
         ret     z
@@ -1868,7 +1868,7 @@ L_CFCF:
         oz      Os_out
         ld      d,$01
 L_CFD5:
-        ld      hl,($1FE5)
+        ld      hl,(line_counter)
         jr      L_CFAD
 
 
@@ -2911,6 +2911,8 @@ copy_record_to_line_buffer:
         ldir
         ret
 
+; $D756-$D765 (16 bytes) are code, left as data because nothing calls them: an unused copy of check_free_memory
+; (LD BC,NQ_Mfs / LD IX,(pool_main) / OS_Nq / CP 0 / RET NZ / LD A,B / CP 5 / RET). The bank's own copy is at $DAD1.
         defb    $01,$00,$89,$dd,$2a,$a7,$1f,$e7
         defb    $66,$fe,$00,$c0,$78,$fe,$05,$c9
 
@@ -4075,12 +4077,12 @@ L_E2EB:
         ld      hl,(dict_pos)
 L_E2F3:
         ld      (dict_pos),hl
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         ld      a,$00
         ld      (dict_word_flags),a
         call    next_full_word
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         call    L_E3BF
         jp      L_E23D
 L_E30D:
@@ -4099,7 +4101,7 @@ L_E320:
 L_E325:
         cp      $01
         jr      nz,L_E348
-        ld      hl,($1FAF)
+        ld      hl,(browse_pos)
 L_E32C:
         dec     hl
         ld      a,(hl)
@@ -4276,13 +4278,13 @@ L_E459:
         dec     (hl)
         call    next_full_word
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         ret
 L_E468:
         ld      a,($1FB3)
         and     $BF
         ld      ($1FB3),a
-        ld      hl,($1FAF)
+        ld      hl,(browse_pos)
         ld      (dict_pos),hl
 L_E476:
         ld      a,$00
@@ -4296,7 +4298,7 @@ L_E476:
         ret
 L_E48B:
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         ret
 L_E492:
         ld      a,(dict_letter2)
@@ -4319,7 +4321,7 @@ L_E4B3:
         call    find_dictionary_section
         jr      c,L_E492
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         jr      L_E476
 L_E4C0:
         ld      a,'A'
@@ -4327,7 +4329,7 @@ L_E4C0:
         ld      (dict_letter2),a
         call    find_dictionary_section
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         jr      L_E476
 L_E4D3:
         call    L_E616
@@ -4359,7 +4361,7 @@ L_E502:
         ld      (dict_ending_ptr),hl
         jp      L_E459
 L_E508:
-        ld      hl,($1FAF)
+        ld      hl,(browse_pos)
         ld      (dict_pos),hl
         call    L_E553
         ld      a,($1FB3)
@@ -4372,7 +4374,7 @@ L_E51B:
         ld      (dict_word_flags),a
         call    next_full_word
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         call    L_E5DB
         jr      c,L_E537
         ld      a,$00
@@ -4444,11 +4446,11 @@ L_E59B:
         cp      $10
         jr      nc,L_E59B
         ld      (dict_pos),hl
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         ret
 L_E5AA:
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         ld      a,(hl)
         and     $DF
         ret     z
@@ -4465,7 +4467,7 @@ L_E5C3:
         call    read_dictionary_record
         call    expand_word
         ld      hl,(dict_pos)
-        ld      bc,($1FAF)
+        ld      bc,(browse_pos)
         scf
         ccf
         sbc     hl,bc
@@ -4546,10 +4548,10 @@ L_E653:
         ld      a,$00
         ld      (dict_word_flags),a
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         call    next_full_word
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         jr      L_E674
 L_E669:
         ld      a,'A'

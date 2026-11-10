@@ -21,6 +21,7 @@
         DEFC next_line_ptr = $1F9F  ; Offset (segment 1) of the line record below the cursor line; 0 = the cursor line is the last line
         DEFC next_line_bank = $1FA1  ; Bank of that record
         DEFC cursor_row = $1FA2  ; Screen row (0 to 7) of the cursor line in window 1
+        DEFC wrap_column = $1FA3  ; Right margin for word wrap and Format paragraph; set to 72 ('H') at start-up and not changed
         DEFC cursor_col_limit = $1FA4  ; Screen column at which the cursor stops while the line scrolls sideways; also the number of columns drawn per row
         DEFC cursor_index = $1FA5  ; Cursor position as a character index within the current line
         DEFC line_length = $1FA6  ; Length of the current line in characters
@@ -29,7 +30,12 @@
         DEFC edit_flags = $1FAB  ; QuickEdit flags: bit 0 = overtype mode (toggled by Insert/Over), bit 4 = check-as-you-type on, bits 1-3 (mask $0E) = screen redraw state (2 = redraw requested, 4 = redraw finished)
         DEFC user_dict_ptr = $1FAC  ; Offset (segment 1) of the user dictionary table: 26 three-byte list heads, one per letter A-Z; 0 = no table yet
         DEFC user_dict_bank = $1FAE  ; Bank of that table
+        DEFC browse_pos = $1FAF  ; Browse: position (in the bound dictionary bank) of the record of the current word, used to step back
+        DEFC typing_word_pending = $1FB1  ; Check as you type: 1 while a word is being typed or edited and has not been checked yet
+        DEFC saved_word_bank = $1FB4  ; Bank of the record holding the typed word while Browse runs (save_typed_word)
+        DEFC saved_word_ptr = $1FB5  ; Offset of that record
         DEFC scan_chars_left = $1FB7  ; Characters of the line still to scan for the next word (next_word_from_text)
+        DEFC scan_ptr = $1FB8  ; Address in the line buffer just after the word being checked; where the scan for the next word continues
         DEFC word_start_ptr = $1FBA  ; Address in the line buffer where the word just taken by next_word_from_text starts
         DEFC guess_list_ptr = $1FC2  ; Offset of the first record of the guess list (Guess correct word); 0 = no guesses
         DEFC guess_list_bank = $1FC4  ; Bank of that record
@@ -45,6 +51,7 @@
         DEFC user_dict_name_bank = $1FD9  ; Bank of that record
         DEFC ignore_list_ptr = $1FDA  ; Offset of the table of ignored words (same structure as the user dictionary); freed when a check ends
         DEFC ignore_list_bank = $1FDC  ; Bank of that table
+        DEFC line_counter = $1FE5  ; Scratch line counter: lines moved down by word wrap, Format paragraph and Replace (bank 62); a row counter while the text window is redrawn (bank 63)
         DEFC line_rec_ptr = $1FE8  ; Offset (segment 1) of the line record being worked on: just allocated, or reached by walking the links (WordFinder reuses this word for a pattern pointer)
         DEFC line_rec_bank = $1FEA  ; Bank of that record
 

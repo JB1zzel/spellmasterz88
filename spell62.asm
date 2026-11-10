@@ -383,9 +383,9 @@ qe_start:
         ld      ($1FE3),a
         ld      (dict_target_length),a
         ld      (line_length),a
-        ld      ($1FB1),a
+        ld      (typing_word_pending),a
         ld      a,'H'
-        ld      ($1FA3),a
+        ld      (wrap_column),a
         ld      (cursor_col_limit),a
         ld      a,$00
         ld      bc,$0000
@@ -819,7 +819,7 @@ L_C5F5:
         jr      c,L_C5FB
         sub     $F9
 L_C5FB:
-        call    L_DC74
+        call    typing_check_command
         cp      '/'
         jr      nc,qe_main_loop
         sla     a
@@ -923,11 +923,11 @@ L_C6A9:
         inc     (hl)
         ld      a,($1FE4)
 L_C6B0:
-        call    L_DCA2
+        call    typing_check_char
 L_C6B3:
         ld      a,(line_length)
         ld      b,a
-        ld      a,($1FA3)
+        ld      a,(wrap_column)
         cp      b
         jp      nc,L_C74A
         ld      a,(line_length)
@@ -942,16 +942,16 @@ L_C6C8:
         cp      ' '
         jr      z,L_C6C8
         inc     c
-        ld      a,($1FA3)
+        ld      a,(wrap_column)
         cp      c
         jp      nc,L_C74A
-        call    L_CD44
+        call    wrap_from_cursor_line
         ld      hl,(prev_line_ptr)
         ld      a,(edit_flags)
         and     $F1
         or      $08
         ld      (edit_flags),a
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         cp      $00
         jp      z,L_C74A
         call    store_cursor_line
@@ -959,7 +959,7 @@ L_C6C8:
 L_C6F5:
         call    step_to_prev_record
         call    dec_cursor_line
-        ld      hl,$1FE5
+        ld      hl,line_counter
         dec     (hl)
         jr      nz,L_C6F5
         ld      a,(line_rec_bank)
@@ -1760,8 +1760,10 @@ free_line_record:
         oz      Os_mfr
         ret
 cmd_format_paragraph:
+; Format paragraph: rewraps the cursor line and each following line (store, take the next, wrap again) until a line that is empty or starts with a space.
+; line_counter counts the lines moved down; cursor_row is moved down by that much (back to row 3 if it would leave the window).
 ; Command handler: 'Format paragraph' - dispatch code $0E
-        call    L_CD44
+        call    wrap_from_cursor_line
 L_CCF9:
         ld      hl,(next_line_ptr)
         ld      a,h
@@ -1775,7 +1777,7 @@ L_CCF9:
         ld      (line_rec_bank),a
         call    take_line_record
         call    inc_cursor_line
-        ld      hl,$1FE5
+        ld      hl,line_counter
         inc     (hl)
         ld      a,(line_length)
 L_CD1F:
@@ -1785,12 +1787,12 @@ L_CD1F:
         ld      a,(hl)
         cp      ' '
         jr      z,L_CD30
-        call    L_CD49
+        call    wrap_cursor_line
         jr      L_CCF9
 L_CD30:
         ld      a,(cursor_row)
         ld      c,a
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         add     a,c
         cp      $08
         jr      c,L_CD3E
@@ -1798,10 +1800,15 @@ L_CD30:
 L_CD3E:
         ld      (cursor_row),a
         jp      L_CA13
-L_CD44:
+wrap_from_cursor_line:
+; Clears line_counter, then wrap_cursor_line. Called by Format paragraph, by the main loop when typing takes the line past wrap_column (word wrap as you type),
+; after Search and Replace (which rewraps every line from the top, $DBD3), and after Copy and Delete marked block.
         ld      a,$00
-        ld      ($1FE5),a
-L_CD49:
+        ld      (line_counter),a
+wrap_cursor_line:
+; If the cursor line, ignoring trailing spaces, is longer than wrap_column, splits it at the last space at or before that column (or at the column if there is no space):
+; the first part becomes a new line record above (alloc_line_record), the rest stays in the edit buffer, block markers move with the text, line_counter and cursor_line go up by one, and it repeats.
+; If the line fits ($CE14), it pulls up the next line, or as many words of it as fit, unless the next line is empty or starts with a space (the end of the paragraph).
         ld      hl,(next_line_ptr)
         ld      a,h
         or      l
@@ -1825,11 +1832,11 @@ L_CD62:
         dec     c
         cp      ' '
         jr      z,L_CD62
-        ld      a,($1FA3)
+        ld      a,(wrap_column)
         inc     c
         sub     c
         jp      nc,L_CE14
-        ld      a,($1FA3)
+        ld      a,(wrap_column)
         ld      c,a
         ld      b,$00
         ld      hl,(line_buffer)
@@ -1851,7 +1858,7 @@ L_CD8E:
         ld      a,e
         cp      $00
         jr      nz,L_CD97
-        ld      a,($1FA3)
+        ld      a,(wrap_column)
 L_CD97:
         call    alloc_line_record
         jp      c,show_no_room_error
@@ -1914,10 +1921,10 @@ L_CE03:
         dec     d
         jr      nz,L_CE03
 L_CE0A:
-        ld      hl,$1FE5
+        ld      hl,line_counter
         inc     (hl)
         call    inc_cursor_line
-        jp      L_CD49
+        jp      wrap_cursor_line
 L_CE14:
         ld      hl,(next_line_ptr)
         ld      a,h
@@ -1954,7 +1961,7 @@ L_CE43:
         add     a,c
         jp      c,L_CEE2
         ld      d,a
-        ld      a,($1FA3)
+        ld      a,(wrap_column)
         cp      d
 L_CE4F:
         jp      c,L_CEE2
@@ -2031,11 +2038,11 @@ L_CEC0:
         ld      (next_line_bank),a
         ld      (next_line_ptr),bc
         call    free_line_record
-        jp      L_CD49
+        jp      wrap_cursor_line
 L_CEE2:
         ld      a,(line_length)
         ld      b,a
-        ld      a,($1FA3)
+        ld      a,(wrap_column)
         sub     b
         jp      c,L_CFE8
         jp      z,L_CFE8
@@ -2163,9 +2170,9 @@ L_CFD0:
         inc     bc
         dec     e
         jr      nz,L_CFD0
-        ld      hl,$1FE5
+        ld      hl,line_counter
         inc     (hl)
-        jp      L_CD49
+        jp      wrap_cursor_line
 L_CFDE:
         inc     c
         inc     hl
@@ -2648,7 +2655,7 @@ L_D325:
         oz      Os_mpb
         call    next_word_from_text
         jr      z,L_D398
-        ld      ($1FB8),hl
+        ld      (scan_ptr),hl
         ld      hl,(ptr_buffer_a)
         ld      a,(dict_target_length)
         cp      $03
@@ -2694,7 +2701,7 @@ L_D36C:
         cp      b
         jr      nc,L_D359
 L_D392:
-        ld      hl,($1FB8)
+        ld      hl,(scan_ptr)
         jp      L_D325
 L_D398:
         call    store_cursor_line
@@ -2750,7 +2757,7 @@ L_D401:
         oz      Os_mpb
         call    next_word_from_text
         jr      z,L_D44E
-        ld      ($1FB8),hl
+        ld      (scan_ptr),hl
         ld      hl,(ptr_buffer_a)
         ld      a,(dict_target_length)
         cp      $03
@@ -2775,7 +2782,7 @@ L_D443:
         ld      hl,L_D9A8
         oz      Gn_sop
 L_D449:
-        ld      hl,($1FB8)
+        ld      hl,(scan_ptr)
         jr      L_D401
 L_D44E:
         call    store_cursor_line
@@ -2885,7 +2892,7 @@ L_D506:
         ld      c,$02
         oz      Os_mpb
         ld      hl,$0000
-        ld      ($1FE5),hl
+        ld      (line_counter),hl
         ld      hl,L_D9A4
         oz      Gn_sop
         ld      a,(edit_flags)
@@ -2979,22 +2986,23 @@ L_D5D2:
         call    swap_word_lists
         ret
 L_D5E0:
+; Correction menu option 5 'Browse through dictionary': save_typed_word, browse_dictionary, restore_typed_word.
         cp      '5'
         jr      nz,L_D608
         ld      a,(edit_flags)
         and     $BF
         ld      (edit_flags),a
-        call    L_DA65
+        call    save_typed_word
         jr      nc,L_D5F7
         call    show_no_room_error
         jp      L_D542
 L_D5F7:
-        call    L_F399
-        call    L_DA91
+        call    browse_dictionary
+        call    restore_typed_word
         ld      a,(edit_flags)
         and     '@'
         jp      nz,L_D542
-        jp      L_D6D8
+        jp      replace_word_everywhere
 L_D608:
         cp      '3'
         jr      nz,L_D643
@@ -3004,7 +3012,7 @@ L_D60C:
         jr      nz,L_D61E
         ld      a,(edit_flags)
         and     '@'
-        jp      z,L_D6D8
+        jp      z,replace_word_everywhere
         jp      L_D557
 L_D61E:
         push    af
@@ -3024,11 +3032,14 @@ L_D636:
         add     a,'1'
         jp      L_D5CA
 L_D643:
+; Correction menu option 4 'Change word'.
         cp      '4'
 L_D645:
         jr      nz,L_D636
         call    dialog_window_left
-L_D64A:
+change_word:
+; Opens 'Replace with', puts the word as it stands in the text into buffer C (leaving out a final 'S or apostrophe, which stays in the text)
+; and edits it with GN_Sip (40 bytes, 20 columns). Enter: letters are made upper case (is_word_char) and replace_word_everywhere runs. Escape: back to the menu.
         ld      hl,L_DB0A
         call    open_dialog_right
         ld      hl,L_DAFF
@@ -3038,7 +3049,7 @@ L_D64A:
         cp      $00
         jr      z,L_D68F
         ld      b,$00
-        ld      hl,($1FB8)
+        ld      hl,(scan_ptr)
         ld      a,(scan_chars_left)
         ld      d,a
         inc     d
@@ -3057,9 +3068,9 @@ L_D64A:
 L_D67B:
         ld      a,d
         ld      (scan_chars_left),a
-        ld      ($1FB8),hl
+        ld      (scan_ptr),hl
 L_D682:
-        ld      hl,($1FB8)
+        ld      hl,(scan_ptr)
         scf
         ccf
         sbc     hl,bc
@@ -3079,7 +3090,7 @@ L_D692:
         cp      'g'
         jp      z,L_D0B4
         cp      'f'
-        jr      z,L_D64A
+        jr      z,change_word
         jr      L_D6B6
 L_D6AE:
         cp      $1B
@@ -3108,7 +3119,12 @@ L_D6D0:
         jr      nz,L_D6C9
         ld      a,b
         ld      (dict_word_length),a
-L_D6D8:
+replace_word_everywhere:
+; Shows 'Replacing...' and replaces the word just checked (buffer A, dict_target_length letters, ending at scan_ptr) with the word in buffer C (dict_word_length letters).
+; Also used when a guess is chosen with Enter. Closes or opens the gap in the line and moves the block markers on this line to match.
+; Each letter takes its case from the letter at the same position in the old word ($D7A5: AND $20 of the old character, OR the new upper-case letter), so 'teh' -> 'the', 'Teh' -> 'The'.
+; It then carries on to the end of the text ($D7BD), replacing every later word that matches the old one (compared in upper case, so in any capitalisation),
+; counting the lines it moves forward in line_counter, and finally walks back to the original line.
         ld      a,(line_buffer_bank)
         ld      b,a
         ld      c,$02
@@ -3127,12 +3143,12 @@ L_D6D8:
         sub     b
         ld      c,a
         ld      b,$00
-        ld      hl,($1FB8)
+        ld      hl,(scan_ptr)
         add     hl,bc
         push    hl
         jp      L_D71B
 L_D707:
-        ld      hl,($1FB8)
+        ld      hl,(scan_ptr)
         push    hl
         jr      L_D71B
 L_D70D:
@@ -3141,13 +3157,13 @@ L_D70D:
         sub     c
         ld      c,a
         ld      b,$00
-        ld      hl,($1FB8)
+        ld      hl,(scan_ptr)
         scf
         ccf
         sbc     hl,bc
         push    hl
 L_D71B:
-        ld      ($1FB8),hl
+        ld      (scan_ptr),hl
 L_D71E:
         ld      a,(dict_word_length)
         ld      b,a
@@ -3246,16 +3262,16 @@ L_D7B7:
         dec     c
         jr      nz,L_D7A5
 L_D7BD:
-        ld      hl,($1FB8)
+        ld      hl,(scan_ptr)
 L_D7C0:
-        call    L_D8C4
+        call    next_word_to_buffer_b
         jr      z,L_D7E8
         ld      a,(dict_target_length)
         ld      b,a
         ld      a,(dict_stem_length)
         cp      b
         jr      nz,L_D7C0
-        ld      ($1FB8),hl
+        ld      (scan_ptr),hl
         ld      hl,(ptr_buffer_b)
         ld      de,(ptr_buffer_a)
         ld      a,(dict_stem_length)
@@ -3273,34 +3289,34 @@ L_D7E8:
         ret     c
         call    step_to_next_record
         jr      z,L_D80D
-        ld      hl,($1FE5)
+        ld      hl,(line_counter)
         inc     hl
-        ld      ($1FE5),hl
+        ld      (line_counter),hl
         call    inc_cursor_line
         call    take_line_record
         ld      a,(line_length)
         ld      (scan_chars_left),a
         ld      hl,(line_buffer)
-        ld      ($1FB8),hl
+        ld      (scan_ptr),hl
         jp      L_D7BD
 L_D80D:
-        ld      hl,($1FE5)
+        ld      hl,(line_counter)
         ld      a,h
         or      l
         jr      z,L_D825
 L_D814:
         call    step_to_prev_record
         call    dec_cursor_line
-        ld      hl,($1FE5)
+        ld      hl,(line_counter)
         dec     hl
-        ld      ($1FE5),hl
+        ld      (line_counter),hl
         ld      a,h
         or      l
         jr      nz,L_D814
 L_D825:
         call    take_line_record
         pop     hl
-        ld      ($1FB8),hl
+        ld      (scan_ptr),hl
         ld      bc,(line_buffer)
         ld      a,l
         sub     c
@@ -3394,7 +3410,8 @@ L_D8BC:
         ld      (hl),a
         djnz    L_D8BC
         jp      L_D796
-L_D8C4:
+next_word_to_buffer_b:
+; next_word_from_text, but the word goes to buffer B. Used by replace_word_everywhere to find later copies of the word.
         ld      de,(ptr_buffer_b)
         jr      L_D8CE
 next_word_from_text:
@@ -3490,7 +3507,7 @@ cmd_check_this_word_or_escape:
         ld      (scan_chars_left),a
         call    next_word_from_text
         jp      z,qe_main_loop
-        ld      ($1FB8),hl
+        ld      (scan_ptr),hl
         ld      a,(dict_target_length)
         cp      $03
         jr      c,L_D978
@@ -3562,7 +3579,8 @@ L_DA32:
 L_DA55:
         defm    "Correction menu"
         defb    $00
-L_DA65:
+save_typed_word:
+; Copies the word in buffer A (dict_target_length letters) into a small record from pool_main (saved_word_ptr/bank), so Browse can use buffer A. Carry set if no room.
         ld      a,(dict_target_length)
         inc     a
         ld      c,a
@@ -3572,8 +3590,8 @@ L_DA65:
         oz      Os_mal
         ret     c
         ld      a,b
-        ld      ($1FB4),a
-        ld      ($1FB5),hl
+        ld      (saved_word_bank),a
+        ld      (saved_word_ptr),hl
         oz      Os_mpb
         ld      a,(dict_target_length)
         ld      (hl),a
@@ -3589,12 +3607,13 @@ L_DA88:
         scf
         ccf
         ret
-L_DA91:
-        ld      a,($1FB4)
+restore_typed_word:
+; Copies the saved word back into buffer A and dict_target_length, and frees the record.
+        ld      a,(saved_word_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FB5)
+        ld      hl,(saved_word_ptr)
         ld      a,(hl)
         ld      (dict_target_length),a
         ld      b,a
@@ -3609,8 +3628,8 @@ L_DAA7:
         djnz    L_DAA7
         ld      b,$00
         ld      ix,(pool_main)
-        ld      a,($1FB4)
-        ld      hl,($1FB5)
+        ld      a,(saved_word_bank)
+        ld      hl,(saved_word_ptr)
         oz      Os_mfr
         ret
 L_DABC:
@@ -3757,7 +3776,7 @@ L_DBC2:
         jr      nz,L_DBC2
 L_DBD3:
         call    take_line_record
-        call    L_CD44
+        call    wrap_from_cursor_line
         ld      hl,(next_line_ptr)
         ld      a,h
         or      l
@@ -3798,7 +3817,7 @@ cmd_merge_text_at_cursor:
         ld      hl,(cursor_line)
         push    hl
 L_DC26:
-        call    L_CD44
+        call    wrap_from_cursor_line
         ld      hl,(next_line_ptr)
         ld      a,h
         or      l
@@ -3838,7 +3857,10 @@ cmd_tab:
         cp      $01
         jp      z,L_C5AF
         jp      L_C6B3
-L_DC74:
+typing_check_command:
+; Check as you type, command hook: called by the main loop with the dispatch code in A before every command (A preserved). Does nothing unless EF_CHECK_ON is set.
+; Rubout ($0B) and Delete character ($14) mark the word as pending (it is being edited). If a word is pending, the cursor movements
+; (codes $01-$0A: screen/cursor up, down, left, right, top/bottom of text, start/end of line; $16/$17: next/previous word) check it first (typing_check_word).
         push    af
         ld      a,(edit_flags)
         and     $10
@@ -3849,7 +3871,7 @@ L_DC74:
         jr      z,L_DCB1
         cp      $14
         jr      z,L_DCB1
-        ld      a,($1FB1)
+        ld      a,(typing_word_pending)
         cp      $00
         jr      z,L_DCA0
         cp      $01
@@ -3861,11 +3883,14 @@ L_DC74:
         cp      $18
         jr      nc,L_DCA0
 L_DC9D:
-        call    L_DCBD
+        call    typing_check_word
 L_DCA0:
         pop     af
         ret
-L_DCA2:
+typing_check_char:
+; Check as you type, character hook: called after a typed character has been put in the line (A = the character, from $1FE4). Does nothing unless EF_CHECK_ON is set.
+; A letter or apostrophe sets typing_word_pending; any other character (space, punctuation, digit) ends the word and checks it (typing_check_word).
+; Enter ($0D) does not come here: the main loop sends it straight to the new-line code at $C756, so the word before an Enter is not checked.
         push    af
         ld      a,(edit_flags)
         and     $10
@@ -3876,20 +3901,23 @@ L_DCA2:
         jr      nz,L_DCB8
 L_DCB1:
         ld      a,$01
-        ld      ($1FB1),a
+        ld      (typing_word_pending),a
         pop     af
         ret
 L_DCB8:
-        call    L_DCBD
+        call    typing_check_word
         pop     af
         ret
-L_DCBD:
-        ld      a,($1FB1)
+typing_check_word:
+; If typing_word_pending is set: clears it, finds the word before the cursor (find_word_start_at_cursor), copies it to buffer A in upper case,
+; drops a final 'S or apostrophe, and looks it up (dictionary_lookup, which also tries the user dictionary and the ignored words).
+; Words of fewer than 3 letters are not checked. If the word is not found the only response is a beep (BEL, 7, through OS_Out): no menu is shown.
+        ld      a,(typing_word_pending)
         cp      $00
         ret     z
         ld      a,$00
-        ld      ($1FB1),a
-        call    L_DD22
+        ld      (typing_word_pending),a
+        call    find_word_start_at_cursor
         ld      de,(ptr_buffer_a)
         ld      b,$00
 L_DCD1:
@@ -3949,7 +3977,9 @@ L_DD19:
         ld      c,$02
         oz      Os_mpb
         ret
-L_DD22:
+find_word_start_at_cursor:
+; Like find_word_start but without clamping cursor_index: moves back from the character before the cursor to the start of that word.
+; Returns at once (Z) if cursor_index is 0, leaving HL unchanged.
         ld      a,(cursor_index)
         cp      $00
         ret     z
@@ -4913,8 +4943,8 @@ L_E43B:
         ld      (top_line),hl
         ld      hl,(cursor_line)
 L_E442:
-        call    L_CD44
-        ld      a,($1FE5)
+        call    wrap_from_cursor_line
+        ld      a,(line_counter)
         cp      $00
         jr      z,L_E45B
         ld      c,a
@@ -5327,19 +5357,19 @@ L_E72F:
 L_E746:
         ld      a,$00
         ld      (marker_flags),a
-        call    L_CD44
+        call    wrap_from_cursor_line
         call    store_cursor_line
         jp      c,L_D0D6
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         cp      $00
         jr      z,L_E76C
 L_E75B:
         call    step_to_prev_record
         jr      z,L_E76C
         call    dec_cursor_line
-        ld      a,($1FE5)
+        ld      a,(line_counter)
         dec     a
-        ld      ($1FE5),a
+        ld      (line_counter),a
         jr      nz,L_E75B
 L_E76C:
         ld      a,(cursor_row)
@@ -5436,7 +5466,7 @@ L_E815:
         inc     hl
         ld      b,(hl)
         inc     hl
-        ld      ($1FE5),hl
+        ld      (line_counter),hl
         ld      a,b
         or      c
         ret     z
@@ -5460,7 +5490,7 @@ L_E837:
         oz      Os_out
         ld      d,$01
 L_E83D:
-        ld      hl,($1FE5)
+        ld      hl,(line_counter)
         jr      L_E815
 
 
@@ -6451,7 +6481,13 @@ L_F38C:
         defb    $32,$2c,$37,$32,$25
 L_F398:
         defb    $00
-L_F399:
+browse_dictionary:
+; Browse through dictionary (Correction menu option 5). Window 'Browse'. The typed word (up to 64 letters) is copied to a work record ($1FBF/$1FC1)
+; and its length kept in wf_menu_sel (borrowed); browse_seek_prefix finds the first dictionary word at or after it and draw_browse_page shows the words around it.
+; Plain keys: a letter (or an apostrophe after the first letter) is added to the prefix and the list seeks again; Enter takes the highlighted word; any other key clears the prefix.
+; Extended keys (0 then a code) first clear the prefix: up/down ($FF/$FE) move one word (browse_prev_word, browse_next_word); $01/$02 (Screen up/down) = previous/next
+; two-letter section; $07/$08 (Top/Bottom of text) = previous/next first letter (wrapping Z/A); $1B and $FC cancel (edit_flags bit 6 = nothing chosen).
+; A $7F code (at $F4FD) would remove the last prefix letter, but the prefix has already been cleared on that path, so it appears to do nothing.
         ld      hl,L_F880
         call    open_dialog_right
         ld      ix,(pool_main)
@@ -6476,19 +6512,19 @@ L_F3C4:
         inc     de
         djnz    L_F3C4
 L_F3CA:
-        call    L_F7D1
+        call    browse_seek_prefix
         ld      hl,L_F887
         oz      Gn_sop
         ld      a,$00
         ld      (wf_menu_sel),a
         jr      L_F3DD
 L_F3DA:
-        call    L_F7D1
+        call    browse_seek_prefix
 L_F3DD:
-        call    L_F562
+        call    draw_browse_page
 L_F3E0:
         call    toggle_reverse
-        call    L_F5D6
+        call    print_current_word
         call    toggle_reverse
 L_F3E9:
         oz      Os_in
@@ -6503,18 +6539,18 @@ L_F3E9:
         jr      c,L_F3E9
         cp      $FF
         jr      nz,L_F410
-        call    L_F5D6
+        call    print_current_word
         ld      a,$0B
         oz      Os_out
-        call    L_F676
+        call    browse_prev_word
         jr      L_F3E0
 L_F410:
         cp      $FE
         jr      nz,L_F420
-        call    L_F5D6
+        call    print_current_word
         ld      a,$0A
         oz      Os_out
-        call    L_F5EA
+        call    browse_next_word
         jr      L_F3E0
 L_F420:
         cp      $1B
@@ -6575,20 +6611,20 @@ L_F486:
         ld      (dict_letter1),a
         jr      L_F48E
 L_F48B:
-        call    L_F518
+        call    next_section_letters
 L_F48E:
         call    find_dictionary_section
         jr      c,L_F48B
         ld      hl,(dict_pos)
 L_F496:
         ld      (dict_pos),hl
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         ld      a,$00
         ld      (dict_word_flags),a
         call    next_full_word
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
-        call    L_F562
+        ld      (browse_pos),hl
+        call    draw_browse_page
         jp      L_F3E0
 L_F4B0:
         cp      $08
@@ -6606,7 +6642,7 @@ L_F4C3:
 L_F4C8:
         cp      $01
         jr      nz,L_F4EB
-        ld      hl,($1FAF)
+        ld      hl,(browse_pos)
 L_F4CF:
         dec     hl
         ld      a,(hl)
@@ -6618,7 +6654,7 @@ L_F4CF:
         cp      $0F
         jr      nz,L_F4E0
 L_F4DD:
-        call    L_F53D
+        call    prev_section_letters
 L_F4E0:
         call    find_dictionary_section
         jr      c,L_F4DD
@@ -6628,7 +6664,7 @@ L_F4EB:
         cp      $02
         jr      nz,L_F4FD
 L_F4EF:
-        call    L_F518
+        call    next_section_letters
         call    find_dictionary_section
         jr      c,L_F4EF
         ld      hl,(dict_pos)
@@ -6646,7 +6682,8 @@ L_F510:
         cp      $FC
         jp      nz,L_F3E0
         jp      L_F424
-L_F518:
+next_section_letters:
+; Steps dict_letter1/dict_letter2 to the next two-letter section (second letter apostrophe, A-Z; then the next first letter, Z wraps to A).
         ld      a,(dict_letter2)
         cp      '''
         jr      nz,L_F521
@@ -6666,7 +6703,8 @@ L_F521:
         ld      a,'A'
         ld      (dict_letter1),a
         ret
-L_F53D:
+prev_section_letters:
+; Steps dict_letter1/dict_letter2 back to the previous two-letter section (A wraps to Z).
         ld      a,(dict_letter2)
         cp      'A'
         jr      nz,L_F546
@@ -6686,7 +6724,8 @@ L_F546:
         ld      a,'Z'
         ld      (dict_letter1),a
         ret
-L_F562:
+draw_browse_page:
+; Clears the window and draws the five words after the current one, then walks back so the current word is highlighted with its neighbours around it.
         ld      a,$0C
         oz      Os_out
         ld      a,$05
@@ -6694,15 +6733,15 @@ L_F568:
         push    af
         ld      a,$0A
         oz      Os_out
-        call    L_F5EA
-        call    L_F5D6
+        call    browse_next_word
+        call    print_current_word
         pop     af
         dec     a
         jr      nz,L_F568
         ld      a,$05
 L_F579:
         push    af
-        call    L_F676
+        call    browse_prev_word
         ld      a,$0B
         oz      Os_out
         pop     af
@@ -6719,7 +6758,7 @@ L_F586:
         call    open_dialog_right
         ld      hl,L_F887
         oz      Gn_sop
-        call    L_F562
+        call    draw_browse_page
 L_F59F:
         pop     af
         ret
@@ -6754,7 +6793,8 @@ L_F5B6:
 L_F5CC:
         defb    $01,$32,$43,$31,$01,$33,$2b,$43
         defb    $53,$00
-L_F5D6:
+print_current_word:
+; Prints the whole current word (buffer C - 2, dict_word_length letters) and a CR.
         ld      hl,(ptr_buffer_c)
         dec     hl
         dec     hl
@@ -6768,7 +6808,9 @@ L_F5DF:
         ld      a,$0D
         oz      Os_out
         ret
-L_F5EA:
+browse_next_word:
+; Moves to the next word for Browse: the next ending of the current stem, or the next record, with any user dictionary word that falls in between (L_F9DF).
+; browse_pos keeps the dictionary position of the current word. $1FB3 bit 1 is set while the current word comes from the user dictionary.
         call    L_F7B9
         ld      a,(dict_word_flags)
         cp      $00
@@ -6783,13 +6825,13 @@ L_F5FC:
         dec     (hl)
         call    next_full_word
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         ret
 L_F60B:
         ld      a,($1FB3)
         and     $BF
         ld      ($1FB3),a
-        ld      hl,($1FAF)
+        ld      hl,(browse_pos)
         ld      (dict_pos),hl
 L_F619:
         ld      a,$00
@@ -6803,7 +6845,7 @@ L_F619:
         ret
 L_F62E:
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         ret
 L_F635:
         ld      a,(dict_letter2)
@@ -6826,7 +6868,7 @@ L_F656:
         call    find_dictionary_section
         jr      c,L_F635
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         jr      L_F619
 L_F663:
         ld      a,'A'
@@ -6834,9 +6876,10 @@ L_F663:
         ld      (dict_letter2),a
         call    find_dictionary_section
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         jr      L_F619
-L_F676:
+browse_prev_word:
+; Moves to the previous word for Browse (previous ending, or back one record from browse_pos), with any user dictionary word in between (L_FADE).
         call    L_F7B9
         ld      a,(dict_word_flags)
         cp      $00
@@ -6866,7 +6909,7 @@ L_F6A5:
         ld      (dict_ending_ptr),hl
         jp      L_F5FC
 L_F6AB:
-        ld      hl,($1FAF)
+        ld      hl,(browse_pos)
         ld      (dict_pos),hl
         call    L_F6F6
         ld      a,($1FB3)
@@ -6879,7 +6922,7 @@ L_F6BE:
         ld      (dict_word_flags),a
         call    next_full_word
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         call    L_FADE
         jr      c,L_F6DA
         ld      a,$00
@@ -6951,11 +6994,11 @@ L_F73E:
         cp      $10
         jr      nc,L_F73E
         ld      (dict_pos),hl
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         ret
 L_F74D:
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         ld      a,(hl)
         and     $DF
         ret     z
@@ -6972,7 +7015,7 @@ L_F766:
         call    read_dictionary_record
         call    expand_word
         ld      hl,(dict_pos)
-        ld      bc,($1FAF)
+        ld      bc,(browse_pos)
         scf
         ccf
         sbc     hl,bc
@@ -7028,7 +7071,8 @@ L_F7B9:
         ld      b,$00
         ldir
         ret
-L_F7D1:
+browse_seek_prefix:
+; Finds the first word at or after the typed prefix: its first two letters select the section (stepping back with prev_section_letters if there is none), then words are read forward.
         ld      a,($1FC1)
         ld      b,a
         ld      c,$01
@@ -7045,16 +7089,16 @@ L_F7D1:
 L_F7EC:
         call    find_dictionary_section
         jr      nc,L_F7F6
-        call    L_F53D
+        call    prev_section_letters
         jr      L_F7EC
 L_F7F6:
         ld      a,$00
         ld      (dict_word_flags),a
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         call    next_full_word
         ld      hl,(dict_pos)
-        ld      ($1FAF),hl
+        ld      (browse_pos),hl
         jr      L_F817
 L_F80C:
         ld      a,'A'
@@ -7123,10 +7167,10 @@ L_F85A:
         ld      a,(dict_letter1)
         cp      'Z'
         jr      nz,L_F87B
-        call    L_F5EA
+        call    browse_next_word
         ret
 L_F87B:
-        call    L_F5EA
+        call    browse_next_word
         jr      L_F817
 
 

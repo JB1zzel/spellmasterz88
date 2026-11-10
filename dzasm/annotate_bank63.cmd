@@ -38,6 +38,7 @@ dc 1F9E prev_line_bank
 dc 1F9F next_line_ptr
 dc 1FA1 next_line_bank
 dc 1FA2 cursor_row
+dc 1FA3 wrap_column
 dc 1FA4 cursor_col_limit
 dc 1FA5 cursor_index
 dc 1FA6 line_length
@@ -48,6 +49,7 @@ dc 1FAC user_dict_ptr
 dc 1FAE user_dict_bank
 dc 1FC2 guess_list_ptr
 dc 1FC4 guess_list_bank
+dc 1FAF browse_pos
 dc 1FC8 block_start_line
 dc 1FCA block_start_col
 dc 1FCB block_end_line
@@ -60,6 +62,7 @@ dc 1FD7 user_dict_name_ptr
 dc 1FD9 user_dict_name_bank
 dc 1FDA ignore_list_ptr
 dc 1FDC ignore_list_bank
+dc 1FE5 line_counter
 dc 1FE8 line_rec_ptr
 dc 1FEA line_rec_bank
 rem C576 < WordFinder reuses the line_rec_ptr word ($1FE8) here: in the crossword solver it holds a pointer into the pattern
@@ -81,6 +84,8 @@ dl D704 step_to_next_record
 dl D728 inc_cursor_line
 dl D730 dec_cursor_line
 dl D738 copy_record_to_line_buffer
+rem D756 < $D756-$D765 (16 bytes) are code, left as data because nothing calls them: an unused copy of check_free_memory
+rem D756 < (LD BC,NQ_Mfs / LD IX,(pool_main) / OS_Nq / CP 0 / RET NZ / LD A,B / CP 5 / RET). The bank's own copy is at $DAD1.
 dl D008 far_call_table
 rem D008 < Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63.
 rem D008 < Index 1 ($D54F) and index 5 ($DB25) are not used by any caller in bank 62.

@@ -164,9 +164,16 @@ The table is allocated and cleared the first time a word is added. The list rout
 
 **The file.** Save user dictionary ($FC8E) writes plain text: for each letter A-Z and each word in order, a space, the first letter, the stored letters and a CR. Load user dictionary ($FD99) asks before discarding the current list, clears it (`word_list_clear`), then reads the file a byte at a time: every run of letters or apostrophes (`is_word_char`, upper-casing letters, at most 64) is a word and any other byte ends it. Words shorter than 3 characters are skipped, and each word goes through `word_list_add`, so any plain word list in any order and case can be loaded. The filename used is kept in a small record (`user_dict_name_ptr`/`user_dict_name_bank`, $1FD7/$1FD9), offered as the default filename by Save user dictionary and shown by Information.
 
-## 15. Checking a word and guessing the correct one
+## 15. Checking words, check as you type and guessing
 
 **Taking a word from the text.** `next_word_from_text` ($D8CA) skips to the next letter or apostrophe and copies the word into buffer A through `is_word_char`, which turns every letter into upper case. **Capital letters therefore make no difference**: "london", "London" and "LONDON" are all checked as LONDON, and a proper noun is accepted only if it is in the dictionary or the user dictionary. Digits and other symbols end a word. A leading apostrophe is dropped, and the length passed to the lookup leaves out a final apostrophe or a final 'S, so JOHN'S is checked as JOHN. `word_start_ptr` ($1FBA) keeps where the word starts so it can be replaced, and `scan_chars_left` ($1FB7) counts what is left of the line. `find_word_start` ($DD33) moves back from the cursor to the start of the current word.
+
+**Check as you type.** When it is on (`EF_CHECK_ON`, toggled by the Check as you type command and shown as Check: On/Off in the status panel) two hooks in the main loop do the work:
+
+- `typing_check_char` ($DCA2) runs after every typed character. A letter or apostrophe sets `typing_word_pending` ($1FB1); any other character (space, punctuation, digit) ends the word and checks it.
+- `typing_check_command` ($DC74) runs before every command. Rubout and Delete character mark the word as pending; the cursor movements (screen and cursor up/down/left/right, top/bottom of text, start/end of line, next/previous word) check a pending word before moving.
+
+`typing_check_word` ($DCBD) takes the word before the cursor, upper case as always, drops a final 'S or apostrophe and looks it up (ROM dictionary, user dictionary, ignored words). Words of fewer than 3 letters are skipped. **A word that is not found only makes the Z88 beep** (BEL through `OS_Out`); the Correction menu is not opened. Read from the code and not yet tried on a machine: Enter goes straight to the new-line code without calling either hook, so the last word of a line, typed just before Enter, does not seem to be checked as you type.
 
 **Correction menu.** When a word is not found the menu offers 1 Ignore word, 2 Add word to user dictionary, 3 Guess correct word, 4 Change word, 5 Browse through dictionary (section 14 covers 1 and 2).
 
@@ -189,5 +196,22 @@ Words whose length differs by two or more are rejected at once.
 
 Each guess is added by `append_guess` ($E076), which is far call 6 (`far_append_guess`, bank 63 $D880). The list is a chain of records like the line records: byte 0 = word length, bytes 1-3 = previous guess, bytes 4-6 = next guess, then the word. Its head is `guess_list_ptr`/`guess_list_bank` ($1FC2/$1FC4). If there are none the routine shows "No Guesses found". Otherwise "Guesses found" lists them six at a time in the right-hand dialog (borrowing `top_line` as a row counter): up and down move the highlight, Enter takes the word (copied to buffer C), 1-5 jump to that Correction menu option and Escape cancels. `free_guess_list` ($DFF5) frees the list afterwards. `edit_flags` bit 6 ($40) is set when no word was chosen, and the caller then returns to the menu instead of replacing the word.
 
-`L_F9DF` and `L_FADE`, which walk the user dictionary for nearby words, belong to option 5 (Browse), not to guessing.
+**Change word** (option 4, `change_word`, $D64A) opens "Replace with" with the word as it stands in the text (without a final 'S or apostrophe, which stay in the text) and lets you edit it.
+
+**Replacing** (`replace_word_everywhere`, $D6D8, used by Change word and by a guess taken with Enter) shows "Replacing...", puts the new word in place of the old one and moves the block markers on that line to match. Each letter of the new word takes its case from the letter in the same position of the old word, so "teh" becomes "the" and "Teh" becomes "The". It then goes on to the end of the text and replaces every later occurrence of the same misspelling, in any capitalisation and keeping each one's case pattern, before returning to the original line.
+
+**Browse through dictionary** (option 5, `browse_dictionary`, $F399) saves the typed word (`save_typed_word`, `saved_word_ptr`/`saved_word_bank`) and shows the dictionary around it in the right-hand window, with the current word highlighted (`draw_browse_page`). Letters typed build a prefix and the list jumps to the first word at or after it (`browse_seek_prefix`); Enter takes the highlighted word. Cursor up and down move one word (`browse_prev_word`/`browse_next_word`, which also bring in user dictionary words through `L_FADE`/`L_F9DF`; `$1FB3` bit 1 marks such a word); Screen up/down move a whole two-letter section and Top/Bottom of text a whole first letter. `browse_pos` ($1FAF) keeps the dictionary position of the current word so the list can step backwards through the packed records.
+
+## 16. Word wrap and Format paragraph
+
+`wrap_column` ($1FA3) is the right margin. It is set to 72 at start-up and nothing changes it, so QuickEdit always wraps at 72 columns (the text window is 74 wide).
+
+`wrap_cursor_line` ($CD49) does the work. If the cursor line, ignoring trailing spaces, is longer than 72 it splits it at the last space at or before column 72 (or at column 72 if the line has no space there): the first part becomes a new line record above, the rest stays in the edit buffer, block markers move with their text, and it repeats. If the line fits, it pulls up the next line, or as many of its words as fit, unless the next line is empty or starts with a space; that is how a paragraph end is recognised. `line_counter` ($1FE5) counts the lines the cursor moves down.
+
+`wrap_from_cursor_line` ($CD44) clears the counter and calls it. It is used:
+
+- while typing, when a character takes the line past column 72 (word wrap as you type);
+- by Format paragraph, which repeats it for each following line until a line that is empty or starts with a space;
+- after Search and Replace, which rewraps every line of the text from the top;
+- after Copy marked block and Delete marked block.
 

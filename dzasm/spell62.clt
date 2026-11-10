@@ -191,8 +191,8 @@ $CCB9, $CCBC load_line_record
 $CCE2 take_line_record, $CCE5 free_line_record
 $CCF6 cmd_format_paragraph, $CCF9
 $CD1F, $CD30
-$CD3E, $CD44
-$CD49, $CD58
+$CD3E, $CD44 wrap_from_cursor_line
+$CD49 wrap_cursor_line, $CD58
 $CD62, $CD7F
 $CD88, $CD8E
 $CD97, $CDBE
@@ -251,13 +251,13 @@ $D5D2, $D5E0
 $D5F7, $D608
 $D60C, $D61E
 $D636, $D643
-$D645, $D64A
+$D645, $D64A change_word
 $D67B, $D682
 $D68F, $D692
 $D6AE, $D6B6
 $D6BE, $D6C4
 $D6C9, $D6D0
-$D6D8, $D707
+$D6D8 replace_word_everywhere, $D707
 $D70D, $D71B
 $D71E, $D74C
 $D76B, $D786
@@ -270,7 +270,7 @@ $D80D, $D814
 $D825, $D83B
 $D85E, $D87D
 $D8AC, $D8B2
-$D8BC, $D8C4
+$D8BC, $D8C4 next_word_to_buffer_b
 $D8CA next_word_from_text, $D8CE
 $D8D7, $D8E1
 $D8E6, $D8E9
@@ -279,8 +279,8 @@ $D8FF, $D912
 $D91D, $D922 is_word_char
 $D92F, $D931 cmd_check_this_word_or_escape
 $D978, $D988 toggle_reverse
-$D991 cmd_insert_over, $DA65
-$DA88, $DA91
+$D991 cmd_insert_over, $DA65 save_typed_word
+$DA88, $DA91 restore_typed_word
 $DAA7, $DABC
 $DADE, $DAE7
 $DAED, $DB17 cmd_split_line
@@ -292,14 +292,14 @@ $DBF6 cmd_next_match, $DBFD cmd_search_for_string
 $DC02, $DC12 cmd_merge_text_at_cursor
 $DC26, $DC41
 $DC52, $DC5C
-$DC61 cmd_tab, $DC74
+$DC61 cmd_tab, $DC74 typing_check_command
 $DC9D, $DCA0
-$DCA2, $DCB1
-$DCB8, $DCBD
+$DCA2 typing_check_char, $DCB1
+$DCB8, $DCBD typing_check_word
 $DCD1, $DCDB
 $DCE4, $DCF5
 $DD04, $DD09
-$DD19, $DD22
+$DD19, $DD22 find_word_start_at_cursor
 $DD33 find_word_start, $DD44
 $DD51, $DD59 cmd_check_as_you_type
 $DDBD guess_correct_word, $DDE4
@@ -417,7 +417,7 @@ $F29F, $F2B0
 $F2C7, $F2C9
 $F2DF, $F337 cmd_change_name
 $F33F, $F35D
-$F36A, $F399
+$F36A, $F399 browse_dictionary
 $F3C4, $F3CA
 $F3DA, $F3DD
 $F3E0, $F3E9
@@ -432,18 +432,18 @@ $F4C8, $F4CF
 $F4DD, $F4E0
 $F4EB, $F4EF
 $F4FD, $F510
-$F518, $F521
-$F53D, $F546
-$F562, $F568
+$F518 next_section_letters, $F521
+$F53D prev_section_letters, $F546
+$F562 draw_browse_page, $F568
 $F579, $F586
 $F59F, $F5A1
 $F5AF, $F5B6
-$F5D6, $F5DF
-$F5EA, $F5FC
+$F5D6 print_current_word, $F5DF
+$F5EA browse_next_word, $F5FC
 $F60B, $F619
 $F62E, $F635
 $F63E, $F656
-$F663, $F676
+$F663, $F676 browse_prev_word
 $F683, $F68B
 $F6A5, $F6AB
 $F6BE, $F6DA
@@ -455,7 +455,7 @@ $F73E, $F74D
 $F757, $F766
 $F77C, $F788 next_full_word
 $F7A6, $F7B9
-$F7D1, $F7EC
+$F7D1 browse_seek_prefix, $F7EC
 $F7F6, $F80C
 $F817, $F830
 $F83D, $F840
@@ -714,7 +714,14 @@ $B82A
 	($CCBC,< "Makes the record at line_rec the cursor line: copies its text into line_buffer (copy_record_to_line_buffer) and takes its previous and next links as prev_line and next_line.")
 	($CCE2,< "load_line_record, then frees the record (free_line_record): the line now exists only in the edit buffer.")
 	($CCE5,< "Frees the record at line_rec back to pool_main (OS_Mfr, size from its length byte).")
-	($CCF6,< "Command handler: 'Format paragraph' - dispatch code $0E")
+	($CCF6,< "Format paragraph: rewraps the cursor line and each following line (store, take the next, wrap again) until a line that is empty or starts with a space."
+		 "line_counter counts the lines moved down; cursor_row is moved down by that much (back to row 3 if it would leave the window)."
+		 "Command handler: 'Format paragraph' - dispatch code $0E")
+	($CD44,< "Clears line_counter, then wrap_cursor_line. Called by Format paragraph, by the main loop when typing takes the line past wrap_column (word wrap as you type),"
+		 "after Search and Replace (which rewraps every line from the top, $DBD3), and after Copy and Delete marked block.")
+	($CD49,< "If the cursor line, ignoring trailing spaces, is longer than wrap_column, splits it at the last space at or before that column (or at the column if there is no space):"
+		 "the first part becomes a new line record above (alloc_line_record), the rest stays in the edit buffer, block markers move with the text, line_counter and cursor_line go up by one, and it repeats."
+		 "If the line fits ($CE14), it pulls up the next line, or as many words of it as fit, unless the next line is empty or starts with a space (the end of the paragraph).")
 	($CFE9,< "In: A = text length. Allocates a line record of A+7 bytes from pool_main and points line_rec_ptr/line_rec_bank at it."
 		 "Links it between prev_line and next_line: prev's next link (+4) and next's prev link (+1) are set to it, and its own header gets the length and both links."
 		 "Out: carry set if OS_Mal failed. E = text length on exit.")
@@ -744,6 +751,16 @@ $B82A
 	($D3D5,< "Command handler: 'Check all text' - dispatch code $12")
 	($D467,< "End of the check: the ignored words are only for this check. Swap the lists, free every ignored word and the table, swap back.")
 	($D5CA,< "Correction menu option 2 'Add word to user dictionary': word_list_add. Option 1 'Ignore word' (below) adds it to the ignored words instead.")
+	($D5E0,< "Correction menu option 5 'Browse through dictionary': save_typed_word, browse_dictionary, restore_typed_word.")
+	($D643,< "Correction menu option 4 'Change word'.")
+	($D64A,< "Opens 'Replace with', puts the word as it stands in the text into buffer C (leaving out a final 'S or apostrophe, which stays in the text)"
+		 "and edits it with GN_Sip (40 bytes, 20 columns). Enter: letters are made upper case (is_word_char) and replace_word_everywhere runs. Escape: back to the menu.")
+	($D6D8,< "Shows 'Replacing...' and replaces the word just checked (buffer A, dict_target_length letters, ending at scan_ptr) with the word in buffer C (dict_word_length letters)."
+		 "Also used when a guess is chosen with Enter. Closes or opens the gap in the line and moves the block markers on this line to match."
+		 "Each letter takes its case from the letter at the same position in the old word ($D7A5: AND $20 of the old character, OR the new upper-case letter), so 'teh' -> 'the', 'Teh' -> 'The'."
+		 "It then carries on to the end of the text ($D7BD), replacing every later word that matches the old one (compared in upper case, so in any capitalisation),"
+		 "counting the lines it moves forward in line_counter, and finally walks back to the original line.")
+	($D8C4,< "next_word_from_text, but the word goes to buffer B. Used by replace_word_everywhere to find later copies of the word.")
 	($D8CA,< "In: HL -> text, scan_chars_left = characters left to scan. Skips to the next word character, then copies the word into buffer A through is_word_char,"
 		 "so every letter is upper case: capital letters make no difference to the check. A leading apostrophe is dropped."
 		 "The length goes to dict_target_length, leaving out a final apostrophe and a final 'S (JOHN'S is checked as JOHN). word_start_ptr = where the word starts."
@@ -754,12 +771,25 @@ $B82A
 		 "Two dispatch codes share this handler.")
 	($D988,< "Prints the 'toggle reverse video' sequence (1 R). HL preserved.")
 	($D991,< "Command handler: 'Insert/Over' - dispatch code $1C")
+	($DA65,< "Copies the word in buffer A (dict_target_length letters) into a small record from pool_main (saved_word_ptr/bank), so Browse can use buffer A. Carry set if no room.")
+	($DA91,< "Copies the saved word back into buffer A and dict_target_length, and frees the record.")
 	($DB17,< "Command handler: 'Split line' - dispatch code $13")
 	($DB9F,< "Command handler: 'Search and Replace' - dispatch code $26")
 	($DBF6,< "Command handler: 'Next Match' - dispatch code $2C")
 	($DBFD,< "Command handler: 'Search for string' - dispatch code $25")
 	($DC12,< "Command handler: 'Merge text at cursor' - dispatch code $27")
 	($DC61,< "Command handler: 'Tab' - dispatch code $29")
+	($DC74,< "Check as you type, command hook: called by the main loop with the dispatch code in A before every command (A preserved). Does nothing unless EF_CHECK_ON is set."
+		 "Rubout ($0B) and Delete character ($14) mark the word as pending (it is being edited). If a word is pending, the cursor movements"
+		 "(codes $01-$0A: screen/cursor up, down, left, right, top/bottom of text, start/end of line; $16/$17: next/previous word) check it first (typing_check_word).")
+	($DCA2,< "Check as you type, character hook: called after a typed character has been put in the line (A = the character, from $1FE4). Does nothing unless EF_CHECK_ON is set."
+		 "A letter or apostrophe sets typing_word_pending; any other character (space, punctuation, digit) ends the word and checks it (typing_check_word)."
+		 "Enter ($0D) does not come here: the main loop sends it straight to the new-line code at $C756, so the word before an Enter is not checked.")
+	($DCBD,< "If typing_word_pending is set: clears it, finds the word before the cursor (find_word_start_at_cursor), copies it to buffer A in upper case,"
+		 "drops a final 'S or apostrophe, and looks it up (dictionary_lookup, which also tries the user dictionary and the ignored words)."
+		 "Words of fewer than 3 letters are not checked. If the word is not found the only response is a beep (BEL, 7, through OS_Out): no menu is shown.")
+	($DD22,< "Like find_word_start but without clamping cursor_index: moves back from the character before the cursor to the start of that word."
+		 "Returns at once (Z) if cursor_index is 0, leaving HL unchanged.")
 	($DD33,< "From cursor_index, moves back to the start of the word at or before the cursor. Out: HL -> that character in line_buffer, C = its index. Z if at the start of the line.")
 	($DD59,< "Command handler: 'Check as you type' - dispatch code $19")
 	($DDAF,< "7 words: inflection class $10 to $16 -> list of endings. The list holds endings each starting with a letter that has bit 7 set, ending with $80."
@@ -803,8 +833,22 @@ $B82A
 		 "Keeps the filename of the text or user dictionary just loaded or saved. Carry set if there is no room.")
 	($F167,< "Command handler: 'Save marked block' - dispatch code $24")
 	($F337,< "Command handler: 'Change name' - dispatch code $2A")
+	($F399,< "Browse through dictionary (Correction menu option 5). Window 'Browse'. The typed word (up to 64 letters) is copied to a work record ($1FBF/$1FC1)"
+		 "and its length kept in wf_menu_sel (borrowed); browse_seek_prefix finds the first dictionary word at or after it and draw_browse_page shows the words around it."
+		 "Plain keys: a letter (or an apostrophe after the first letter) is added to the prefix and the list seeks again; Enter takes the highlighted word; any other key clears the prefix."
+		 "Extended keys (0 then a code) first clear the prefix: up/down ($FF/$FE) move one word (browse_prev_word, browse_next_word); $01/$02 (Screen up/down) = previous/next"
+		 "two-letter section; $07/$08 (Top/Bottom of text) = previous/next first letter (wrapping Z/A); $1B and $FC cancel (edit_flags bit 6 = nothing chosen)."
+		 "A $7F code (at $F4FD) would remove the last prefix letter, but the prefix has already been cleared on that path, so it appears to do nothing.")
+	($F518,< "Steps dict_letter1/dict_letter2 to the next two-letter section (second letter apostrophe, A-Z; then the next first letter, Z wraps to A).")
+	($F53D,< "Steps dict_letter1/dict_letter2 back to the previous two-letter section (A wraps to Z).")
+	($F562,< "Clears the window and draws the five words after the current one, then walks back so the current word is highlighted with its neighbours around it.")
+	($F5D6,< "Prints the whole current word (buffer C - 2, dict_word_length letters) and a CR.")
+	($F5EA,< "Moves to the next word for Browse: the next ending of the current stem, or the next record, with any user dictionary word that falls in between (L_F9DF)."
+		 "browse_pos keeps the dictionary position of the current word. $1FB3 bit 1 is set while the current word comes from the user dictionary.")
+	($F676,< "Moves to the previous word for Browse (previous ending, or back one record from browse_pos), with any user dictionary word in between (L_FADE).")
 	($F788,< "next_word_form, then writes the two section letters (dict_letter1, dict_letter2) just before buffer C and adds 2 to dict_word_length and dict_stem_length,"
 		 "so the whole word starts two bytes before buffer C. Returns the flags of next_word_form (carry = end of section).")
+	($F7D1,< "Finds the first word at or after the typed prefix: its first two letters select the section (stepping back with prev_section_letters if there is none), then words are read forward.")
 	($F88C,< "Word lists. The user dictionary (user_dict_ptr/bank) and the ignored words (ignore_list_ptr/bank) have the same structure:"
 		 "a 78-byte ($4E) table of 26 three-byte heads (bank, offset low, offset high), one per letter A-Z, each the start of a linked list of word records in alphabetical order."
 		 "A word record is: byte 0 = n, the number of letters stored; bytes 1-3 = next record (bank, offset low, offset high; offset 0 = end of list); then the n letters."
@@ -851,8 +895,9 @@ $B82A
 
 	$1F82 dict_pos, $1F84 dict_bank, $1F85 dict_target_length, $1F86 dict_letter1, $1F87 dict_letter2, $1F88 dict_word_length, $1F89 dict_word_flags, $1F8A dict_ending_ptr
 	$1F8C dict_stem_length, $1F8D ptr_buffer_b, $1F8F ptr_buffer_c, $1F91 ptr_buffer_a, $1F93 pool_buffers, $1F99 line_buffer, $1F9B line_buffer_bank, $1F9C prev_line_ptr
-	$1F9E prev_line_bank, $1F9F next_line_ptr, $1FA1 next_line_bank, $1FA2 cursor_row, $1FA4 cursor_col_limit, $1FA5 cursor_index, $1FA6 line_length, $1FA7 pool_main
-	$1FA9 pool_second, $1FAB edit_flags, $1FAC user_dict_ptr, $1FAE user_dict_bank, $1FB7 scan_chars_left, $1FBA word_start_ptr, $1FC2 guess_list_ptr, $1FC4 guess_list_bank
-	$1FC8 block_start_line, $1FCA block_start_col, $1FCB block_end_line, $1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel
-	$1FD7 user_dict_name_ptr, $1FD9 user_dict_name_bank, $1FDA ignore_list_ptr, $1FDC ignore_list_bank, $1FE8 line_rec_ptr, $1FEA line_rec_bank
+	$1F9E prev_line_bank, $1F9F next_line_ptr, $1FA1 next_line_bank, $1FA2 cursor_row, $1FA3 wrap_column, $1FA4 cursor_col_limit, $1FA5 cursor_index, $1FA6 line_length
+	$1FA7 pool_main, $1FA9 pool_second, $1FAB edit_flags, $1FAC user_dict_ptr, $1FAE user_dict_bank, $1FAF browse_pos, $1FB1 typing_word_pending, $1FB4 saved_word_bank
+	$1FB5 saved_word_ptr, $1FB7 scan_chars_left, $1FB8 scan_ptr, $1FBA word_start_ptr, $1FC2 guess_list_ptr, $1FC4 guess_list_bank, $1FC8 block_start_line, $1FCA block_start_col
+	$1FCB block_end_line, $1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel, $1FD7 user_dict_name_ptr, $1FD9 user_dict_name_bank
+	$1FDA ignore_list_ptr, $1FDC ignore_list_bank, $1FE5 line_counter, $1FE8 line_rec_ptr, $1FEA line_rec_bank
 }

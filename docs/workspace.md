@@ -26,7 +26,7 @@ Both applications use the same layout. 'refs' counts instructions naming the add
 | $1F9F | next_line_ptr | 2 | 52/9 | Offset (segment 1) of the line record below the cursor line; 0 = the cursor line is the last line |
 | $1FA1 | next_line_bank | 1 | 35/7 | Bank of the record below the cursor line |
 | $1FA2 | cursor_row | 1 | 32/14 | Screen row (0 to 7) of the cursor line in window 1 |
-| $1FA3 |  |  | 8/1 | (not yet identified) |
+| $1FA3 | wrap_column | 1 | 8/1 | Right margin for word wrap and Format paragraph: 72, set at start-up and never changed (notes section 16) |
 | $1FA4 | cursor_col_limit | 1 | 5/8 | Screen column at which the cursor stops while the line scrolls sideways; also the number of columns drawn per row |
 | $1FA5 | cursor_index | 1 | 58/36 | Cursor position as a character index within the current line |
 | $1FA6 | line_length | 1 | 112/34 | Length of the current line in characters |
@@ -35,13 +35,13 @@ Both applications use the same layout. 'refs' counts instructions naming the add
 | $1FAB | edit_flags | 1 | 65/9 | QuickEdit flags: bit 0 = overtype mode (toggled by Insert/Over), bit 4 = check-as-you-type on, bits 1-3 (mask $0E) = screen redraw state (2 = redraw requested, 4 = redraw finished) |
 | $1FAC | user_dict_ptr | 2 | 20/4 | Offset (segment 1) of the user dictionary table: 26 three-byte list heads, one per letter A-Z; 0 = no table yet (see notes section 14) |
 | $1FAE | user_dict_bank | 1 | 13/2 | Bank of the user dictionary table |
-| $1FAF |  |  | 15/15 | (not yet identified) |
-| $1FB1 |  |  | 5/0 | (not yet identified) |
+| $1FAF | browse_pos | 2 | 15/15 | Browse (Correction menu and WordFinder): dictionary position of the record of the current word, used to step back |
+| $1FB1 | typing_word_pending | 1 | 5/0 | Check as you type: 1 while a word is being typed or edited and has not been checked yet (notes section 15) |
 | $1FB3 |  |  | 9/13 | (not yet identified) |
-| $1FB4 |  |  | 3/0 | (not yet identified) |
-| $1FB5 |  |  | 3/0 | (not yet identified) |
+| $1FB4 | saved_word_bank | 1 | 3/0 | Bank of the record holding the typed word while Browse runs (save_typed_word) |
+| $1FB5 | saved_word_ptr | 2 | 3/0 | Offset of that record |
 | $1FB7 | scan_chars_left | 1 | 21/0 | Characters of the line still to scan for the next word (next_word_from_text); set to line_length minus the scan start |
-| $1FB8 |  |  | 16/0 | (not yet identified) |
+| $1FB8 | scan_ptr | 2 | 16/0 | Address in the line buffer just after the word being checked; where the scan for the next word continues |
 | $1FBA | word_start_ptr | 2 | 5/0 | Address in the line buffer where the word just taken by next_word_from_text starts |
 | $1FBC |  |  | 24/8 | (not yet identified) |
 | $1FBD |  |  | 0/3 | (not yet identified) |
@@ -73,7 +73,7 @@ Both applications use the same layout. 'refs' counts instructions naming the add
 | $1FE2 |  |  | 0/3 | (not yet identified) |
 | $1FE3 |  |  | 5/0 | (not yet identified) |
 | $1FE4 |  |  | 26/5 | (not yet identified) |
-| $1FE5 |  |  | 19/21 | (not yet identified) |
+| $1FE5 | line_counter | 1 | 19/21 | Scratch line counter: lines moved down by word wrap, Format paragraph and Replace (a word in Replace); a row counter during the redraw in bank 63 |
 | $1FE7 |  |  | 4/0 | (not yet identified) |
 | $1FE8 | line_rec_ptr | 2 | 83/34 | Offset (segment 1) of the line record being worked on: just allocated (alloc_line_record) or reached by walking the links (step_to_prev_record, step_to_next_record). WordFinder reuses this word in the crossword solver as a pointer into the pattern |
 | $1FEA | line_rec_bank | 1 | 68/24 | Bank of that record |

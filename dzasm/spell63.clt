@@ -699,6 +699,8 @@ $8900
 		 "Called from the QuickEdit handler for Search for string (command $25).")
 	($D600,< "$D600-$D74F: copies of the bank 62 line-record routines, used by the far-called commands (see notes section 12, 'How the text is stored').")
 	($D61A,< "Copies the record at line_rec into the edit buffer, takes its links as prev_line and next_line, then frees it (falls into free_line_record).")
+	($D756,< "$D756-$D765 (16 bytes) are code, left as data because nothing calls them: an unused copy of check_free_memory"
+		 "(LD BC,NQ_Mfs / LD IX,(pool_main) / OS_Nq / CP 0 / RET NZ / LD A,B / CP 5 / RET). The bank's own copy is at $DAD1.")
 	($D880,< "Far-call table entry 6."
 		 "Called from append_guess (bank 62 $E076) by Guess correct word, once for each dictionary or user word that is one edit away from the typed word."
 		 "Allocates a record of (word length + 7) bytes and appends it to the guess list: byte 0 = word length, bytes 1-3 = previous guess, bytes 4-6 = next guess (0), then the whole word from buffer C - 2."
@@ -753,8 +755,8 @@ $8900
 
 	$1F82 dict_pos, $1F84 dict_bank, $1F85 dict_target_length, $1F86 dict_letter1, $1F87 dict_letter2, $1F88 dict_word_length, $1F89 dict_word_flags, $1F8A dict_ending_ptr
 	$1F8C dict_stem_length, $1F8D ptr_buffer_b, $1F8F ptr_buffer_c, $1F91 ptr_buffer_a, $1F93 pool_buffers, $1F99 line_buffer, $1F9B line_buffer_bank, $1F9C prev_line_ptr
-	$1F9E prev_line_bank, $1F9F next_line_ptr, $1FA1 next_line_bank, $1FA2 cursor_row, $1FA4 cursor_col_limit, $1FA5 cursor_index, $1FA6 line_length, $1FA7 pool_main
-	$1FA9 pool_second, $1FAB edit_flags, $1FAC user_dict_ptr, $1FAE user_dict_bank, $1FC2 guess_list_ptr, $1FC4 guess_list_bank, $1FC8 block_start_line, $1FCA block_start_col
-	$1FCB block_end_line, $1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel, $1FD7 user_dict_name_ptr, $1FD9 user_dict_name_bank
-	$1FDA ignore_list_ptr, $1FDC ignore_list_bank, $1FE8 line_rec_ptr, $1FEA line_rec_bank
+	$1F9E prev_line_bank, $1F9F next_line_ptr, $1FA1 next_line_bank, $1FA2 cursor_row, $1FA3 wrap_column, $1FA4 cursor_col_limit, $1FA5 cursor_index, $1FA6 line_length
+	$1FA7 pool_main, $1FA9 pool_second, $1FAB edit_flags, $1FAC user_dict_ptr, $1FAE user_dict_bank, $1FAF browse_pos, $1FC2 guess_list_ptr, $1FC4 guess_list_bank
+	$1FC8 block_start_line, $1FCA block_start_col, $1FCB block_end_line, $1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel
+	$1FD7 user_dict_name_ptr, $1FD9 user_dict_name_bank, $1FDA ignore_list_ptr, $1FDC ignore_list_bank, $1FE5 line_counter, $1FE8 line_rec_ptr, $1FEA line_rec_bank
 }
