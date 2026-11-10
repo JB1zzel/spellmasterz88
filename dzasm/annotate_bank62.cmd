@@ -19,6 +19,10 @@ dc 1F91 ptr_buffer_a
 dc 1F93 pool_buffers
 dc 1F99 line_buffer
 dc 1F9B line_buffer_bank
+dc 1F9C prev_line_ptr
+dc 1F9E prev_line_bank
+dc 1F9F next_line_ptr
+dc 1FA1 next_line_bank
 dc 1FA2 cursor_row
 dc 1FA4 cursor_col_limit
 dc 1FA5 cursor_index
@@ -26,6 +30,12 @@ dc 1FA6 line_length
 dc 1FA7 pool_main
 dc 1FA9 pool_second
 dc 1FAB edit_flags
+dc 1FAC user_dict_ptr
+dc 1FAE user_dict_bank
+dc 1FB7 scan_chars_left
+dc 1FBA word_start_ptr
+dc 1FC2 guess_list_ptr
+dc 1FC4 guess_list_bank
 dc 1FC8 block_start_line
 dc 1FCA block_start_col
 dc 1FCB block_end_line
@@ -34,6 +44,118 @@ dc 1FCE marker_flags
 dc 1FCF cursor_line
 dc 1FD1 top_line
 dc 1FD3 wf_menu_sel
+dc 1FD7 user_dict_name_ptr
+dc 1FD9 user_dict_name_bank
+dc 1FDA ignore_list_ptr
+dc 1FDC ignore_list_bank
+dc 1FE8 line_rec_ptr
+dc 1FEA line_rec_bank
+rem F88C < Word lists. The user dictionary (user_dict_ptr/bank) and the ignored words (ignore_list_ptr/bank) have the same structure:
+rem F88C < a 78-byte ($4E) table of 26 three-byte heads (bank, offset low, offset high), one per letter A-Z, each the start of a linked list of word records in alphabetical order.
+rem F88C < A word record is: byte 0 = n, the number of letters stored; bytes 1-3 = next record (bank, offset low, offset high; offset 0 = end of list); then the n letters.
+rem F88C < The first letter is not stored (it is given by the table slot), so n is the word length minus one. Records come from pool_main.
+rem F88C < The routines always work on the user dictionary pointer; swap_word_lists exchanges the two so the same code serves the ignored words.
+dl F88C word_list_add
+rem F88C < Adds the word in buffer A (dict_target_length letters, first letter A-Z) to the list, in alphabetical order. Allocates and clears the table on first use.
+rem F88C < Returns Z if the word is already there; carry set if the first character is not a letter A-Z. No memory -> show_no_room_error.
+rem F88C < $1FEB and $1FED hold the link to be patched (its address and the OS_Mpb binding) while the list is searched.
+dl FBE3 word_list_lookup
+rem FBE3 < Looks the word in buffer A up in the list. Carry clear = found. Called from dictionary_lookup after dict_target_length has had 2 subtracted, hence the +1.
+dl FC71 swap_word_lists
+rem FC71 < Exchanges user_dict_ptr/bank with ignore_list_ptr/bank, so the word list routines act on the ignored words. Always called in pairs.
+dl FEC1 word_list_clear
+rem FEC1 < Frees every word record in the list and clears the 26 heads (the table itself is kept).
+dl FBC6 word_list_select_letter
+rem FBC6 < In: A = letter 'A'-'Z'. Binds the table, saves the letter in $1FE4 and points line_rec_ptr at that letter's head.
+dl FB81 word_list_first_from
+rem FB81 < In: A = letter. Finds the first word record at or after that letter (line_rec). Carry set if there is none.
+dl FB7B word_list_next
+rem FB7B < Moves line_rec to the next word record, going on to the following letters at the end of a list. Carry set at the end of the table.
+rem C083 < Not in the ROM dictionary: try the user dictionary, then (swapping the lists) the ignored words.
+rem D467 < End of the check: the ignored words are only for this check. Swap the lists, free every ignored word and the table, swap back.
+rem D5CA < Correction menu option 2 'Add word to user dictionary': word_list_add. Option 1 'Ignore word' (below) adds it to the ignored words instead.
+dl D264 clamp_cursor_index
+rem D264 < If cursor_index is beyond line_length, sets it to line_length. Out: A = C = cursor_index. BC preserved apart from C.
+dl D988 toggle_reverse
+rem D988 < Prints the 'toggle reverse video' sequence (1 R). HL preserved.
+dl E1AB is_block_start_line
+rem E1AB < Carry clear if the start marker is set and is on the cursor line; carry set otherwise. BC preserved.
+dl E1CB is_block_end_line
+rem E1CB < Carry clear if both markers are set and the end marker is on the cursor line; carry set otherwise. BC preserved.
+dl E5D2 check_free_memory
+rem E5D2 < OS_Nq NQ_Mfs (free memory) for pool_main. Carry set when the high byte returned in A is 0 and B is below 5, i.e. memory is nearly full; callers then refuse the command.
+de E5D3 "NQ_Mfs"
+dl F02C redefine_window1
+rem F02C < Prints str_define_window1: redefines and selects the text window, which closes any dialog drawn over it.
+dl F0A8 input_to_buffer_a
+rem F0A8 < GN_Sip line input into buffer A (buffer size 50, 30 columns shown). Used for filenames. Out: A = the key that ended the input.
+dl F0F9 free_sized_record
+rem F0F9 < In: HL = offset, A = bank of a record whose byte 0 is its size. Frees it to pool_main; does nothing if HL = 0.
+dl F10E store_filename_record
+rem F10E < In: C = length of the explicit filename that GN_Opf left in buffer C. Allocates a record of C+2 bytes (line_rec), byte 0 = its size, then copies the name and its terminator.
+rem F10E < Keeps the filename of the text or user dictionary just loaded or saved. Carry set if there is no room.
+dl C2AE next_word_form
+rem C2AE < Puts the next accepted word form in buffer C: the next ending of the current stem's inflection class if there is one, otherwise the next record of the section, expanded.
+rem C2AE < Carry set at the end of the section (from read_dictionary_record).
+dl F788 next_full_word
+rem F788 < next_word_form, then writes the two section letters (dict_letter1, dict_letter2) just before buffer C and adds 2 to dict_word_length and dict_stem_length,
+rem F788 < so the whole word starts two bytes before buffer C. Returns the flags of next_word_form (carry = end of section).
+dl FC44 word_list_compare
+rem FC44 < Compares the word at HL (A letters, first letter included) with the list word at line_rec, whose first letter is in $1FE4.
+rem FC44 < Flags as for CP at the first difference: Z = equal, carry = the word comes first.
+dl FF46 open_dialog_centre
+rem FF46 < open_dialog_with_title with the centre geometry: x 25, 30 columns, full height (title on row 0).
+dl FF4B open_dialog_right
+rem FF4B < open_dialog_with_title with the right-hand geometry: x 38, 35 columns, rows 1-7. (open_dialog_default is the same on the left, x 1.)
+dl D8CA next_word_from_text
+rem D8CA < In: HL -> text, scan_chars_left = characters left to scan. Skips to the next word character, then copies the word into buffer A through is_word_char,
+rem D8CA < so every letter is upper case: capital letters make no difference to the check. A leading apostrophe is dropped.
+rem D8CA < The length goes to dict_target_length, leaving out a final apostrophe and a final 'S (JOHN'S is checked as JOHN). word_start_ptr = where the word starts.
+rem D8CA < Z set if no word is left; NZ when a word was found.
+dl DD33 find_word_start
+rem DD33 < From cursor_index, moves back to the start of the word at or before the cursor. Out: HL -> that character in line_buffer, C = its index. Z if at the start of the line.
+dl DDBD guess_correct_word
+rem DDBD < Correction menu option 3 'Guess correct word'. The word is in buffer A (dict_target_length letters).
+rem DDBD < Scans every section of the ROM dictionary (first letters A-Z, second letters apostrophe and A-Z) that section_could_match allows, every word form (next_word_form),
+rem DDBD < then every word of the user dictionary. Each word that is_one_edit_away accepts is appended to the guess list (append_guess).
+rem DDBD < A key pressed during the scan stops it (checked with OS_Xin after each first letter). The guesses are then shown six at a time in the right-hand dialog:
+rem DDBD < up and down move the highlight, Enter puts the chosen word in buffer C and returns, 1-5 go to that Correction menu option, Escape cancels.
+rem DDBD < Out: A = 1, or the menu key pressed. edit_flags bit 6 ($40) is set when no word was chosen. top_line is borrowed as a row counter while the list is drawn.
+dl E063 section_could_match
+rem E063 < Z set if the section's first letter (dict_letter1) or second letter (dict_letter2) equals the first or the second letter of the typed word.
+rem E063 < Only those sections are searched, so a guess must share one of its first two letters with the typed word.
+dl E076 append_guess
+rem E076 < Far call 6 (far_append_guess in bank 63): appends the word in buffer C - 2 to the guess list. Carry set if there is no room.
+dl E090 is_one_edit_away
+rem E090 < Compares the word being scanned (buffer C - 2, dict_word_length + 2 letters) with the typed word (buffer A, dict_target_length letters).
+rem E090 < Z set (a guess) when they differ by one edit: same length with one letter different, or with two adjacent letters swapped ($E0C0);
+rem E090 < typed word one letter shorter, i.e. a letter missing ($E0EF); typed word one letter longer, i.e. an extra letter ($E10F). Lengths further apart are rejected.
+dl DFF5 free_guess_list
+rem DFF5 < Frees every record of the guess list and clears guess_list_ptr.
+dl D922 is_word_char
+rem D922 < Z set if A is a letter or an apostrophe. A letter is returned in upper case (AND $DF); an apostrophe is returned unchanged.
+rem FE15 < Load user dictionary: each run of word characters (is_word_char, at most 64) is one word; any other byte ends it. Words of fewer than 3 characters are skipped.
+rem FE15 < The words are added with word_list_add, so the file needs no particular order; a word starting with an apostrophe is rejected by word_list_add.
+dl CFE9 alloc_line_record
+rem CFE9 < In: A = text length. Allocates a line record of A+7 bytes from pool_main and points line_rec_ptr/line_rec_bank at it.
+rem CFE9 < Links it between prev_line and next_line: prev's next link (+4) and next's prev link (+1) are set to it, and its own header gets the length and both links.
+rem CFE9 < Out: carry set if OS_Mal failed. E = text length on exit.
+dl CCA2 store_cursor_line
+rem CCA2 < Writes the cursor line (line_buffer, line_length characters) into a new line record linked between prev_line and next_line. Carry set if there is no room.
+dl CCBC load_line_record
+rem CCBC < Makes the record at line_rec the cursor line: copies its text into line_buffer (copy_record_to_line_buffer) and takes its previous and next links as prev_line and next_line.
+dl CCE2 take_line_record
+rem CCE2 < load_line_record, then frees the record (free_line_record): the line now exists only in the edit buffer.
+dl CCE5 free_line_record
+rem CCE5 < Frees the record at line_rec back to pool_main (OS_Mfr, size from its length byte).
+dl E5B4 copy_record_to_line_buffer
+rem E5B4 < Binds the record's bank into segment 1, sets line_length = record length - 7 and copies the text into line_buffer.
+dl ED76 step_to_prev_record
+rem ED76 < Follows the previous link (+1..+3) of the record at line_rec. Z set (line_rec unchanged) if there is no previous line; otherwise line_rec = previous record, bound into segment 1, NZ.
+dl ED9C step_to_next_record
+rem ED9C < Follows the next link (+4..+6) of the record at line_rec. Z set (line_rec unchanged) if there is no next line; otherwise line_rec = next record, bound into segment 1, NZ.
+dl E7BB dec_cursor_line
+dl E7C3 inc_cursor_line
 dl C5B2 qe_main_loop
 rem C5B2 < QuickEdit main loop (entry 0 of the command table: 'no command', just reads the next key).
 dl CB7A cmd_screen_up

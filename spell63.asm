@@ -114,7 +114,8 @@ L_C081:
         scf
         ccf
         ret
-L_C087:
+find_dictionary_section:
+; Same routine as find_dictionary_section in bank 62.
         ld      a,(dict_letter1)
         sub     'A'
         ld      l,a
@@ -175,7 +176,8 @@ bind_dictionary_bank:
         scf
         ccf
         ret
-L_C0EB:
+next_word_form:
+; Same routine as next_word_form in bank 62: the next accepted word form in buffer C (next ending, or next record expanded). Carry set at the end of the section.
         ld      a,(dict_word_flags)
         cp      $00
         jp      m,L_C126
@@ -292,8 +294,8 @@ wf_start:
         oz      Os_erh
         ld      hl,$0000
         ld      a,$00
-        ld      ($1FAC),hl
-        ld      ($1FAE),a
+        ld      (user_dict_ptr),hl
+        ld      (user_dict_bank),a
         ld      a,$00
         ld      bc,$0000
         oz      Os_mop
@@ -648,15 +650,17 @@ L_C55A:
         cp      (hl)
         jp      nz,L_C607
 L_C56B:
-        call    L_C087
+        call    find_dictionary_section
         jp      c,L_C607
         ld      a,$00
         ld      (dict_word_flags),a
 L_C576:
-        call    L_C0EB
+; WordFinder reuses the line_rec_ptr word ($1FE8) here: in the crossword solver it holds a pointer into the pattern
+; (set after a '*' or '#' at $C5C4, 0 = none), not a line record. Likewise $1FEB holds a pointer into the dictionary word.
+        call    next_word_form
         jp      c,L_C607
         ld      hl,$0000
-        ld      ($1FE8),hl
+        ld      (line_rec_ptr),hl
         ld      hl,(ptr_buffer_c)
         dec     hl
         ld      a,(dict_letter2)
@@ -708,7 +712,7 @@ L_C5C4:
         jr      z,L_C5C4
         cp      '#'
         jr      z,L_C5C4
-        ld      ($1FE8),de
+        ld      (line_rec_ptr),de
         ld      a,b
         ld      ($1FBC),a
         ld      ($1FEB),hl
@@ -727,7 +731,7 @@ L_C5E4:
         jr      nz,L_C5E0
         jr      L_C576
 L_C5F1:
-        ld      de,($1FE8)
+        ld      de,(line_rec_ptr)
         ld      a,d
         or      e
         jp      z,L_C576
@@ -787,12 +791,12 @@ L_C649:
         ld      a,'''
         ld      (dict_letter2),a
 L_C66E:
-        call    L_C087
+        call    find_dictionary_section
         jr      c,L_C6CE
         ld      a,$00
         ld      (dict_word_flags),a
 L_C678:
-        call    L_C0EB
+        call    next_word_form
         jr      c,L_C6CE
         ld      a,(dict_target_length)
         ld      b,a
@@ -1050,31 +1054,31 @@ L_C83E:
         ld      ($1FE5),a
         cp      $00
         jp      z,L_C90E
-        ld      a,($1F9E)
-        ld      hl,($1F9C)
-        ld      ($1FEA),a
-        ld      ($1FE8),hl
+        ld      a,(prev_line_bank)
+        ld      hl,(prev_line_ptr)
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),hl
         ld      hl,$1FE5
         dec     (hl)
 L_C859:
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
         ld      a,($1FE5)
         cp      $00
         jr      z,L_C881
-        ld      ix,($1FE8)
+        ld      ix,(line_rec_ptr)
         ld      a,(ix+1)
         ld      l,(ix+2)
         ld      h,(ix+3)
-        ld      ($1FEA),a
-        ld      ($1FE8),hl
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),hl
         ld      hl,$1FE5
         dec     (hl)
         jr      L_C859
 L_C881:
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -1094,14 +1098,14 @@ L_C881:
         ld      a,(cursor_col_limit)
         ld      e,a
         ld      d,a
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(hl)
         sub     LINE_HDR_SIZE
         cp      e
         jr      nc,L_C8B6
         ld      e,a
 L_C8B6:
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      bc,$0007
         add     hl,bc
         ld      c,$00
@@ -1133,15 +1137,15 @@ L_C8D8:
         ld      a,(cursor_row)
         cp      b
         jr      z,L_C90A
-        ld      ix,($1FE8)
+        ld      ix,(line_rec_ptr)
         ld      l,(ix+5)
         ld      h,(ix+6)
         ld      a,h
         or      l
         jp      z,L_C969
         ld      a,(ix+4)
-        ld      ($1FEA),a
-        ld      ($1FE8),hl
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),hl
         ld      a,(edit_flags)
         and     $02
         jr      nz,L_C90A
@@ -1163,13 +1167,13 @@ L_C91F:
         jr      z,redraw_done
         inc     a
         ld      ($1FE5),a
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jr      z,draw_end_of_text_marker
-        ld      a,($1FA1)
-        ld      ($1FEA),a
-        ld      ($1FE8),hl
+        ld      a,(next_line_bank)
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),hl
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -1601,7 +1605,7 @@ far_information:
         oz      Gn_nln
         ld      hl,L_CF7E
         oz      Gn_sop
-        ld      bc,$8900
+        ld      bc,NQ_Mfs
         ld      ix,(pool_main)
         oz      Os_nq
         srl     a
@@ -1615,7 +1619,7 @@ far_information:
         oz      Gn_sop
         ld      hl,L_CF7E
         oz      Gn_sop
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         jr      nz,L_CDE6
@@ -1623,16 +1627,16 @@ far_information:
         oz      Gn_sop
         jr      L_CDF0
 L_CDE6:
-        ld      a,($1FD9)
+        ld      a,(user_dict_name_bank)
         ld      b,a
-        ld      hl,($1FD7)
+        ld      hl,(user_dict_name_ptr)
         call    L_CEB4
 L_CDF0:
         ld      hl,(cursor_line)
         push    hl
-        call    L_D600
+        call    store_cursor_line
 L_CDF7:
-        call    L_D6E3
+        call    step_to_prev_record
         jr      nz,L_CDF7
         ld      hl,$0000
         ld      (top_line),hl
@@ -1640,8 +1644,8 @@ L_CDF7:
 L_CE05:
         oz      Os_xin
         jp      nc,L_CE60
-        call    L_D61A
-        call    L_D640
+        call    take_line_record
+        call    free_line_record
         ld      hl,(line_buffer)
         ld      a,(line_length)
         ld      b,a
@@ -1663,10 +1667,10 @@ L_CE33:
         inc     hl
         djnz    L_CE1D
 L_CE36:
-        call    L_D600
-        call    L_D704
+        call    store_cursor_line
+        call    step_to_next_record
         jr      z,L_CE47
-        call    L_D728
+        call    inc_cursor_line
         jr      L_CE05
 L_CE43:
         ld      c,$00
@@ -1691,8 +1695,8 @@ L_CE60:
         jr      c,L_CE88
         jr      z,L_CE80
 L_CE6F:
-        call    L_D6E3
-        call    L_D730
+        call    step_to_prev_record
+        call    dec_cursor_line
         ld      hl,(top_line)
         dec     hl
         ld      (top_line),hl
@@ -1700,12 +1704,12 @@ L_CE6F:
         or      l
         jr      nz,L_CE6F
 L_CE80:
-        call    L_D61A
-        call    L_D640
+        call    take_line_record
+        call    free_line_record
         jr      L_CE9B
 L_CE88:
-        call    L_D704
-        call    L_D728
+        call    step_to_next_record
+        call    inc_cursor_line
         ld      hl,(top_line)
         inc     hl
         ld      (top_line),hl
@@ -1907,7 +1911,7 @@ far_call_table:
         defw    far_search_and_replace
         defw    far_load_text_at_cursor
         defw    L_DB25
-        defw    far_call_6
+        defw    far_append_guess
         defw    far_redraw_text_window
         defw    far_tab
         defw    far_next_match
@@ -2080,20 +2084,20 @@ far_print_text:
         oz      Os_prt
         ld      a,'['
         oz      Os_prt
-        call    L_D600
-        ld      a,($1FEA)
-        ld      hl,($1FE8)
-        ld      ($1FA1),a
-        ld      ($1F9F),hl
+        call    store_cursor_line
+        ld      a,(line_rec_bank)
+        ld      hl,(line_rec_ptr)
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),hl
 L_D121:
-        call    L_D6E3
+        call    step_to_prev_record
         jr      nz,L_D121
 L_D126:
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(hl)
         sub     $07
         jr      z,L_D144
@@ -2114,7 +2118,7 @@ L_D144:
         ld      a,$0D
         oz      Os_prt
         jr      c,L_D174
-        call    L_D704
+        call    step_to_next_record
         jr      nz,L_D126
 L_D155:
         ld      a,$05
@@ -2123,12 +2127,12 @@ L_D155:
         oz      Os_prt
         ld      a,$06
         oz      Os_esc
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
-        call    L_D61A
-        call    L_D640
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
+        call    take_line_record
+        call    free_line_record
         ret
 L_D174:
         ld      a,$07
@@ -2430,11 +2434,11 @@ L_D3BE:
         cp      $00
         jr      z,L_D3DD
         push    de
-        call    L_D600
-        call    L_D704
-        call    L_D61A
-        call    L_D640
-        call    L_D728
+        call    store_cursor_line
+        call    step_to_next_record
+        call    take_line_record
+        call    free_line_record
+        call    inc_cursor_line
         ld      hl,(line_buffer)
         ld      a,(line_length)
         ld      c,a
@@ -2668,14 +2672,14 @@ L_D578:
         cp      $00
         jr      z,L_D5B5
         push    de
-        call    L_D600
-        call    L_D704
+        call    store_cursor_line
+        call    step_to_next_record
         push    af
-        call    L_D61A
-        call    L_D640
+        call    take_line_record
+        call    free_line_record
         pop     af
         jr      z,L_D5A9
-        call    L_D728
+        call    inc_cursor_line
         pop     de
         ld      hl,(line_buffer)
         ld      a,(line_length)
@@ -2693,15 +2697,15 @@ L_D5B5:
         ccf
         ret
 L_D5BB:
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jr      z,L_D5D9
-        call    L_D600
-        call    L_D704
-        call    L_D61A
-        call    L_D640
-        call    L_D728
+        call    store_cursor_line
+        call    step_to_next_record
+        call    take_line_record
+        call    free_line_record
+        call    inc_cursor_line
         ld      a,$00
         ld      (cursor_index),a
         jp      L_D54F
@@ -2716,10 +2720,10 @@ L_D5DB:
         sbc     hl,bc
         ret     z
         push    hl
-        call    L_D600
+        call    store_cursor_line
 L_D5EB:
-        call    L_D6E3
-        call    L_D730
+        call    step_to_prev_record
+        call    dec_cursor_line
         pop     hl
         dec     hl
         push    hl
@@ -2727,12 +2731,13 @@ L_D5EB:
         or      l
         jr      nz,L_D5EB
         pop     hl
-        call    L_D61A
-        call    L_D640
+        call    take_line_record
+        call    free_line_record
         ret
-L_D600:
+store_cursor_line:
+; $D600-$D74F: copies of the bank 62 line-record routines, used by the far-called commands (see notes section 12, 'How the text is stored').
         ld      a,(line_length)
-        call    L_D651
+        call    alloc_line_record
         ret     c
         ld      a,e
         cp      $00
@@ -2747,31 +2752,32 @@ L_D617:
         scf
         ccf
         ret
-L_D61A:
-        call    L_D738
-        ld      ix,($1FE8)
+take_line_record:
+; Copies the record at line_rec into the edit buffer, takes its links as prev_line and next_line, then frees it (falls into free_line_record).
+        call    copy_record_to_line_buffer
+        ld      ix,(line_rec_ptr)
         ld      a,(ix+1)
         ld      l,(ix+2)
         ld      h,(ix+3)
-        ld      ($1F9E),a
-        ld      ($1F9C),hl
+        ld      (prev_line_bank),a
+        ld      (prev_line_ptr),hl
         ld      a,(ix+4)
         ld      l,(ix+5)
         ld      h,(ix+6)
-        ld      ($1FA1),a
-        ld      ($1F9F),hl
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),hl
         ret
-L_D640:
-        ld      hl,($1FE8)
+free_line_record:
+        ld      hl,(line_rec_ptr)
         ld      a,(hl)
         ld      c,a
 L_D645:
         ld      b,$00
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      ix,(pool_main)
         oz      Os_mfr
         ret
-L_D651:
+alloc_line_record:
         ld      e,a
         add     a,$07
         ld      c,a
@@ -2781,66 +2787,66 @@ L_D651:
         oz      Os_mal
         ret     c
         ld      a,b
-        ld      ($1FEA),a
-        ld      ($1FE8),hl
-        ld      hl,($1F9C)
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),hl
+        ld      hl,(prev_line_ptr)
         ld      a,h
         or      l
         jr      z,L_D68A
-        ld      a,($1F9E)
+        ld      a,(prev_line_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      bc,($1FE8)
-        ld      a,($1FEA)
-        ld      ix,($1F9C)
+        ld      bc,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      ix,(prev_line_ptr)
         ld      (ix+4),a
         ld      (ix+5),c
         ld      (ix+6),b
 L_D68A:
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jr      z,L_D6AD
-        ld      a,($1FA1)
+        ld      a,(next_line_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      bc,($1FE8)
-        ld      a,($1FEA)
-        ld      ix,($1F9F)
+        ld      bc,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      ix,(next_line_ptr)
         ld      (ix+1),a
         ld      (ix+2),c
         ld      (ix+3),b
 L_D6AD:
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
         ld      a,e
         add     a,$07
-        ld      ix,($1FE8)
+        ld      ix,(line_rec_ptr)
         ld      (ix+0),a
-        ld      a,($1F9E)
+        ld      a,(prev_line_bank)
         ld      (ix+1),a
-        ld      hl,($1F9C)
+        ld      hl,(prev_line_ptr)
         ld      (ix+2),l
         ld      (ix+3),h
-        ld      a,($1FA1)
+        ld      a,(next_line_bank)
         ld      (ix+4),a
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      (ix+5),l
         ld      (ix+6),h
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         scf
         ccf
         ret
-L_D6E3:
-        ld      a,($1FEA)
+step_to_prev_record:
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         inc     hl
         ld      d,(hl)
         inc     hl
@@ -2851,17 +2857,17 @@ L_D6E3:
         or      c
         ret     z
         ld      a,d
-        ld      ($1FEA),a
-        ld      ($1FE8),bc
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),bc
         ld      a,$01
         cp      $00
         ret
-L_D704:
-        ld      a,($1FEA)
+step_to_next_record:
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      bc,$0004
         add     hl,bc
         ld      d,(hl)
@@ -2873,27 +2879,27 @@ L_D704:
         or      c
         ret     z
         ld      a,d
-        ld      ($1FEA),a
-        ld      ($1FE8),bc
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),bc
         ld      a,$01
         cp      $00
         ret
-L_D728:
+inc_cursor_line:
         ld      hl,(cursor_line)
         inc     hl
         ld      (cursor_line),hl
         ret
-L_D730:
+dec_cursor_line:
         ld      hl,(cursor_line)
         dec     hl
         ld      (cursor_line),hl
         ret
-L_D738:
-        ld      a,($1FEA)
+copy_record_to_line_buffer:
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(hl)
         sub     $07
         ld      (line_length),a
@@ -2935,8 +2941,8 @@ L_D7AD:
         push    bc
         oz      Os_mal
         ld      a,b
-        ld      ($1FEA),a
-        ld      ($1FE8),hl
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),hl
         oz      Os_mpb
         pop     bc
         ld      a,c
@@ -2950,8 +2956,8 @@ L_D7CE:
         inc     de
         cp      $00
         jr      nz,L_D7CE
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
         ret
 L_D7DD:
         ld      d,a
@@ -3026,9 +3032,11 @@ L_D862:
 L_D87A:
         defb    $01,$33,$40
         defb    $20,$20,$00
-far_call_6:
+far_append_guess:
 ; Far-call table entry 6.
-; Called from bank 62 at $E076, inside the check-as-you-type code. Purpose not yet identified.
+; Called from append_guess (bank 62 $E076) by Guess correct word, once for each dictionary or user word that is one edit away from the typed word.
+; Allocates a record of (word length + 7) bytes and appends it to the guess list: byte 0 = word length, bytes 1-3 = previous guess, bytes 4-6 = next guess (0), then the whole word from buffer C - 2.
+; The first guess becomes the list head (guess_list_ptr/bank); $1FBC/$1FBE hold the last guess, $1FBF/$1FC1 the new one. Carry set if there is no room.
         ld      a,(dict_word_length)
         add     a,$02
         ld      e,a
@@ -3059,8 +3067,8 @@ far_call_6:
         jr      nz,L_D8C1
         ld      hl,($1FBF)
         ld      a,($1FC1)
-        ld      ($1FC2),hl
-        ld      ($1FC4),a
+        ld      (guess_list_ptr),hl
+        ld      (guess_list_bank),a
         ld      bc,$0004
         add     hl,bc
 L_D8C1:
@@ -3145,11 +3153,11 @@ L_D939:
         ld      ($1F97),ix
         call    L_DB06
         call    L_DA56
-        call    L_D600
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
-        ld      ($1F9C),hl
-        ld      ($1F9E),a
+        call    store_cursor_line
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      (prev_line_ptr),hl
+        ld      (prev_line_bank),a
         ld      hl,L_DA31
         oz      Gn_sop
         ld      hl,(cursor_line)
@@ -3157,7 +3165,7 @@ L_D939:
 L_D96F:
         ld      a,$00
         ld      (line_length),a
-        call    L_DAD1
+        call    check_free_memory
         jp      c,L_D9FE
         ld      hl,(line_buffer)
 L_D97D:
@@ -3174,13 +3182,13 @@ L_D97D:
         cp      $EF
         jr      c,L_D97D
 L_D996:
-        call    L_D600
+        call    store_cursor_line
         call    L_DAE1
-        call    L_D728
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
-        ld      ($1F9C),hl
-        ld      ($1F9E),a
+        call    inc_cursor_line
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      (prev_line_ptr),hl
+        ld      (prev_line_bank),a
         jp      L_D96F
 L_D9AE:
         cp      $09
@@ -3202,7 +3210,7 @@ L_D9C4:
         ld      a,(line_length)
         cp      $00
         jr      z,L_D9D8
-        call    L_D600
+        call    store_cursor_line
 L_D9D8:
         ld      a,$00
 L_D9DA:
@@ -3215,20 +3223,20 @@ L_D9DA:
         jr      z,L_D9F6
 L_D9E5:
         ld      (top_line),hl
-        call    L_D6E3
-        call    L_D730
+        call    step_to_prev_record
+        call    dec_cursor_line
         ld      hl,(top_line)
         dec     hl
         ld      a,h
         or      l
         jr      nz,L_D9E5
 L_D9F6:
-        call    L_D61A
-        call    L_D640
+        call    take_line_record
+        call    free_line_record
         pop     af
         ret
 L_D9FE:
-        call    L_D600
+        call    store_cursor_line
         ld      a,$02
         jr      L_D9DA
 
@@ -3266,7 +3274,7 @@ L_DA56:
         ld      (cursor_index),a
         ld      a,$00
 L_DA68:
-        call    L_D651
+        call    alloc_line_record
         ret     c
         ld      bc,$0007
         add     hl,bc
@@ -3282,10 +3290,10 @@ L_DA68:
         jr      z,L_DA84
         ldir
 L_DA84:
-        ld      a,($1FEA)
-        ld      hl,($1FE8)
-        ld      ($1FA1),a
-        ld      ($1F9F),hl
+        ld      a,(line_rec_bank)
+        ld      hl,(line_rec_ptr)
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),hl
         ld      hl,(block_start_line)
         ld      a,(block_start_col)
         call    L_DAB7
@@ -3321,8 +3329,9 @@ L_DAB7:
 L_DACF:
         inc     hl
         ret
-L_DAD1:
-        ld      bc,$8900
+check_free_memory:
+; Same routine as check_free_memory in bank 62: carry set when memory is nearly full.
+        ld      bc,NQ_Mfs
         ld      ix,(pool_main)
         oz      Os_nq
         cp      $00
@@ -3378,17 +3387,17 @@ L_DB25:
         inc     hl
         ld      a,(hl)
         ld      (dict_letter2),a
-        call    L_C087
+        call    find_dictionary_section
         jr      nc,L_DB53
 L_DB3E:
         call    L_E375
-        call    L_C087
+        call    find_dictionary_section
         jr      c,L_DB3E
         ld      a,$00
         ld      (dict_word_flags),a
         call    L_DC87
         ret     nc
-        call    L_E5E5
+        call    next_full_word
         ret
 L_DB53:
         call    read_dictionary_record
@@ -3566,7 +3575,7 @@ L_DC77:
         ccf
         ret
 L_DC87:
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         jr      nz,L_DC90
@@ -3574,7 +3583,7 @@ L_DC8E:
         scf
         ret
 L_DC90:
-        ld      a,($1FAE)
+        ld      a,(user_dict_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -3586,7 +3595,7 @@ L_DC90:
         add     a,c
         ld      c,a
         ld      b,$00
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         add     hl,bc
 L_DCA8:
         ld      d,(hl)
@@ -3597,11 +3606,11 @@ L_DCA8:
         ld      a,b
         or      c
         jr      z,L_DC8E
-        ld      ($1FE8),bc
+        ld      (line_rec_ptr),bc
         ld      b,d
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(dict_target_length)
         inc     a
         cp      (hl)
@@ -3636,7 +3645,7 @@ L_DCD2:
         ccf
         ret
 L_DCF8:
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         inc     hl
         jr      L_DCA8
 wf_option_3_find_close_matches:
@@ -3669,7 +3678,7 @@ L_DD17:
 L_DD35:
         call    L_D862
         jp      nz,L_DD64
-        call    L_C087
+        call    find_dictionary_section
         jp      c,L_DD64
         ld      hl,(ptr_buffer_c)
         ld      a,(dict_letter2)
@@ -3681,7 +3690,7 @@ L_DD35:
         ld      a,$00
         ld      (dict_word_flags),a
 L_DD53:
-        call    L_C0EB
+        call    next_word_form
         jp      c,L_DD64
         call    L_DD8A
         jr      nz,L_DD53
@@ -4061,7 +4070,7 @@ L_E2E3:
 L_E2E8:
         call    L_E375
 L_E2EB:
-        call    L_C087
+        call    find_dictionary_section
         jr      c,L_E2E8
         ld      hl,(dict_pos)
 L_E2F3:
@@ -4069,7 +4078,7 @@ L_E2F3:
         ld      ($1FAF),hl
         ld      a,$00
         ld      (dict_word_flags),a
-        call    L_E5E5
+        call    next_full_word
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
         call    L_E3BF
@@ -4104,7 +4113,7 @@ L_E32C:
 L_E33A:
         call    L_E39A
 L_E33D:
-        call    L_C087
+        call    find_dictionary_section
         jr      c,L_E33A
         ld      hl,(dict_pos)
         jp      L_E2F3
@@ -4113,7 +4122,7 @@ L_E348:
         jr      nz,L_E35A
 L_E34C:
         call    L_E375
-        call    L_C087
+        call    find_dictionary_section
         jr      c,L_E34C
         ld      hl,(dict_pos)
         jp      L_E2F3
@@ -4265,7 +4274,7 @@ L_E459:
         ld      hl,dict_stem_length
         dec     (hl)
         dec     (hl)
-        call    L_E5E5
+        call    next_full_word
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
         ret
@@ -4278,7 +4287,7 @@ L_E468:
 L_E476:
         ld      a,$00
         ld      (dict_word_flags),a
-        call    L_E5E5
+        call    next_full_word
         jr      c,L_E492
         call    L_E5DB
         jr      c,L_E48B
@@ -4307,7 +4316,7 @@ L_E49B:
         cp      '['
         jr      nc,L_E4C0
 L_E4B3:
-        call    L_C087
+        call    find_dictionary_section
         jr      c,L_E492
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
@@ -4316,7 +4325,7 @@ L_E4C0:
         ld      a,'A'
         ld      (dict_letter1),a
         ld      (dict_letter2),a
-        call    L_C087
+        call    find_dictionary_section
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
         jr      L_E476
@@ -4361,7 +4370,7 @@ L_E51B:
         call    L_E5AA
         ld      a,$00
         ld      (dict_word_flags),a
-        call    L_E5E5
+        call    next_full_word
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
         call    L_E5DB
@@ -4420,7 +4429,7 @@ L_E570:
         ld      a,'Z'
         ld      (dict_letter1),a
 L_E58D:
-        call    L_C087
+        call    find_dictionary_section
         jr      c,L_E567
         ld      hl,(dict_pos)
 L_E595:
@@ -4473,7 +4482,8 @@ L_E5DB:
         ld      ($1FB3),a
         scf
         ret
-L_E5E5:
+next_full_word:
+; Same routine as next_full_word in bank 62: next_word_form, with the two section letters written just before buffer C.
         ld      hl,(ptr_buffer_c)
         dec     hl
         ld      a,(dict_letter2)
@@ -4483,7 +4493,7 @@ L_E5E5:
         ld      (hl),a
         ld      a,(dict_word_flags)
         push    af
-        call    L_C0EB
+        call    next_word_form
         push    af
         pop     hl
         pop     af
@@ -4528,7 +4538,7 @@ L_E62E:
         ld      a,(hl)
         ld      (dict_letter2),a
 L_E649:
-        call    L_C087
+        call    find_dictionary_section
         jr      nc,L_E653
         call    L_E39A
         jr      L_E649
@@ -4537,7 +4547,7 @@ L_E653:
         ld      (dict_word_flags),a
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
-        call    L_E5E5
+        call    next_full_word
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
         jr      L_E674

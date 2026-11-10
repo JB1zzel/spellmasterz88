@@ -156,10 +156,10 @@ $C001 applDor_QuickEdit, $C03B read_dictionary_record
 $C048, $C051
 $C06B, $C06E
 $C070 skip_to_next_letter_group, $C073
-$C081, $C087
+$C081, $C087 find_dictionary_section
 $C0A8, $C0AA
 $C0AB, $C0BD
-$C0BF bind_dictionary_bank, $C0EB
+$C0BF bind_dictionary_bank, $C0EB next_word_form
 $C126, $C138
 $C142, $C149
 $C14B, $C154
@@ -292,17 +292,17 @@ $D55D, $D578
 $D5A9, $D5B5
 $D5BB, $D5D9
 $D5DB, $D5EB
-$D600, $D617
-$D61A, $D640
-$D645, $D651
+$D600 store_cursor_line, $D617
+$D61A take_line_record, $D640 free_line_record
+$D645, $D651 alloc_line_record
 $D68A, $D6AD
-$D6E3, $D704
-$D728, $D730
-$D738, $D7AA
+$D6E3 step_to_prev_record, $D704 step_to_next_record
+$D728 inc_cursor_line, $D730 dec_cursor_line
+$D738 copy_record_to_line_buffer, $D7AA
 $D7AD, $D7CE
 $D7DD, $D7F2
 $D7FB, $D800
-$D862, $D880 far_call_6
+$D862, $D880 far_append_guess
 $D8C1, $D8D5
 $D8FA, $D909 far_load_text_at_cursor
 $D91B, $D925
@@ -315,7 +315,7 @@ $D9F6, $D9FE
 $DA23, $DA56
 $DA68, $DA84
 $DAB7, $DACF
-$DAD1, $DAE1
+$DAD1 check_free_memory, $DAE1
 $DAF2, $DAF6
 $DB01, $DB06
 $DB25, $DB3E
@@ -376,7 +376,7 @@ $E570, $E58D
 $E595, $E59B
 $E5AA, $E5B4
 $E5C3, $E5D9
-$E5DB, $E5E5
+$E5DB, $E5E5 next_full_word
 $E603, $E616
 $E62E, $E649
 $E653, $E669
@@ -634,8 +634,10 @@ $8900
 		 "'N' = name section, length 10: QuickEdit, 0. Then $FF ends the DOR.")
 	($C03B,< "Copy of bank 62 read_dictionary_record (see there).")
 	($C070,< "Copy of bank 62 skip_to_next_letter_group.")
+	($C087,< "Same routine as find_dictionary_section in bank 62.")
 	($C0BF,< "Same routine as in bank 62: bind one dictionary bank into segment 2 (see bank 62 for the description)."
 		 "BANK-ADDRESSING SITE 1 (patched, copy in this bank): ADD A,D / SUB $3F, where D = $38 + index. The ORIGINAL ROM had AND $C0 / OR D.")
+	($C0EB,< "Same routine as next_word_form in bank 62: the next accepted word form in buffer C (next ending, or next record expanded). Carry set at the end of the section.")
 	($C196,< "WordFinder application DOR (raw bytes for the same reason as the QuickEdit DOR)."
 		 "$C196 parent link 0; brother link 0 (last application on the card); son link 0. $83 = application ROM DOR, length $30. '@' = info section, length $12:"
 		 "reserved 00 00; key letter 'W'; contiguous RAM size 0; overhead 0; unsafe workspace $007C; safe workspace 0; entry point $C1D1;"
@@ -648,6 +650,8 @@ $8900
 		 "Enter runs the selected option, Escape frees the pools and exits (OS_Bye).")
 	($C2C7,< "Handles a key typed in the WordFinder menu.")
 	($C506,< "Menu option 4: Solve crossword (window title 'Crossword').")
+	($C576,< "WordFinder reuses the line_rec_ptr word ($1FE8) here: in the crossword solver it holds a pointer into the pattern"
+		 "(set after a '*' or '#' at $C5C4, 0 = none), not a line record. Likewise $1FEB holds a pointer into the dictionary word.")
 	($C62D,< "Menu option 2: Find anagrams (window title 'Anagram'). Asks for a word, checks it is letters only, then searches.")
 	($C799,< "Far-call table entry 7."
 		 "Called by draw_text_window (bank 62), which redraw_screen calls. Draws the text in window 1: the cursor line from the edit buffer,"
@@ -693,12 +697,18 @@ $8900
 		 "Called from the QuickEdit handler for Next Match (command $2C).")
 	($D498,< "Far-call table entry 2."
 		 "Called from the QuickEdit handler for Search for string (command $25).")
+	($D600,< "$D600-$D74F: copies of the bank 62 line-record routines, used by the far-called commands (see notes section 12, 'How the text is stored').")
+	($D61A,< "Copies the record at line_rec into the edit buffer, takes its links as prev_line and next_line, then frees it (falls into free_line_record).")
 	($D880,< "Far-call table entry 6."
-		 "Called from bank 62 at $E076, inside the check-as-you-type code. Purpose not yet identified.")
+		 "Called from append_guess (bank 62 $E076) by Guess correct word, once for each dictionary or user word that is one edit away from the typed word."
+		 "Allocates a record of (word length + 7) bytes and appends it to the guess list: byte 0 = word length, bytes 1-3 = previous guess, bytes 4-6 = next guess (0), then the whole word from buffer C - 2."
+		 "The first guess becomes the list head (guess_list_ptr/bank); $1FBC/$1FBE hold the last guess, $1FBF/$1FC1 the new one. Carry set if there is no room.")
 	($D909,< "Far-call table entry 4."
 		 "Called from the QuickEdit handler for Merge text at cursor (command $27).")
+	($DAD1,< "Same routine as check_free_memory in bank 62: carry set when memory is nearly full.")
 	($DCFE,< "Menu option 3: Find close matches (window title 'Find close matches').")
 	($E203,< "Menu option 1: Browse through dictionary.")
+	($E5E5,< "Same routine as next_full_word in bank 62: next_word_form, with the two section letters written just before buffer C.")
 	($E6EB,< "QuickEdit menu topics ('Blocks', 'Cursor', 'Edit', 'Files', 'SPELLING') - kept as raw bytes.")
 	($E728,< "QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See NOTES.md for the full table.")
 	($EBAE,< "Menu commands for the Correction/spelling menu.")
@@ -734,13 +744,17 @@ $8900
 	($CA9F,"SD_COORD"SD_COORD)
 	($CAFA,"SD_COORD"SD_COORD)
 	($CB01,"SD_COORD"SD_COORD)
+	($CDB6,"NQ_Mfs"NQ_Mfs)
+	($DAD2,"NQ_Mfs"NQ_Mfs)
 }
 
 ; Global constants:
 {
 
 	$1F82 dict_pos, $1F84 dict_bank, $1F85 dict_target_length, $1F86 dict_letter1, $1F87 dict_letter2, $1F88 dict_word_length, $1F89 dict_word_flags, $1F8A dict_ending_ptr
-	$1F8C dict_stem_length, $1F8D ptr_buffer_b, $1F8F ptr_buffer_c, $1F91 ptr_buffer_a, $1F93 pool_buffers, $1F99 line_buffer, $1F9B line_buffer_bank, $1FA2 cursor_row
-	$1FA4 cursor_col_limit, $1FA5 cursor_index, $1FA6 line_length, $1FA7 pool_main, $1FA9 pool_second, $1FAB edit_flags, $1FC8 block_start_line, $1FCA block_start_col
-	$1FCB block_end_line, $1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel
+	$1F8C dict_stem_length, $1F8D ptr_buffer_b, $1F8F ptr_buffer_c, $1F91 ptr_buffer_a, $1F93 pool_buffers, $1F99 line_buffer, $1F9B line_buffer_bank, $1F9C prev_line_ptr
+	$1F9E prev_line_bank, $1F9F next_line_ptr, $1FA1 next_line_bank, $1FA2 cursor_row, $1FA4 cursor_col_limit, $1FA5 cursor_index, $1FA6 line_length, $1FA7 pool_main
+	$1FA9 pool_second, $1FAB edit_flags, $1FAC user_dict_ptr, $1FAE user_dict_bank, $1FC2 guess_list_ptr, $1FC4 guess_list_bank, $1FC8 block_start_line, $1FCA block_start_col
+	$1FCB block_end_line, $1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel, $1FD7 user_dict_name_ptr, $1FD9 user_dict_name_bank
+	$1FDA ignore_list_ptr, $1FDC ignore_list_bank, $1FE8 line_rec_ptr, $1FEA line_rec_bank
 }

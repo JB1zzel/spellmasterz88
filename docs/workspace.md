@@ -21,10 +21,10 @@ Both applications use the same layout. 'refs' counts instructions naming the add
 | $1F97 |  |  | 26/3 | (not yet identified) |
 | $1F99 | line_buffer | 2 | 49/18 | Pointer to the current-line edit buffer (0xF8 bytes, allocated at start-up) |
 | $1F9B | line_buffer_bank | 1 | 13/1 | Bank of the current-line edit buffer |
-| $1F9C |  |  | 27/7 | (not yet identified) |
-| $1F9E |  |  | 19/6 | (not yet identified) |
-| $1F9F |  |  | 52/9 | (not yet identified) |
-| $1FA1 |  |  | 35/7 | (not yet identified) |
+| $1F9C | prev_line_ptr | 2 | 27/7 | Offset (segment 1) of the line record above the cursor line; 0 = the cursor line is the first line |
+| $1F9E | prev_line_bank | 1 | 19/6 | Bank of the record above the cursor line |
+| $1F9F | next_line_ptr | 2 | 52/9 | Offset (segment 1) of the line record below the cursor line; 0 = the cursor line is the last line |
+| $1FA1 | next_line_bank | 1 | 35/7 | Bank of the record below the cursor line |
 | $1FA2 | cursor_row | 1 | 32/14 | Screen row (0 to 7) of the cursor line in window 1 |
 | $1FA3 |  |  | 8/1 | (not yet identified) |
 | $1FA4 | cursor_col_limit | 1 | 5/8 | Screen column at which the cursor stops while the line scrolls sideways; also the number of columns drawn per row |
@@ -33,23 +33,23 @@ Both applications use the same layout. 'refs' counts instructions naming the add
 | $1FA7 | pool_main | 2 | 20/14 | Memory pool handle #1 (created first with OS_Mop) |
 | $1FA9 | pool_second | 2 | 3/5 | Memory pool handle #2 (created second with OS_Mop) |
 | $1FAB | edit_flags | 1 | 65/9 | QuickEdit flags: bit 0 = overtype mode (toggled by Insert/Over), bit 4 = check-as-you-type on, bits 1-3 (mask $0E) = screen redraw state (2 = redraw requested, 4 = redraw finished) |
-| $1FAC |  |  | 20/4 | (not yet identified) |
-| $1FAE |  |  | 13/2 | (not yet identified) |
+| $1FAC | user_dict_ptr | 2 | 20/4 | Offset (segment 1) of the user dictionary table: 26 three-byte list heads, one per letter A-Z; 0 = no table yet (see notes section 14) |
+| $1FAE | user_dict_bank | 1 | 13/2 | Bank of the user dictionary table |
 | $1FAF |  |  | 15/15 | (not yet identified) |
 | $1FB1 |  |  | 5/0 | (not yet identified) |
 | $1FB3 |  |  | 9/13 | (not yet identified) |
 | $1FB4 |  |  | 3/0 | (not yet identified) |
 | $1FB5 |  |  | 3/0 | (not yet identified) |
-| $1FB7 |  |  | 21/0 | (not yet identified) |
+| $1FB7 | scan_chars_left | 1 | 21/0 | Characters of the line still to scan for the next word (next_word_from_text); set to line_length minus the scan start |
 | $1FB8 |  |  | 16/0 | (not yet identified) |
-| $1FBA |  |  | 5/0 | (not yet identified) |
+| $1FBA | word_start_ptr | 2 | 5/0 | Address in the line buffer where the word just taken by next_word_from_text starts |
 | $1FBC |  |  | 24/8 | (not yet identified) |
 | $1FBD |  |  | 0/3 | (not yet identified) |
 | $1FBE |  |  | 17/3 | (not yet identified) |
 | $1FBF |  |  | 11/9 | (not yet identified) |
 | $1FC1 |  |  | 10/8 | (not yet identified) |
-| $1FC2 |  |  | 6/1 | (not yet identified) |
-| $1FC4 |  |  | 6/1 | (not yet identified) |
+| $1FC2 | guess_list_ptr | 2 | 6/1 | Offset of the first record of the guess list built by Guess correct word; 0 = none (notes section 15) |
+| $1FC4 | guess_list_bank | 1 | 6/1 | Bank of that record |
 | $1FC8 | block_start_line | 2 | 32/9 | Block start marker: line number |
 | $1FC9 |  |  | 1/0 | (not yet identified) |
 | $1FCA | block_start_col | 1 | 39/8 | Block start marker: column |
@@ -63,10 +63,10 @@ Both applications use the same layout. 'refs' counts instructions naming the add
 | $1FD3 | wf_menu_sel | 1 | 21/16 | WordFinder: currently selected menu line (0 to 3) |
 | $1FD4 |  |  | 9/1 | (not yet identified) |
 | $1FD6 |  |  | 7/1 | (not yet identified) |
-| $1FD7 |  |  | 7/1 | (not yet identified) |
-| $1FD9 |  |  | 5/1 | (not yet identified) |
-| $1FDA |  |  | 2/0 | (not yet identified) |
-| $1FDC |  |  | 2/0 | (not yet identified) |
+| $1FD7 | user_dict_name_ptr | 2 | 7/1 | Offset of a record holding the user dictionary filename last saved or loaded (byte 0 = length); shown by Information |
+| $1FD9 | user_dict_name_bank | 1 | 5/1 | Bank of that record |
+| $1FDA | ignore_list_ptr | 2 | 2/0 | Offset of the ignored-words table (same structure as the user dictionary); only touched by swap_word_lists |
+| $1FDC | ignore_list_bank | 1 | 2/0 | Bank of the ignored-words table |
 | $1FDD |  |  | 0/9 | (not yet identified) |
 | $1FDF |  |  | 0/7 | (not yet identified) |
 | $1FE0 |  |  | 0/4 | (not yet identified) |
@@ -75,8 +75,8 @@ Both applications use the same layout. 'refs' counts instructions naming the add
 | $1FE4 |  |  | 26/5 | (not yet identified) |
 | $1FE5 |  |  | 19/21 | (not yet identified) |
 | $1FE7 |  |  | 4/0 | (not yet identified) |
-| $1FE8 |  |  | 83/34 | (not yet identified) |
-| $1FEA |  |  | 68/24 | (not yet identified) |
+| $1FE8 | line_rec_ptr | 2 | 83/34 | Offset (segment 1) of the line record being worked on: just allocated (alloc_line_record) or reached by walking the links (step_to_prev_record, step_to_next_record). WordFinder reuses this word in the crossword solver as a pointer into the pattern |
+| $1FEA | line_rec_bank | 1 | 68/24 | Bank of that record |
 | $1FEB |  |  | 5/3 | (not yet identified) |
 | $1FED |  |  | 5/0 | (not yet identified) |
 | $1FF3 |  |  | 4/0 | (not yet identified) |

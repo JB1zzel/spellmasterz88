@@ -47,7 +47,7 @@ Some QuickEdit commands are implemented in bank 63. `far_call_bank63` (bank 62, 
 | 2 | far_search_for_string ($D498) | Search for string |
 | 3 | far_search_and_replace ($D19D) | Search and Replace |
 | 4 | far_load_text_at_cursor ($D909) | Merge text at cursor |
-| 6 | far_call_6 ($D880) | called from bank 62 at $E076; purpose not identified |
+| 6 | far_append_guess ($D880) | Guess correct word: append_guess at $E076 adds each guess to the list (section 15) |
 | 7 | far_redraw_text_window ($C799) | draw_text_window, which redraw_screen calls (section 12) |
 | 8 | far_tab ($D01E) | Tab |
 | 9 | far_next_match ($D479) | Next Match |
@@ -74,7 +74,7 @@ The dictionary stores common groups of letters as single bytes ($80 or more). Th
 
 ## 7. Workspace
 
-Both apps use the application workspace $1F80-$1FFF with the same layout. `docs/workspace.md` lists every address used and names those the code establishes: the buffer pointers, the pool handles, the dictionary position and bank, the current-line buffer, the cursor row, column limit, index and line length, the block markers, the cursor and top line numbers, `edit_flags` and `wf_menu_sel`. The rest are unidentified.
+Both apps use the application workspace $1F80-$1FFF with the same layout. `docs/workspace.md` lists every address used and names those the code establishes: the buffer pointers, the pool handles, the dictionary position and bank, the current-line buffer, the cursor row, column limit, index and line length, the block markers, the cursor and top line numbers, the links around the cursor line and the working line-record pointer, the user dictionary, the ignored words and the user dictionary filename (see "How the text is stored" in section 12), `edit_flags` and `wf_menu_sel`. The rest are unidentified.
 
 ## 8. RAM installation under OZ 5 (learned along the way)
 
@@ -93,8 +93,7 @@ From reading the OZ ROM (`ozs0-7e93476`) and the developer notes; untested.
 
 ## 10. What is still unknown
 
-- The purpose of far call 6 and most unnamed routines (`docs/routine_index_bank*.md`).
-- The user dictionary format (the Save and Load user dictionary commands), and how the checker treats capital letters.
+- Most unnamed routines (`docs/routine_index_bank*.md`).
 - Regions that decode as code may be data that happens to assemble; the byte-identical check cannot tell.
 - Most workspace variables.
 - Behaviour has not been traced on a running machine.
@@ -125,6 +124,8 @@ Coordinates sent to the screen driver have 32 added (`SD_COORD`). Window 1 is re
 
 **`redraw_screen` ($D241).** 1) `draw_text_window` ($D06F), which is `LD A,7` and a far call to `far_redraw_text_window` in bank 63. 2) `draw_status_line` ($D0F7). 3) `place_cursor` ($D247).
 
+**How the text is stored.** The cursor line is not in the chain: it lives in the edit buffer (`line_buffer`, `line_length`), and the chain is cut around it. `prev_line_ptr`/`prev_line_bank` ($1F9C/$1F9E) point at the record above it and `next_line_ptr`/`next_line_bank` ($1F9F/$1FA1) at the record below; a zero offset means there is none, so an empty text is `line_length` = 0 with both offsets zero (the test `cmd_load_text` makes before asking whether to discard the text). Moving to another line goes in two steps. `store_cursor_line` ($CCA2) writes the edit buffer into a new record (`alloc_line_record`, $CFE9, which links it between the two neighbours and leaves it in `line_rec_ptr`/`line_rec_bank`, $1FE8/$1FEA). Then the target record is put in `line_rec`, and `take_line_record` ($CCE2) copies its text into the edit buffer, takes its links as the new `prev_line`/`next_line` and frees it. `step_to_prev_record` ($ED76) and `step_to_next_record` ($ED9C) walk `line_rec` along the links, returning Z at either end. `store_cursor_line` (40 callers) and `take_line_record` (36) are among the most called routines in bank 62.
+
 **`far_redraw_text_window` ($C799).** The text is a chain of line records in banked memory: byte 0 is the record length (text length + `LINE_HDR_SIZE`, 7), bytes 1-3 the previous line (bank, offset low, offset high), bytes 4-6 the next line, and the text from byte 7. The cursor line itself is held in the edit buffer. The routine:
 1. works out `top_line` = `cursor_line` - `cursor_row` (clamped at line 0, in which case `cursor_row` becomes `cursor_line`);
 2. draws the cursor line at `cursor_row` (`draw_cursor_line`, $C7C5);
@@ -144,3 +145,49 @@ It appears to check for a waiting key with `OS_Xin` and stop early, so typing is
 **Status line.** `draw_status_line` redefines and clears window 2, prints the number `cursor_line + 1`, then in tiny type shows Insert or Overtype on row 7 (`edit_flags` bit 0) and Check: On or Off on row 6 (bit 4), and selects window 1 again.
 
 **Dialogs.** `open_dialog_with_title` ($FF61) draws window 3 as an outer window (type $83), prints the title centred, makes the title line reverse across 75 characters, then redefines window 3 as an inner window (type $81) below the title. `dialog_window_right` and `dialog_window_left` open a plain window 3 in the right (x 37) or left (x 0) half. Which of the two a caller uses depends on the caller; nothing in the code selects by cursor position.
+
+## 14. The user dictionary and ignored words
+
+**In memory.** QuickEdit keeps two word lists with the same structure: the user dictionary (`user_dict_ptr`/`user_dict_bank`, $1FAC/$1FAE) and the ignored words (`ignore_list_ptr`/`ignore_list_bank`, $1FDA/$1FDC). Each is a 78-byte ($4E) table of 26 three-byte heads (bank, offset low, offset high), one per letter A-Z. Each head starts a linked list of word records in alphabetical order, allocated from `pool_main`:
+
+| offset | size | contents |
+|---|---|---|
+| 0 | 1 | n = number of letters stored = word length - 1 |
+| 1 | 3 | next record: bank, offset low, offset high (offset 0 = end of list) |
+| 4 | n | the word without its first letter, which is given by the table slot |
+
+The table is allocated and cleared the first time a word is added. The list routines only ever use `user_dict_ptr`; `swap_word_lists` ($FC71) exchanges the two pointers, and every use of the ignored words is a swap, the call and a swap back.
+
+**Routines (bank 62).** `word_list_add` ($F88C) inserts the word in buffer A in alphabetical order (Z if it is already there, carry if it does not start with A-Z). `word_list_lookup` ($FBE3) finds a word (carry clear = found). `word_list_clear` ($FEC1) frees every record and clears the heads. `word_list_select_letter`, `word_list_first_from` and `word_list_next` walk the whole table in order; `L_F9DF` and `L_FADE` use them to look for nearby user words (purpose not yet confirmed).
+
+**How the checker uses them.** `dictionary_lookup` tries the ROM dictionary first; if the word is not there it tries the user dictionary and then the ignored words ($C083). In the Correction menu, option 1 'Ignore word' adds the word to the ignored words and option 2 'Add word to user dictionary' to the user dictionary ($D5CA). When a check of the text ends ($D467) the ignored words are freed together with their table, so 'Ignore' lasts for one check; the user dictionary stays until it is replaced.
+
+**The file.** Save user dictionary ($FC8E) writes plain text: for each letter A-Z and each word in order, a space, the first letter, the stored letters and a CR. Load user dictionary ($FD99) asks before discarding the current list, clears it (`word_list_clear`), then reads the file a byte at a time: every run of letters or apostrophes (`is_word_char`, upper-casing letters, at most 64) is a word and any other byte ends it. Words shorter than 3 characters are skipped, and each word goes through `word_list_add`, so any plain word list in any order and case can be loaded. The filename used is kept in a small record (`user_dict_name_ptr`/`user_dict_name_bank`, $1FD7/$1FD9), offered as the default filename by Save user dictionary and shown by Information.
+
+## 15. Checking a word and guessing the correct one
+
+**Taking a word from the text.** `next_word_from_text` ($D8CA) skips to the next letter or apostrophe and copies the word into buffer A through `is_word_char`, which turns every letter into upper case. **Capital letters therefore make no difference**: "london", "London" and "LONDON" are all checked as LONDON, and a proper noun is accepted only if it is in the dictionary or the user dictionary. Digits and other symbols end a word. A leading apostrophe is dropped, and the length passed to the lookup leaves out a final apostrophe or a final 'S, so JOHN'S is checked as JOHN. `word_start_ptr` ($1FBA) keeps where the word starts so it can be replaced, and `scan_chars_left` ($1FB7) counts what is left of the line. `find_word_start` ($DD33) moves back from the cursor to the start of the current word.
+
+**Correction menu.** When a word is not found the menu offers 1 Ignore word, 2 Add word to user dictionary, 3 Guess correct word, 4 Change word, 5 Browse through dictionary (section 14 covers 1 and 2).
+
+**Guess correct word** (`guess_correct_word`, $DDBD) is a brute-force search for words one edit away from the typed word:
+
+1. It goes through every section of the ROM dictionary, first letter A-Z and second letter apostrophe then A-Z, but searches only those where `section_could_match` ($E063) holds: the section's first or second letter equals the typed word's first or second letter. So a guess is found only if one of its first two letters equals one of the typed word's first two letters, in either position (a swap of the first two letters is still found; a word whose first two letters are both wrong is not).
+2. In each section it produces every accepted form, endings included (`next_word_form`), and tests it with `is_one_edit_away` ($E090).
+3. It then tests every word of the user dictionary the same way.
+4. A key pressed during the search stops it (checked after each first letter).
+
+`is_one_edit_away` accepts a word that is:
+
+| typed word | accepted when | code |
+|---|---|---|
+| same length | one letter differs, or two adjacent letters are swapped (one swap) | $E0B3, $E0C0 |
+| one letter shorter | one letter is missing | $E0EF |
+| one letter longer | one letter is extra | $E10F |
+
+Words whose length differs by two or more are rejected at once.
+
+Each guess is added by `append_guess` ($E076), which is far call 6 (`far_append_guess`, bank 63 $D880). The list is a chain of records like the line records: byte 0 = word length, bytes 1-3 = previous guess, bytes 4-6 = next guess, then the word. Its head is `guess_list_ptr`/`guess_list_bank` ($1FC2/$1FC4). If there are none the routine shows "No Guesses found". Otherwise "Guesses found" lists them six at a time in the right-hand dialog (borrowing `top_line` as a row counter): up and down move the highlight, Enter takes the word (copied to buffer C), 1-5 jump to that Correction menu option and Escape cancels. `free_guess_list` ($DFF5) frees the list afterwards. `edit_flags` bit 6 ($40) is set when no word was chosen, and the caller then returns to the menu instead of replacing the word.
+
+`L_F9DF` and `L_FADE`, which walk the user dictionary for nearby words, belong to option 5 (Browse), not to guessing.
+

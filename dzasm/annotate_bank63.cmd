@@ -33,6 +33,10 @@ dc 1F91 ptr_buffer_a
 dc 1F93 pool_buffers
 dc 1F99 line_buffer
 dc 1F9B line_buffer_bank
+dc 1F9C prev_line_ptr
+dc 1F9E prev_line_bank
+dc 1F9F next_line_ptr
+dc 1FA1 next_line_bank
 dc 1FA2 cursor_row
 dc 1FA4 cursor_col_limit
 dc 1FA5 cursor_index
@@ -40,6 +44,10 @@ dc 1FA6 line_length
 dc 1FA7 pool_main
 dc 1FA9 pool_second
 dc 1FAB edit_flags
+dc 1FAC user_dict_ptr
+dc 1FAE user_dict_bank
+dc 1FC2 guess_list_ptr
+dc 1FC4 guess_list_bank
 dc 1FC8 block_start_line
 dc 1FCA block_start_col
 dc 1FCB block_end_line
@@ -48,6 +56,31 @@ dc 1FCE marker_flags
 dc 1FCF cursor_line
 dc 1FD1 top_line
 dc 1FD3 wf_menu_sel
+dc 1FD7 user_dict_name_ptr
+dc 1FD9 user_dict_name_bank
+dc 1FDA ignore_list_ptr
+dc 1FDC ignore_list_bank
+dc 1FE8 line_rec_ptr
+dc 1FEA line_rec_bank
+rem C576 < WordFinder reuses the line_rec_ptr word ($1FE8) here: in the crossword solver it holds a pointer into the pattern
+rem C576 < (set after a '*' or '#' at $C5C4, 0 = none), not a line record. Likewise $1FEB holds a pointer into the dictionary word.
+dl C087 find_dictionary_section
+rem C087 < Same routine as find_dictionary_section in bank 62.
+dl C0EB next_word_form
+rem C0EB < Same routine as next_word_form in bank 62: the next accepted word form in buffer C (next ending, or next record expanded). Carry set at the end of the section.
+dl E5E5 next_full_word
+rem E5E5 < Same routine as next_full_word in bank 62: next_word_form, with the two section letters written just before buffer C.
+rem D600 < $D600-$D74F: copies of the bank 62 line-record routines, used by the far-called commands (see notes section 12, 'How the text is stored').
+dl D600 store_cursor_line
+dl D61A take_line_record
+rem D61A < Copies the record at line_rec into the edit buffer, takes its links as prev_line and next_line, then frees it (falls into free_line_record).
+dl D640 free_line_record
+dl D651 alloc_line_record
+dl D6E3 step_to_prev_record
+dl D704 step_to_next_record
+dl D728 inc_cursor_line
+dl D730 dec_cursor_line
+dl D738 copy_record_to_line_buffer
 dl D008 far_call_table
 rem D008 < Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63.
 rem D008 < Index 1 ($D54F) and index 5 ($DB25) are not used by any caller in bank 62.
@@ -64,9 +97,11 @@ rem D19D < Called from the QuickEdit handler for Search and Replace (command $26
 dl D909 far_load_text_at_cursor
 rem D909 < Far-call table entry 4.
 rem D909 < Called from the QuickEdit handler for Merge text at cursor (command $27).
-dl D880 far_call_6
+dl D880 far_append_guess
 rem D880 < Far-call table entry 6.
-rem D880 < Called from bank 62 at $E076, inside the check-as-you-type code. Purpose not yet identified.
+rem D880 < Called from append_guess (bank 62 $E076) by Guess correct word, once for each dictionary or user word that is one edit away from the typed word.
+rem D880 < Allocates a record of (word length + 7) bytes and appends it to the guess list: byte 0 = word length, bytes 1-3 = previous guess, bytes 4-6 = next guess (0), then the whole word from buffer C - 2.
+rem D880 < The first guess becomes the list head (guess_list_ptr/bank); $1FBC/$1FBE hold the last guess, $1FBF/$1FC1 the new one. Carry set if there is no room.
 dl C799 far_redraw_text_window
 rem C799 < Far-call table entry 7.
 rem C799 < Called by draw_text_window (bank 62), which redraw_screen calls. Draws the text in window 1: the cursor line from the edit buffer,
@@ -180,4 +215,8 @@ de CA87 "SD_COORD"
 de CA9F "SD_COORD"
 de CAFA "SD_COORD"
 de CB01 "SD_COORD"
+de CDB6 "NQ_Mfs"
+dl DAD1 check_free_memory
+rem DAD1 < Same routine as check_free_memory in bank 62: carry set when memory is nearly full.
+de DAD2 "NQ_Mfs"
 ca

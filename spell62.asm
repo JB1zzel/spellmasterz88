@@ -133,12 +133,13 @@ L_C067:
         call    skip_to_next_letter_group
         jr      nc,L_C067
 L_C083:
-        call    L_FBE3
+; Not in the ROM dictionary: try the user dictionary, then (swapping the lists) the ignored words.
+        call    word_list_lookup
         ret     nc
-        call    L_FC71
-        call    L_FBE3
+        call    swap_word_lists
+        call    word_list_lookup
         push    af
-        call    L_FC71
+        call    swap_word_lists
         pop     af
         ret
 compare_expanded_word:
@@ -371,12 +372,12 @@ qe_start:
         oz      Os_erh
         ld      hl,$0000
         ld      a,$00
-        ld      ($1F9C),hl
-        ld      ($1F9E),a
-        ld      ($1F9F),hl
-        ld      ($1FA1),a
-        ld      ($1FAC),hl
-        ld      ($1FAE),a
+        ld      (prev_line_ptr),hl
+        ld      (prev_line_bank),a
+        ld      (next_line_ptr),hl
+        ld      (next_line_bank),a
+        ld      (user_dict_ptr),hl
+        ld      (user_dict_bank),a
         ld      (cursor_row),a
         ld      (cursor_index),a
         ld      ($1FE3),a
@@ -437,7 +438,9 @@ L_C2A4:
 L_C2AA:
         ld      a,$07
         oz      Os_bye
-L_C2AE:
+next_word_form:
+; Puts the next accepted word form in buffer C: the next ending of the current stem's inflection class if there is one, otherwise the next record of the section, expanded.
+; Carry set at the end of the section (from read_dictionary_record).
         ld      a,(dict_word_flags)
         cp      $00
         jp      m,L_C2E9
@@ -772,7 +775,7 @@ L_C5A4:
         ld      a,(line_buffer_bank)
         ld      b,a
         oz      Os_mpb
-        call    L_F02C
+        call    redefine_window1
 L_C5AF:
         call    redraw_screen
 qe_main_loop:
@@ -838,7 +841,7 @@ L_C614:
         jp      z,L_C756
 L_C619:
         ld      ($1FE4),a
-        call    L_E5D2
+        call    check_free_memory
         jr      c,qe_main_loop
         ld      a,(line_length)
         ld      c,a
@@ -894,7 +897,7 @@ L_C670:
         ld      a,(marker_flags)
         and     $03
         jr      z,L_C6A9
-        call    L_E1AB
+        call    is_block_start_line
         jr      c,L_C694
         ld      a,(cursor_index)
         ld      b,a
@@ -905,7 +908,7 @@ L_C670:
         inc     a
         ld      (block_start_col),a
 L_C694:
-        call    L_E1CB
+        call    is_block_end_line
         jr      c,L_C6A9
         ld      a,(cursor_index)
         ld      b,a
@@ -943,7 +946,7 @@ L_C6C8:
         cp      c
         jp      nc,L_C74A
         call    L_CD44
-        ld      hl,($1F9C)
+        ld      hl,(prev_line_ptr)
         ld      a,(edit_flags)
         and     $F1
         or      $08
@@ -951,19 +954,19 @@ L_C6C8:
         ld      a,($1FE5)
         cp      $00
         jp      z,L_C74A
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
 L_C6F5:
-        call    L_ED76
-        call    L_E7BB
+        call    step_to_prev_record
+        call    dec_cursor_line
         ld      hl,$1FE5
         dec     (hl)
         jr      nz,L_C6F5
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(cursor_index)
         ld      b,a
         ld      a,(hl)
@@ -981,18 +984,18 @@ L_C6F5:
         ld      a,$03
 L_C726:
         ld      (cursor_row),a
-        call    L_E7C3
-        ld      ix,($1FE8)
+        call    inc_cursor_line
+        ld      ix,(line_rec_ptr)
         ld      a,(ix+4)
         ld      l,(ix+5)
         ld      h,(ix+6)
-        ld      ($1FEA),a
-        ld      ($1FE8),hl
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),hl
         ld      b,a
         ld      c,$01
         oz      Os_mpb
 L_C744:
-        call    L_CCE2
+        call    take_line_record
         jp      L_C5AF
 L_C74A:
         ld      a,(edit_flags)
@@ -1001,7 +1004,7 @@ L_C74A:
         jp      qe_main_loop
 L_C756:
         oz      Os_pur
-        call    L_E5D2
+        call    check_free_memory
         jp      c,qe_main_loop
         ld      a,(edit_flags)
         or      $08
@@ -1016,11 +1019,11 @@ L_C756:
 L_C774:
         call    L_DB2E
         jp      c,L_D0D6
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        call    L_ED9C
-        call    L_CCE2
-        call    L_E7C3
+        call    step_to_next_record
+        call    take_line_record
+        call    inc_cursor_line
         ld      a,$00
         ld      (cursor_index),a
         ld      a,(cursor_row)
@@ -1035,7 +1038,7 @@ cmd_previous_word:
 ; Command handler: 'Previous word' - dispatch code $17
         ld      a,$00
         ld      ($1FE4),a
-        call    L_D264
+        call    clamp_cursor_index
         ld      c,a
         ld      b,$00
         ld      hl,(line_buffer)
@@ -1044,18 +1047,18 @@ cmd_previous_word:
         cp      $00
         jr      nz,L_C7E1
 L_C7B2:
-        ld      hl,($1F9C)
+        ld      hl,(prev_line_ptr)
         ld      a,h
         or      l
         jr      z,L_C801
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        ld      hl,($1F9C)
-        ld      a,($1F9E)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
-        call    L_CCE2
-        call    L_E7BB
+        ld      hl,(prev_line_ptr)
+        ld      a,(prev_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
+        call    take_line_record
+        call    dec_cursor_line
         ld      a,(line_length)
         ld      c,a
         ld      hl,$1FE4
@@ -1109,7 +1112,7 @@ cmd_next_word:
         ld      e,a
         ld      a,$00
         ld      ($1FE4),a
-        call    L_D264
+        call    clamp_cursor_index
         ld      c,a
         ld      b,$00
         ld      hl,(line_buffer)
@@ -1128,19 +1131,19 @@ L_C83D:
         ld      a,c
         cp      e
         jr      c,L_C86D
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jr      z,L_C87A
 L_C848:
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
-        call    L_CCE2
-        call    L_E7C3
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
+        call    take_line_record
+        call    inc_cursor_line
         ld      a,(line_length)
         ld      e,a
         ld      c,$00
@@ -1176,59 +1179,59 @@ cmd_delete_line:
         and     $01
         jr      z,L_C8B1
 L_C89D:
-        call    L_E1AB
+        call    is_block_start_line
         jr      c,L_C8A9
         call    L_E1DC
         jr      z,L_C8B1
         jr      L_C89D
 L_C8A9:
-        call    L_E1CB
+        call    is_block_end_line
         jr      c,L_C8B1
         call    L_E1F1
 L_C8B1:
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jr      z,L_C8DC
-        ld      ($1FE8),hl
-        ld      a,($1FA1)
-        ld      ($1FEA),a
+        ld      (line_rec_ptr),hl
+        ld      a,(next_line_bank)
+        ld      (line_rec_bank),a
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      bc,($1F9C)
-        ld      a,($1F9E)
+        ld      bc,(prev_line_ptr)
+        ld      a,(prev_line_bank)
         inc     hl
         ld      (hl),a
         inc     hl
         ld      (hl),c
         inc     hl
         ld      (hl),b
-        call    L_CCE2
+        call    take_line_record
         call    L_D1D7
         jp      L_CA13
 L_C8DC:
-        ld      hl,($1F9C)
+        ld      hl,(prev_line_ptr)
         ld      a,h
         or      l
         jr      z,L_C915
-        ld      ($1FE8),hl
-        ld      a,($1F9E)
-        ld      ($1FEA),a
+        ld      (line_rec_ptr),hl
+        ld      a,(prev_line_bank)
+        ld      (line_rec_bank),a
         ld      b,a
         ld      c,$01
         oz      Os_mpb
         ld      bc,$0004
         add     hl,bc
-        ld      bc,($1F9F)
-        ld      a,($1FA1)
+        ld      bc,(next_line_ptr)
+        ld      a,(next_line_bank)
         ld      (hl),a
         inc     hl
         ld      (hl),c
         inc     hl
         ld      (hl),b
-        call    L_CCE2
-        call    L_E7BB
+        call    take_line_record
+        call    dec_cursor_line
         ld      a,(cursor_row)
         cp      $00
         jr      z,L_C912
@@ -1249,7 +1252,7 @@ cmd_delete_character:
         ld      a,(cursor_index)
         cp      b
         jr      c,L_C938
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jp      nz,L_CA00
@@ -1260,7 +1263,7 @@ L_C938:
         jp      cmd_rubout
 cmd_rubout:
 ; Command handler: 'Rubout' - dispatch code $0B
-        call    L_D264
+        call    clamp_cursor_index
         cp      $00
         jr      z,L_C9AD
         ld      a,(marker_flags)
@@ -1270,7 +1273,7 @@ cmd_rubout:
         dec     a
         ld      b,a
 L_C952:
-        call    L_E1AB
+        call    is_block_start_line
         jr      c,L_C96F
         ld      a,(block_start_col)
         cp      b
@@ -1285,7 +1288,7 @@ L_C968:
         jr      z,L_C988
         jr      L_C952
 L_C96F:
-        call    L_E1CB
+        call    is_block_end_line
         jr      c,L_C988
         ld      a,(block_end_col)
         cp      b
@@ -1298,7 +1301,7 @@ L_C96F:
 L_C985:
         call    L_E1F1
 L_C988:
-        call    L_D264
+        call    clamp_cursor_index
         ld      c,a
         ld      b,$00
         ld      hl,(line_buffer)
@@ -1323,18 +1326,18 @@ L_C9A2:
         dec     (hl)
         jp      L_C5AF
 L_C9AD:
-        ld      hl,($1F9C)
+        ld      hl,(prev_line_ptr)
         ld      a,h
         or      l
         jp      z,qe_main_loop
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        ld      hl,($1F9C)
-        ld      a,($1F9E)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
-        call    L_CCE2
-        call    L_E7BB
+        ld      hl,(prev_line_ptr)
+        ld      a,(prev_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
+        call    take_line_record
+        call    dec_cursor_line
         ld      a,(cursor_row)
         cp      $00
         jr      z,L_C9D8
@@ -1376,11 +1379,11 @@ L_CA13:
         jp      L_C5AF
 cmd_join_lines:
 ; Command handler: 'Join lines' - dispatch code $0D
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jp      z,qe_main_loop
-        ld      a,($1FA1)
+        ld      a,(next_line_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -1400,7 +1403,7 @@ L_CA43:
         call    L_CA49
         jp      L_CA13
 L_CA49:
-        ld      a,($1FA1)
+        ld      a,(next_line_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -1437,7 +1440,7 @@ L_CA73:
         ld      (block_end_col),a
 L_CA91:
         call    L_D1D7
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,(hl)
         sub     $07
         ld      ($1FE4),a
@@ -1455,10 +1458,10 @@ L_CA91:
         ex      de,hl
         ldir
 L_CAB5:
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
         ld      a,(hl)
         sub     $07
         ld      c,a
@@ -1472,9 +1475,9 @@ L_CAB5:
         ld      c,(hl)
         inc     hl
         ld      b,(hl)
-        ld      ($1FA1),a
-        ld      ($1F9F),bc
-        call    L_CCE5
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),bc
+        call    free_line_record
         ret
 cmd_swap_case:
 ; Command handler: 'Swap case' - dispatch code $0C
@@ -1511,18 +1514,18 @@ cmd_end_of_line:
         jp      L_C5AF
 cmd_bottom_of_text:
 ; Command handler: 'Bottom of text' - dispatch code $08
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jp      z,qe_main_loop
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
         ld      a,(cursor_row)
         ld      e,a
 L_CB2D:
-        call    L_ED9C
+        call    step_to_next_record
         jr      z,L_CB3D
-        call    L_E7C3
+        call    inc_cursor_line
         ld      a,e
         cp      $08
         jr      nc,L_CB3B
@@ -1536,22 +1539,22 @@ L_CB3D:
         ld      a,$03
 L_CB44:
         ld      (cursor_row),a
-        call    L_CCE2
+        call    take_line_record
         ld      a,(line_length)
         ld      (cursor_index),a
         jp      L_CA13
 cmd_top_of_text:
 ; Command handler: 'Top of text' - dispatch code $07
-        ld      hl,($1F9C)
+        ld      hl,(prev_line_ptr)
         ld      a,h
         or      l
         jp      z,qe_main_loop
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
 L_CB61:
-        call    L_ED76
+        call    step_to_prev_record
         jr      nz,L_CB61
-        call    L_CCE2
+        call    take_line_record
         ld      a,$00
         ld      (cursor_row),a
         ld      (cursor_index),a
@@ -1560,21 +1563,21 @@ L_CB61:
         jp      L_CA13
 cmd_screen_up:
 ; Command handler: 'Screen up' - dispatch code $01
-        ld      hl,($1F9C)
+        ld      hl,(prev_line_ptr)
         ld      a,h
         or      l
         jp      z,qe_main_loop
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
         ld      e,$06
 L_CB8A:
-        call    L_ED76
+        call    step_to_prev_record
         jr      z,L_CB95
-        call    L_E7BB
+        call    dec_cursor_line
         dec     e
         jr      nz,L_CB8A
 L_CB95:
-        call    L_CCE2
+        call    take_line_record
         ld      hl,(cursor_line)
         ld      a,(cursor_row)
         ld      c,a
@@ -1588,32 +1591,32 @@ L_CB95:
         jp      L_CA13
 cmd_screen_down:
 ; Command handler: 'Screen down' - dispatch code $02
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jp      z,qe_main_loop
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
         ld      e,$06
 L_CBBF:
-        call    L_ED9C
+        call    step_to_next_record
         jr      z,L_CBCA
-        call    L_E7C3
+        call    inc_cursor_line
         dec     e
         jr      nz,L_CBBF
 L_CBCA:
-        call    L_CCE2
+        call    take_line_record
         jp      L_CA13
 cmd_cursor_down:
 ; Command handler: 'Cursor down' - dispatch code $05
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jp      z,qe_main_loop
         jr      L_CBFC
 cmd_cursor_up:
 ; Command handler: 'Cursor up' - dispatch code $06
-        ld      hl,($1F9C)
+        ld      hl,(prev_line_ptr)
         ld      a,h
         or      l
         jp      z,qe_main_loop
@@ -1625,21 +1628,21 @@ cmd_cursor_right:
         ld      a,(cursor_index)
         cp      c
         jr      c,L_CC32
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jp      z,qe_main_loop
         ld      a,$00
         ld      (cursor_index),a
 L_CBFC:
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        ld      a,($1FA1)
-        ld      hl,($1F9F)
-        ld      ($1FEA),a
-        ld      ($1FE8),hl
-        call    L_CCE2
-        call    L_E7C3
+        ld      a,(next_line_bank)
+        ld      hl,(next_line_ptr)
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),hl
+        call    take_line_record
+        call    inc_cursor_line
         ld      a,(cursor_row)
         cp      $07
         jr      c,L_CC2B
@@ -1676,11 +1679,11 @@ cmd_cursor_left:
         inc     a
         jp      L_CC36
 L_CC56:
-        ld      hl,($1F9C)
+        ld      hl,(prev_line_ptr)
         ld      a,h
         or      l
         jp      z,qe_main_loop
-        ld      a,($1F9E)
+        ld      a,(prev_line_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -1688,14 +1691,14 @@ L_CC56:
         sub     $07
         ld      (cursor_index),a
 L_CC6C:
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        ld      a,($1F9E)
-        ld      hl,($1F9C)
-        ld      ($1FEA),a
-        ld      ($1FE8),hl
-        call    L_CCE2
-        call    L_E7BB
+        ld      a,(prev_line_bank)
+        ld      hl,(prev_line_ptr)
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),hl
+        call    take_line_record
+        call    dec_cursor_line
         ld      a,(cursor_row)
         cp      $00
         jr      nz,L_CC9B
@@ -1710,9 +1713,10 @@ L_CC9B:
         dec     a
         ld      (cursor_row),a
         jp      L_C5AF
-L_CCA2:
+store_cursor_line:
+; Writes the cursor line (line_buffer, line_length characters) into a new line record linked between prev_line and next_line. Carry set if there is no room.
         ld      a,(line_length)
-        call    L_CFE9
+        call    alloc_line_record
         ret     c
         ld      a,e
         cp      $00
@@ -1727,28 +1731,31 @@ L_CCB9:
         scf
         ccf
         ret
-L_CCBC:
-        call    L_E5B4
-        ld      ix,($1FE8)
+load_line_record:
+; Makes the record at line_rec the cursor line: copies its text into line_buffer (copy_record_to_line_buffer) and takes its previous and next links as prev_line and next_line.
+        call    copy_record_to_line_buffer
+        ld      ix,(line_rec_ptr)
         ld      a,(ix+1)
         ld      l,(ix+2)
         ld      h,(ix+3)
-        ld      ($1F9E),a
-        ld      ($1F9C),hl
+        ld      (prev_line_bank),a
+        ld      (prev_line_ptr),hl
         ld      a,(ix+4)
         ld      l,(ix+5)
         ld      h,(ix+6)
-        ld      ($1FA1),a
-        ld      ($1F9F),hl
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),hl
         ret
-L_CCE2:
-        call    L_CCBC
-L_CCE5:
-        ld      hl,($1FE8)
+take_line_record:
+; load_line_record, then frees the record (free_line_record): the line now exists only in the edit buffer.
+        call    load_line_record
+free_line_record:
+; Frees the record at line_rec back to pool_main (OS_Mfr, size from its length byte).
+        ld      hl,(line_rec_ptr)
         ld      a,(hl)
         ld      c,a
         ld      b,$00
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      ix,(pool_main)
         oz      Os_mfr
         ret
@@ -1756,18 +1763,18 @@ cmd_format_paragraph:
 ; Command handler: 'Format paragraph' - dispatch code $0E
         call    L_CD44
 L_CCF9:
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jr      z,L_CD30
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
-        call    L_CCE2
-        call    L_E7C3
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
+        call    take_line_record
+        call    inc_cursor_line
         ld      hl,$1FE5
         inc     (hl)
         ld      a,(line_length)
@@ -1795,12 +1802,12 @@ L_CD44:
         ld      a,$00
         ld      ($1FE5),a
 L_CD49:
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jr      z,L_CD58
         ld      c,$01
-        ld      a,($1FA1)
+        ld      a,(next_line_bank)
         ld      b,a
         oz      Os_mpb
 L_CD58:
@@ -1846,14 +1853,14 @@ L_CD8E:
         jr      nz,L_CD97
         ld      a,($1FA3)
 L_CD97:
-        call    L_CFE9
+        call    alloc_line_record
         jp      c,show_no_room_error
         push    hl
         call    L_D20C
         ld      a,(marker_flags)
         and     $03
         jr      z,L_CDD4
-        call    L_E1AB
+        call    is_block_start_line
         jr      c,L_CDBE
         ld      a,(block_start_col)
         cp      e
@@ -1864,7 +1871,7 @@ L_CD97:
         inc     hl
         ld      (block_start_line),hl
 L_CDBE:
-        call    L_E1CB
+        call    is_block_end_line
         jr      c,L_CDD4
         ld      a,(block_end_col)
         cp      e
@@ -1887,10 +1894,10 @@ L_CDDE:
         inc     bc
         dec     d
         jr      nz,L_CDDE
-        ld      a,($1FEA)
-        ld      ($1F9E),a
-        ld      hl,($1FE8)
-        ld      ($1F9C),hl
+        ld      a,(line_rec_bank)
+        ld      (prev_line_bank),a
+        ld      hl,(line_rec_ptr)
+        ld      (prev_line_ptr),hl
         ld      hl,(line_buffer)
         add     hl,de
         ld      bc,(line_buffer)
@@ -1909,14 +1916,14 @@ L_CE03:
 L_CE0A:
         ld      hl,$1FE5
         inc     (hl)
-        call    L_E7C3
+        call    inc_cursor_line
         jp      L_CD49
 L_CE14:
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         ret     z
-        ld      a,($1FA1)
+        ld      a,(next_line_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -1996,7 +2003,7 @@ L_CE99:
         ld      hl,(line_buffer)
         add     hl,bc
         ex      de,hl
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,(hl)
         sub     $07
         ld      bc,$0007
@@ -2010,10 +2017,10 @@ L_CE99:
         jr      z,L_CEC0
         ldir
 L_CEC0:
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
         ld      bc,$0004
         add     hl,bc
         ld      a,(hl)
@@ -2021,9 +2028,9 @@ L_CEC0:
         ld      c,(hl)
         inc     hl
         ld      b,(hl)
-        ld      ($1FA1),a
-        ld      ($1F9F),bc
-        call    L_CCE5
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),bc
+        call    free_line_record
         jp      L_CD49
 L_CEE2:
         ld      a,(line_length)
@@ -2033,7 +2040,7 @@ L_CEE2:
         jp      c,L_CFE8
         jp      z,L_CFE8
         ld      d,a
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      bc,$0007
         add     hl,bc
         ld      c,d
@@ -2117,7 +2124,7 @@ L_CF7B:
         ld      hl,(line_buffer)
         add     hl,bc
         ex      de,hl
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      bc,$0007
         add     hl,bc
         ld      a,($1FE7)
@@ -2131,14 +2138,14 @@ L_CF97:
         ld      a,($1FE7)
         add     a,c
         ld      (line_length),a
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,show_no_room_error
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
-        call    L_CCE2
-        call    L_E7C3
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
+        call    take_line_record
+        call    inc_cursor_line
         ld      a,($1FE7)
         ld      c,a
         ld      b,$00
@@ -2168,7 +2175,10 @@ L_CFDE:
         jp      L_CF0F
 L_CFE8:
         ret
-L_CFE9:
+alloc_line_record:
+; In: A = text length. Allocates a line record of A+7 bytes from pool_main and points line_rec_ptr/line_rec_bank at it.
+; Links it between prev_line and next_line: prev's next link (+4) and next's prev link (+1) are set to it, and its own header gets the length and both links.
+; Out: carry set if OS_Mal failed. E = text length on exit.
         ld      e,a
         add     a,$07
         ld      c,a
@@ -2178,38 +2188,38 @@ L_CFE9:
         oz      Os_mal
         ret     c
         ld      a,b
-        ld      ($1FEA),a
-        ld      ($1FE8),hl
-        ld      hl,($1F9C)
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),hl
+        ld      hl,(prev_line_ptr)
         ld      a,h
         or      l
         jr      z,L_D021
-        ld      a,($1F9E)
+        ld      a,(prev_line_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1F9C)
+        ld      hl,(prev_line_ptr)
         ld      bc,$0004
         add     hl,bc
-        ld      bc,($1FE8)
-        ld      a,($1FEA)
+        ld      bc,(line_rec_ptr)
+        ld      a,(line_rec_bank)
         ld      (hl),a
         inc     hl
         ld      (hl),c
         inc     hl
         ld      (hl),b
 L_D021:
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jr      z,L_D040
-        ld      a,($1FA1)
+        ld      a,(next_line_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      bc,($1FE8)
-        ld      a,($1FEA)
-        ld      hl,($1F9F)
+        ld      bc,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      hl,(next_line_ptr)
         inc     hl
         ld      (hl),a
         inc     hl
@@ -2217,31 +2227,31 @@ L_D021:
         inc     hl
         ld      (hl),b
 L_D040:
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
         ld      a,e
         add     a,$07
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      (hl),a
         inc     hl
-        ld      a,($1F9E)
+        ld      a,(prev_line_bank)
         ld      (hl),a
         inc     hl
-        ld      bc,($1F9C)
+        ld      bc,(prev_line_ptr)
         ld      (hl),c
         inc     hl
         ld      (hl),b
         inc     hl
-        ld      a,($1FA1)
+        ld      a,(next_line_bank)
         ld      (hl),a
         inc     hl
-        ld      bc,($1F9F)
+        ld      bc,(next_line_ptr)
         ld      (hl),c
         inc     hl
         ld      (hl),b
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         scf
         ccf
         ret
@@ -2315,7 +2325,7 @@ show_no_room_error:
         oz      Gn_sop
         pop     hl
         oz      Gn_sop
-        jp      L_F02C
+        jp      redefine_window1
 
 
 L_D0ED:
@@ -2523,7 +2533,8 @@ L_D258:
         add     a,SD_COORD
         oz      Os_out
         ret
-L_D264:
+clamp_cursor_index:
+; If cursor_index is beyond line_length, sets it to line_length. Out: A = C = cursor_index. BC preserved apart from C.
         push    bc
         ld      a,(cursor_index)
         ld      c,a
@@ -2571,21 +2582,21 @@ L_D29D:
         ret
 cmd_check_from_cursor:
 ; Command handler: 'Check from cursor' - dispatch code $1D
-        call    L_E5D2
+        call    check_free_memory
         jp      c,L_D0D6
         ld      hl,L_D9A8
         oz      Gn_sop
-        call    L_DD33
+        call    find_word_start
         ld      a,(line_length)
         sub     c
-        ld      ($1FB7),a
+        ld      (scan_chars_left),a
         jp      L_D401
 cmd_check_marked_block:
 ; Command handler: 'Check marked block' - dispatch code $28
         ld      a,(marker_flags)
         and     $02
         jp      z,qe_main_loop
-        call    L_E5D2
+        call    check_free_memory
         jp      c,L_D0D6
         call    L_E171
         ld      hl,L_D9A8
@@ -2598,44 +2609,44 @@ cmd_check_marked_block:
         jr      z,L_D315
         jr      c,L_D2FB
         ld      (top_line),hl
-        call    L_CCA2
+        call    store_cursor_line
 L_D2E5:
-        call    L_ED76
-        call    L_E7BB
+        call    step_to_prev_record
+        call    dec_cursor_line
         ld      hl,(top_line)
         dec     hl
         ld      (top_line),hl
         ld      a,h
         or      l
         jr      nz,L_D2E5
-        call    L_CCE2
+        call    take_line_record
         jr      L_D315
 L_D2FB:
         ld      (top_line),hl
-        call    L_CCA2
+        call    store_cursor_line
 L_D301:
-        call    L_ED9C
-        call    L_E7C3
+        call    step_to_next_record
+        call    inc_cursor_line
         ld      hl,(top_line)
         inc     hl
         ld      (top_line),hl
         ld      a,h
         or      l
         jr      nz,L_D301
-        call    L_CCE2
+        call    take_line_record
 L_D315:
         ld      a,(block_start_col)
         ld      (cursor_index),a
-        call    L_DD33
+        call    find_word_start
         ld      a,(line_length)
         sub     c
-        ld      ($1FB7),a
+        ld      (scan_chars_left),a
 L_D325:
         ld      a,(line_buffer_bank)
         ld      b,a
         ld      c,$02
         oz      Os_mpb
-        call    L_D8CA
+        call    next_word_from_text
         jr      z,L_D398
         ld      ($1FB8),hl
         ld      hl,(ptr_buffer_a)
@@ -2648,12 +2659,12 @@ L_D325:
         and     $BF
         ld      (edit_flags),a
         call    L_D506
-        call    L_F02C
+        call    redefine_window1
         ld      a,(edit_flags)
         and     '@'
         jr      z,L_D366
 L_D359:
-        ld      a,($1FB7)
+        ld      a,(scan_chars_left)
         ld      b,a
         ld      a,(line_length)
         sub     b
@@ -2676,7 +2687,7 @@ L_D36C:
         jr      nz,L_D359
         ld      a,(block_end_col)
         ld      b,a
-        ld      a,($1FB7)
+        ld      a,(scan_chars_left)
         ld      c,a
         ld      a,(line_length)
         sub     c
@@ -2686,18 +2697,18 @@ L_D392:
         ld      hl,($1FB8)
         jp      L_D325
 L_D398:
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        call    L_ED9C
+        call    step_to_next_record
         jr      z,L_D3B5
-        call    L_E7C3
-        call    L_CCE2
+        call    inc_cursor_line
+        call    take_line_record
         ld      a,(line_length)
-        ld      ($1FB7),a
+        ld      (scan_chars_left),a
         ld      hl,(line_buffer)
         jp      L_D325
 L_D3B5:
-        call    L_CCE2
+        call    take_line_record
         ld      a,(line_length)
         ld      (cursor_index),a
 L_D3BE:
@@ -2715,29 +2726,29 @@ L_D3D2:
         jp      L_D467
 cmd_check_all_text:
 ; Command handler: 'Check all text' - dispatch code $12
-        call    L_E5D2
+        call    check_free_memory
         jp      c,L_D0D6
-        call    L_CCA2
+        call    store_cursor_line
 L_D3DE:
-        call    L_ED76
+        call    step_to_prev_record
         jr      nz,L_D3DE
         ld      hl,$0000
         ld      (cursor_line),hl
         ld      hl,L_D9A8
         oz      Gn_sop
 L_D3EF:
-        call    L_CCE2
-        call    L_E5D2
+        call    take_line_record
+        call    check_free_memory
         jp      c,L_D0D6
         ld      a,(line_length)
-        ld      ($1FB7),a
+        ld      (scan_chars_left),a
         ld      hl,(line_buffer)
 L_D401:
         ld      a,(line_buffer_bank)
         ld      b,a
         ld      c,$02
         oz      Os_mpb
-        call    L_D8CA
+        call    next_word_from_text
         jr      z,L_D44E
         ld      ($1FB8),hl
         ld      hl,(ptr_buffer_a)
@@ -2750,11 +2761,11 @@ L_D401:
         and     $BF
         ld      (edit_flags),a
         call    L_D506
-        call    L_F02C
+        call    redefine_window1
         ld      a,(edit_flags)
         and     '@'
         jr      z,L_D443
-        ld      a,($1FB7)
+        ld      a,(scan_chars_left)
         ld      b,a
         ld      a,(line_length)
         sub     b
@@ -2767,36 +2778,37 @@ L_D449:
         ld      hl,($1FB8)
         jr      L_D401
 L_D44E:
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
 L_D454:
-        call    L_ED9C
+        call    step_to_next_record
         jr      z,L_D45E
-        call    L_E7C3
+        call    inc_cursor_line
         jr      L_D3EF
 L_D45E:
-        call    L_CCE2
+        call    take_line_record
         ld      a,(line_length)
         ld      (cursor_index),a
 L_D467:
+; End of the check: the ignored words are only for this check. Swap the lists, free every ignored word and the table, swap back.
         ld      a,(edit_flags)
         and     $F1
         or      $02
         ld      (edit_flags),a
-        call    L_FC71
-        call    L_FEC1
-        ld      hl,($1FAC)
+        call    swap_word_lists
+        call    word_list_clear
+        ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         jr      z,L_D490
-        ld      a,($1FAE)
+        ld      a,(user_dict_bank)
         ld      bc,$004E
         ld      ix,(pool_main)
         oz      Os_mfr
         ld      hl,$0000
-        ld      ($1FAC),hl
+        ld      (user_dict_ptr),hl
 L_D490:
-        call    L_FC71
+        call    swap_word_lists
         jp      L_C5AF
 L_D496:
         ld      a,(line_buffer_bank)
@@ -2805,7 +2817,7 @@ L_D496:
         oz      Os_mpb
         ld      a,$0C
         oz      Os_out
-        ld      a,($1FB7)
+        ld      a,(scan_chars_left)
         ld      b,a
         ld      a,(line_length)
         sub     b
@@ -2830,7 +2842,7 @@ L_D4BD:
 L_D4CB:
         ld      a,(line_buffer)
         ld      d,a
-        ld      a,($1FBA)
+        ld      a,(word_start_ptr)
         sub     d
         sub     e
         ld      d,a
@@ -2840,12 +2852,12 @@ L_D4CB:
         ld      a,d
         cp      $00
         jr      nz,L_D4E2
-        call    L_D988
+        call    toggle_reverse
 L_D4E2:
         ld      a,e
         cp      $00
         jr      nz,L_D4EA
-        call    L_D988
+        call    toggle_reverse
 L_D4EA:
         ld      a,(hl)
         oz      Os_out
@@ -2854,11 +2866,11 @@ L_D4EA:
         jr      z,L_D4FF
         dec     d
         jr      nz,L_D4F7
-        call    L_D988
+        call    toggle_reverse
 L_D4F7:
         dec     e
         jr      nz,L_D4EA
-        call    L_D988
+        call    toggle_reverse
         jr      L_D4EA
 L_D4FF:
         ld      hl,L_D983
@@ -2890,7 +2902,7 @@ L_D506:
         oz      Gn_sop
         jp      L_D60C
 L_D542:
-        call    L_F02C
+        call    redefine_window1
         ld      hl,L_D9A4
         oz      Gn_sop
         ld      a,' '
@@ -2924,7 +2936,7 @@ L_D575:
         ld      a,(edit_flags)
         or      '@'
         ld      (edit_flags),a
-        call    L_F02C
+        call    redefine_window1
         ret
 L_D597:
         cp      $FE
@@ -2954,16 +2966,17 @@ L_D5B8:
         ld      b,$00
         jr      L_D5AD
 L_D5CA:
+; Correction menu option 2 'Add word to user dictionary': word_list_add. Option 1 'Ignore word' (below) adds it to the ignored words instead.
         cp      '2'
         jr      nz,L_D5D2
-        call    L_F88C
+        call    word_list_add
         ret
 L_D5D2:
         cp      '1'
         jr      nz,L_D5E0
-        call    L_FC71
-        call    L_F88C
-        call    L_FC71
+        call    swap_word_lists
+        call    word_list_add
+        call    swap_word_lists
         ret
 L_D5E0:
         cp      '5'
@@ -2986,7 +2999,7 @@ L_D608:
         cp      '3'
         jr      nz,L_D643
 L_D60C:
-        call    L_DDBD
+        call    guess_correct_word
         cp      $01
         jr      nz,L_D61E
         ld      a,(edit_flags)
@@ -3017,7 +3030,7 @@ L_D645:
         call    dialog_window_left
 L_D64A:
         ld      hl,L_DB0A
-        call    L_FF4B
+        call    open_dialog_right
         ld      hl,L_DAFF
         oz      Gn_sop
         ld      a,(dict_target_length)
@@ -3026,7 +3039,7 @@ L_D64A:
         jr      z,L_D68F
         ld      b,$00
         ld      hl,($1FB8)
-        ld      a,($1FB7)
+        ld      a,(scan_chars_left)
         ld      d,a
         inc     d
         dec     hl
@@ -3043,7 +3056,7 @@ L_D64A:
         jr      nz,L_D682
 L_D67B:
         ld      a,d
-        ld      ($1FB7),a
+        ld      (scan_chars_left),a
         ld      ($1FB8),hl
 L_D682:
         ld      hl,($1FB8)
@@ -3086,7 +3099,7 @@ L_D6C4:
         ld      c,b
 L_D6C9:
         ld      a,(hl)
-        call    L_D922
+        call    is_word_char
         jr      nz,L_D6D0
         ld      (hl),a
 L_D6D0:
@@ -3147,9 +3160,9 @@ L_D71E:
         ld      a,(marker_flags)
         and     $01
         jr      z,L_D76B
-        call    L_E1AB
+        call    is_block_start_line
         jr      c,L_D74C
-        ld      a,($1FB7)
+        ld      a,(scan_chars_left)
         ld      b,a
         ld      a,(line_length)
         sub     b
@@ -3163,9 +3176,9 @@ L_D74C:
         ld      a,(marker_flags)
         and     $02
         jr      z,L_D76B
-        call    L_E1CB
+        call    is_block_end_line
         jr      c,L_D76B
-        ld      a,($1FB7)
+        ld      a,(scan_chars_left)
         ld      b,a
         ld      a,(line_length)
         sub     b
@@ -3176,7 +3189,7 @@ L_D74C:
         sub     d
         ld      (block_end_col),a
 L_D76B:
-        ld      hl,($1FBA)
+        ld      hl,(word_start_ptr)
         ld      a,(dict_target_length)
         ld      c,a
         ld      b,$00
@@ -3188,7 +3201,7 @@ L_D76B:
         scf
         ccf
         sbc     hl,bc
-        ld      a,($1FB7)
+        ld      a,(scan_chars_left)
         cp      $00
         jr      z,L_D78D
         ld      b,a
@@ -3206,7 +3219,7 @@ L_D78D:
         sub     l
         ld      (line_length),a
 L_D796:
-        ld      de,($1FBA)
+        ld      de,(word_start_ptr)
         ld      hl,(ptr_buffer_c)
         ld      a,(dict_word_length)
         ld      c,a
@@ -3256,17 +3269,17 @@ L_D7DD:
         djnz    L_D7DD
         jp      L_D71E
 L_D7E8:
-        call    L_CCA2
+        call    store_cursor_line
         ret     c
-        call    L_ED9C
+        call    step_to_next_record
         jr      z,L_D80D
         ld      hl,($1FE5)
         inc     hl
         ld      ($1FE5),hl
-        call    L_E7C3
-        call    L_CCE2
+        call    inc_cursor_line
+        call    take_line_record
         ld      a,(line_length)
-        ld      ($1FB7),a
+        ld      (scan_chars_left),a
         ld      hl,(line_buffer)
         ld      ($1FB8),hl
         jp      L_D7BD
@@ -3276,8 +3289,8 @@ L_D80D:
         or      l
         jr      z,L_D825
 L_D814:
-        call    L_ED76
-        call    L_E7BB
+        call    step_to_prev_record
+        call    dec_cursor_line
         ld      hl,($1FE5)
         dec     hl
         ld      ($1FE5),hl
@@ -3285,7 +3298,7 @@ L_D814:
         or      l
         jr      nz,L_D814
 L_D825:
-        call    L_CCE2
+        call    take_line_record
         pop     hl
         ld      ($1FB8),hl
         ld      bc,(line_buffer)
@@ -3294,7 +3307,7 @@ L_D825:
         ld      b,a
         ld      a,(line_length)
         sub     b
-        ld      ($1FB7),a
+        ld      (scan_chars_left),a
         ret
 L_D83B:
         ld      c,a
@@ -3304,9 +3317,9 @@ L_D83B:
         ld      a,(marker_flags)
         and     $01
         jr      z,L_D87D
-        call    L_E1AB
+        call    is_block_start_line
         jr      c,L_D85E
-        ld      a,($1FB7)
+        ld      a,(scan_chars_left)
         ld      b,a
         ld      a,(line_length)
         sub     b
@@ -3320,9 +3333,9 @@ L_D85E:
         ld      a,(marker_flags)
         and     $02
         jr      z,L_D87D
-        call    L_E1CB
+        call    is_block_end_line
         jr      c,L_D87D
-        ld      a,($1FB7)
+        ld      a,(scan_chars_left)
         ld      b,a
         ld      a,(line_length)
         sub     b
@@ -3338,7 +3351,7 @@ L_D87D:
         ld      a,(dict_stem_length)
         ld      e,a
         ld      d,$00
-        ld      hl,($1FBA)
+        ld      hl,(word_start_ptr)
         add     hl,de
         ld      a,l
         push    af
@@ -3384,10 +3397,14 @@ L_D8BC:
 L_D8C4:
         ld      de,(ptr_buffer_b)
         jr      L_D8CE
-L_D8CA:
+next_word_from_text:
+; In: HL -> text, scan_chars_left = characters left to scan. Skips to the next word character, then copies the word into buffer A through is_word_char,
+; so every letter is upper case: capital letters make no difference to the check. A leading apostrophe is dropped.
+; The length goes to dict_target_length, leaving out a final apostrophe and a final 'S (JOHN'S is checked as JOHN). word_start_ptr = where the word starts.
+; Z set if no word is left; NZ when a word was found.
         ld      de,(ptr_buffer_a)
 L_D8CE:
-        ld      a,($1FB7)
+        ld      a,(scan_chars_left)
         cp      $00
         ret     z
         ld      c,a
@@ -3396,7 +3413,7 @@ L_D8D7:
         ld      a,(hl)
         cp      '''
         jr      z,L_D8E1
-        call    L_D922
+        call    is_word_char
         jr      z,L_D8E6
 L_D8E1:
         inc     hl
@@ -3404,10 +3421,10 @@ L_D8E1:
         ret     z
         jr      L_D8D7
 L_D8E6:
-        ld      ($1FBA),hl
+        ld      (word_start_ptr),hl
 L_D8E9:
         ld      a,(hl)
-        call    L_D922
+        call    is_word_char
         jr      nz,L_D8FF
         ld      (de),a
         cp      '''
@@ -3426,7 +3443,7 @@ L_D8FF:
         ld      a,b
         ld      (dict_target_length),a
         ld      a,c
-        ld      ($1FB7),a
+        ld      (scan_chars_left),a
         dec     de
         ld      a,(de)
         cp      'S'
@@ -3446,7 +3463,8 @@ L_D91D:
         ld      a,$01
         cp      $00
         ret
-L_D922:
+is_word_char:
+; Z set if A is a letter or an apostrophe. A letter is returned in upper case (AND $DF); an apostrophe is returned unchanged.
         cp      '''
         ret     z
         and     $DF
@@ -3462,15 +3480,15 @@ cmd_check_this_word_or_escape:
 ; Command handler: 'Check this word' - dispatch code $0F
 ; Command handler: 'Escape' - dispatch code $1B
 ; Two dispatch codes share this handler.
-        call    L_E5D2
+        call    check_free_memory
         jp      c,L_D0D6
         ld      bc,($1F95)
         oz      Os_mpb
-        call    L_DD33
+        call    find_word_start
         ld      a,(line_length)
         sub     c
-        ld      ($1FB7),a
-        call    L_D8CA
+        ld      (scan_chars_left),a
+        call    next_word_from_text
         jp      z,qe_main_loop
         ld      ($1FB8),hl
         ld      a,(dict_target_length)
@@ -3482,8 +3500,8 @@ cmd_check_this_word_or_escape:
         and     $BF
         ld      (edit_flags),a
         call    L_D506
-        call    L_F02C
-        ld      a,($1FB7)
+        call    redefine_window1
+        ld      a,(scan_chars_left)
         ld      b,a
         ld      a,(line_length)
         sub     b
@@ -3499,7 +3517,8 @@ L_D978:
 
 L_D983:
         defb    $01,$32,$2d,$52,$00
-L_D988:
+toggle_reverse:
+; Prints the 'toggle reverse video' sequence (1 R). HL preserved.
         push    hl
         ld      hl,L_D9A1
         oz      Gn_sop
@@ -3652,11 +3671,11 @@ cmd_split_line:
         jp      c,L_D0D6
         jp      L_CA13
 L_DB2E:
-        call    L_D264
+        call    clamp_cursor_index
         ld      b,a
         ld      a,(line_length)
         sub     b
-        call    L_CFE9
+        call    alloc_line_record
         ret     c
         ld      bc,$0007
         add     hl,bc
@@ -3672,10 +3691,10 @@ L_DB2E:
         jr      z,L_DB52
         ldir
 L_DB52:
-        ld      a,($1FEA)
-        ld      hl,($1FE8)
-        ld      ($1FA1),a
-        ld      ($1F9F),hl
+        ld      a,(line_rec_bank)
+        ld      hl,(line_rec_ptr)
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),hl
         ld      hl,(block_start_line)
         ld      a,(block_start_col)
         call    L_DB85
@@ -3713,7 +3732,7 @@ L_DB9D:
         ret
 cmd_search_and_replace:
 ; Command handler: 'Search and Replace' - dispatch code $26
-        call    L_E5D2
+        call    check_free_memory
         jp      c,L_D0D6
         ld      a,$03
         call    far_call_bank63
@@ -3725,11 +3744,11 @@ cmd_search_and_replace:
         sbc     hl,bc
         jr      z,L_DC02
         ld      (top_line),hl
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
 L_DBC2:
-        call    L_ED76
-        call    L_E7BB
+        call    step_to_prev_record
+        call    dec_cursor_line
         ld      hl,(top_line)
         dec     hl
         ld      (top_line),hl
@@ -3737,16 +3756,16 @@ L_DBC2:
         or      l
         jr      nz,L_DBC2
 L_DBD3:
-        call    L_CCE2
+        call    take_line_record
         call    L_CD44
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jr      z,L_DBEE
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        call    L_ED9C
-        call    L_E7C3
+        call    step_to_next_record
+        call    inc_cursor_line
         jr      L_DBD3
 L_DBEE:
         ld      a,(line_length)
@@ -3766,11 +3785,11 @@ L_DC02:
         and     $F1
         or      $02
         ld      (edit_flags),a
-        call    L_F02C
+        call    redefine_window1
         jp      L_C5AF
 cmd_merge_text_at_cursor:
 ; Command handler: 'Merge text at cursor' - dispatch code $27
-        call    L_E5D2
+        call    check_free_memory
         jp      c,L_D0D6
         ld      a,$04
         call    far_call_bank63
@@ -3780,18 +3799,18 @@ cmd_merge_text_at_cursor:
         push    hl
 L_DC26:
         call    L_CD44
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jr      z,L_DC41
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        call    L_ED9C
-        call    L_CCE2
-        call    L_E7C3
+        call    step_to_next_record
+        call    take_line_record
+        call    inc_cursor_line
         jr      L_DC26
 L_DC41:
-        call    L_CCA2
+        call    store_cursor_line
         ld      hl,(cursor_line)
         pop     bc
         ld      (cursor_line),bc
@@ -3801,18 +3820,18 @@ L_DC41:
         jr      z,L_DC5C
 L_DC52:
         push    hl
-        call    L_ED76
+        call    step_to_prev_record
         pop     hl
         dec     hl
         ld      a,h
         or      l
         jr      nz,L_DC52
 L_DC5C:
-        call    L_CCE2
+        call    take_line_record
         jr      L_DC02
 cmd_tab:
 ; Command handler: 'Tab' - dispatch code $29
-        call    L_E5D2
+        call    check_free_memory
         jp      c,L_D0D6
         ld      a,$08
         call    far_call_bank63
@@ -3853,7 +3872,7 @@ L_DCA2:
         jr      z,L_DCA0
         pop     af
         push    af
-        call    L_D922
+        call    is_word_char
         jr      nz,L_DCB8
 L_DCB1:
         ld      a,$01
@@ -3877,7 +3896,7 @@ L_DCD1:
         ld      a,(hl)
         cp      '''
         jr      z,L_DCDB
-        call    L_D922
+        call    is_word_char
         jr      z,L_DCE4
 L_DCDB:
         inc     hl
@@ -3888,7 +3907,7 @@ L_DCDB:
         ret
 L_DCE4:
         ld      a,(hl)
-        call    L_D922
+        call    is_word_char
         jr      nz,L_DCF5
         ld      (de),a
         inc     de
@@ -3940,8 +3959,9 @@ L_DD22:
         add     hl,bc
         ld      d,$00
         jr      L_DD44
-L_DD33:
-        call    L_D264
+find_word_start:
+; From cursor_index, moves back to the start of the word at or before the cursor. Out: HL -> that character in line_buffer, C = its index. Z if at the start of the line.
+        call    clamp_cursor_index
         ld      hl,(line_buffer)
         ld      c,a
         cp      $00
@@ -3956,7 +3976,7 @@ L_DD44:
         dec     c
         ret     z
         ld      a,(hl)
-        call    L_D922
+        call    is_word_char
         jr      nz,L_DD51
         ld      d,$01
         jr      L_DD44
@@ -3995,7 +4015,13 @@ inflection_class_table:
         defb    $65,$dd,$6c,$dd,$77
         defb    $dd,$6e,$dd,$7f,$dd,$84,$dd,$87
         defb    $dd
-L_DDBD:
+guess_correct_word:
+; Correction menu option 3 'Guess correct word'. The word is in buffer A (dict_target_length letters).
+; Scans every section of the ROM dictionary (first letters A-Z, second letters apostrophe and A-Z) that section_could_match allows, every word form (next_word_form),
+; then every word of the user dictionary. Each word that is_one_edit_away accepts is appended to the guess list (append_guess).
+; A key pressed during the scan stops it (checked with OS_Xin after each first letter). The guesses are then shown six at a time in the right-hand dialog:
+; up and down move the highlight, Enter puts the chosen word in buffer C and returns, 1-5 go to that Correction menu option, Escape cancels.
+; Out: A = 1, or the menu key pressed. edit_flags bit 6 ($40) is set when no word was chosen. top_line is borrowed as a row counter while the list is drawn.
         ld      bc,($1F95)
         oz      Os_mpb
         ld      a,'A'
@@ -4009,9 +4035,9 @@ L_DDBD:
         ld      ($1FBC),hl
         ld      ($1FBE),a
         ld      hl,L_E07C
-        call    L_FF4B
+        call    open_dialog_right
 L_DDE4:
-        call    L_E063
+        call    section_could_match
 L_DDE7:
         jp      nz,L_DE2B
         call    find_dictionary_section
@@ -4026,11 +4052,11 @@ L_DDE7:
         ld      a,$00
         ld      (dict_word_flags),a
 L_DE02:
-        call    L_C2AE
+        call    next_word_form
         jp      c,L_DE2B
-        call    L_E090
+        call    is_one_edit_away
         jr      nz,L_DE02
-        call    L_E076
+        call    append_guess
         jr      nc,L_DE02
 L_DE12:
         call    show_no_room_error
@@ -4038,7 +4064,7 @@ L_DE15:
         ld      a,(edit_flags)
         or      '@'
         ld      (edit_flags),a
-        call    L_DFF5
+        call    free_guess_list
         ld      a,(line_buffer_bank)
         ld      b,a
         ld      c,$02
@@ -4064,15 +4090,15 @@ L_DE34:
         ld      (dict_letter1),a
         cp      '['
         jp      c,L_DDE4
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         jr      z,L_DE9E
         ld      a,'A'
-        call    L_FB81
+        call    word_list_first_from
         jr      c,L_DE9E
 L_DE61:
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -4082,7 +4108,7 @@ L_DE61:
         ld      a,($1FE4)
         ld      (de),a
         inc     de
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(hl)
         ld      bc,$0004
         add     hl,bc
@@ -4095,36 +4121,36 @@ L_DE81:
         inc     hl
         inc     de
         djnz    L_DE81
-        call    L_E090
+        call    is_one_edit_away
         jr      nz,L_DE91
-        call    L_E076
+        call    append_guess
         jr      c,L_DE12
 L_DE91:
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        call    L_FB7B
+        call    word_list_next
         jr      nc,L_DE61
 L_DE9E:
-        ld      hl,($1FC2)
+        ld      hl,(guess_list_ptr)
         ld      a,h
         or      l
         jp      z,L_E035
-        ld      a,($1FC4)
+        ld      a,(guess_list_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
 L_DEAE:
         ld      hl,L_E041
-        call    L_FF4B
+        call    open_dialog_right
         ld      hl,L_E085
         oz      Gn_sop
         ld      hl,$0006
         ld      (top_line),hl
-        ld      hl,($1FC2)
+        ld      hl,(guess_list_ptr)
         ld      ($1FBC),hl
-        ld      a,($1FC4)
+        ld      a,(guess_list_bank)
         ld      ($1FBE),a
 L_DECC:
         ld      a,($1FBE)
@@ -4164,8 +4190,8 @@ L_DEDC:
 L_DF09:
         ld      hl,L_E08A
         oz      Gn_sop
-        ld      a,($1FC4)
-        ld      hl,($1FC2)
+        ld      a,(guess_list_bank)
+        ld      hl,(guess_list_ptr)
 L_DF15:
         ld      b,a
         ld      c,$01
@@ -4189,7 +4215,7 @@ L_DF15:
         ld      ($1FC1),a
         ld      ($1FBF),de
         push    hl
-        call    L_D988
+        call    toggle_reverse
         ld      c,b
 L_DF3B:
         ld      a,(hl)
@@ -4198,7 +4224,7 @@ L_DF3B:
         djnz    L_DF3B
         ld      a,$0D
         oz      Os_out
-        call    L_D988
+        call    toggle_reverse
         pop     hl
 L_DF49:
         oz      Os_in
@@ -4275,7 +4301,7 @@ L_DFC0:
         ld      b,a
         ld      c,$02
         oz      Os_mpb
-        call    L_DFF5
+        call    free_guess_list
         ld      a,$0C
         oz      Os_out
         ld      a,$01
@@ -4293,16 +4319,17 @@ L_DFDC:
 L_DFEF:
         call    dialog_window_right
         jp      L_DE15
-L_DFF5:
-        ld      hl,($1FC2)
+free_guess_list:
+; Frees every record of the guess list and clears guess_list_ptr.
+        ld      hl,(guess_list_ptr)
         ld      ($1FBF),hl
-        ld      a,($1FC4)
+        ld      a,(guess_list_bank)
         ld      ($1FC1),a
-        ld      hl,($1FC2)
+        ld      hl,(guess_list_ptr)
         ld      a,h
         or      l
         ret     z
-        ld      a,($1FC4)
+        ld      a,(guess_list_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -4317,18 +4344,18 @@ L_DFF5:
         inc     hl
         ld      b,(hl)
         inc     hl
-        ld      ($1FC2),bc
-        ld      ($1FC4),a
+        ld      (guess_list_ptr),bc
+        ld      (guess_list_bank),a
         ld      hl,($1FBF)
         ld      c,d
         ld      b,$00
         ld      ix,(pool_main)
         ld      a,($1FC1)
         oz      Os_mfr
-        jr      L_DFF5
+        jr      free_guess_list
 L_E035:
         ld      hl,L_E03E
-        call    L_FF4B
+        call    open_dialog_right
         jp      L_DE15
 
 L_E03E:
@@ -4351,7 +4378,9 @@ L_E05D:
 L_E061:
         pop     af
         ret
-L_E063:
+section_could_match:
+; Z set if the section's first letter (dict_letter1) or second letter (dict_letter2) equals the first or the second letter of the typed word.
+; Only those sections are searched, so a guess must share one of its first two letters with the typed word.
         ld      hl,(ptr_buffer_a)
         ld      a,(dict_letter1)
         cp      (hl)
@@ -4365,7 +4394,8 @@ L_E063:
         dec     hl
         cp      (hl)
         ret
-L_E076:
+append_guess:
+; Far call 6 (far_append_guess in bank 63): appends the word in buffer C - 2 to the guess list. Carry set if there is no room.
         ld      a,$06
         call    far_call_bank63
         ret
@@ -4378,7 +4408,10 @@ L_E085:
 L_E08A:
         defb    $01,$33
         defb    $40,$20,$20,$00
-L_E090:
+is_one_edit_away:
+; Compares the word being scanned (buffer C - 2, dict_word_length + 2 letters) with the typed word (buffer A, dict_target_length letters).
+; Z set (a guess) when they differ by one edit: same length with one letter different, or with two adjacent letters swapped ($E0C0);
+; typed word one letter shorter, i.e. a letter missing ($E0EF); typed word one letter longer, i.e. an extra letter ($E10F). Lengths further apart are rejected.
         ld      a,(dict_word_length)
         ld      b,a
         ld      a,(dict_target_length)
@@ -4506,7 +4539,7 @@ L_E147:
         ld      a,($1FD0)
         ld      (hl),a
         inc     hl
-        call    L_D264
+        call    clamp_cursor_index
         ld      (hl),a
         scf
         ld      a,(marker_flags)
@@ -4549,7 +4582,8 @@ L_E18E:
         ld      a,b
         ld      (block_end_col),a
         ret
-L_E1AB:
+is_block_start_line:
+; Carry clear if the start marker is set and is on the cursor line; carry set otherwise. BC preserved.
         push    bc
         call    L_E1B1
         pop     bc
@@ -4573,7 +4607,8 @@ L_E1BA:
 L_E1C9:
         scf
         ret
-L_E1CB:
+is_block_end_line:
+; Carry clear if both markers are set and the end marker is on the cursor line; carry set otherwise. BC preserved.
         push    bc
         call    L_E1D1
         pop     bc
@@ -4604,7 +4639,7 @@ L_E1FA:
         and     $01
         ret     z
 L_E200:
-        call    L_E1AB
+        call    is_block_start_line
         jr      c,L_E215
         ld      a,(cursor_index)
         ld      b,a
@@ -4615,7 +4650,7 @@ L_E200:
         ret     z
         jr      L_E200
 L_E215:
-        call    L_E1CB
+        call    is_block_end_line
         ret     c
         ld      a,(cursor_index)
         ld      b,a
@@ -4655,7 +4690,7 @@ L_E250:
         scf
         ret
 L_E256:
-        call    L_E5D2
+        call    check_free_memory
         jr      c,L_E250
         call    L_E171
         ld      bc,(cursor_line)
@@ -4693,12 +4728,12 @@ L_E28E:
 L_E2A1:
         cp      $00
         jr      nz,L_E2BF
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_E23D
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
-        ld      ($1F9F),hl
-        ld      ($1FA1),a
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      (next_line_ptr),hl
+        ld      (next_line_bank),a
         ld      a,$01
         ld      (wf_menu_sel),a
         jp      L_E2F5
@@ -4708,22 +4743,22 @@ L_E2BF:
         sub     b
         cp      $00
         jr      nz,L_E2DD
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_E23D
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
-        ld      ($1F9C),hl
-        ld      ($1F9E),a
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      (prev_line_ptr),hl
+        ld      (prev_line_bank),a
         jp      L_E2F5
 L_E2DD:
         call    L_DB2E
         jp      c,L_E23D
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_E23D
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
-        ld      ($1F9C),hl
-        ld      ($1F9E),a
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      (prev_line_ptr),hl
+        ld      (prev_line_bank),a
 L_E2F5:
         ld      hl,(cursor_line)
         push    hl
@@ -4735,7 +4770,7 @@ L_E2F5:
         jp      nc,L_E4C5
         ld      (top_line),hl
 L_E30A:
-        call    L_ED76
+        call    step_to_prev_record
         ld      hl,(top_line)
         inc     hl
         ld      (top_line),hl
@@ -4750,14 +4785,14 @@ L_E318:
         sbc     hl,bc
         ld      (top_line),hl
         jp      z,L_E486
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      ($1FBC),hl
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      ($1FBE),a
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(block_start_col)
         ld      b,a
         ld      a,(hl)
@@ -4775,25 +4810,25 @@ L_E318:
         ld      de,(line_buffer)
         ldir
 L_E35B:
-        call    L_E5D2
+        call    check_free_memory
         jp      c,L_E5A3
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_E5A3
         call    L_E4DC
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
-        ld      ($1F9C),hl
-        ld      ($1F9E),a
-        call    L_E7C3
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      (prev_line_ptr),hl
+        ld      (prev_line_bank),a
+        call    inc_cursor_line
 L_E379:
         ld      hl,($1FBC)
         ld      a,($1FBE)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
-        call    L_ED9C
-        ld      hl,($1FE8)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
+        call    step_to_next_record
+        ld      hl,(line_rec_ptr)
         ld      ($1FBC),hl
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      ($1FBE),a
         ld      hl,(top_line)
         dec     hl
@@ -4801,24 +4836,24 @@ L_E379:
         ld      a,h
         or      l
         jr      z,L_E3C2
-        call    L_E5B4
-        call    L_E5D2
+        call    copy_record_to_line_buffer
+        call    check_free_memory
         jp      c,L_E5A3
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_E5A3
         call    L_E4DC
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
-        ld      ($1F9C),hl
-        ld      ($1F9E),a
-        call    L_E7C3
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      (prev_line_ptr),hl
+        ld      (prev_line_bank),a
+        call    inc_cursor_line
         jr      L_E379
 L_E3C2:
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      bc,$0007
         add     hl,bc
         ld      a,(block_end_col)
@@ -4829,20 +4864,20 @@ L_E3C2:
         ld      c,a
         ldir
 L_E3E2:
-        call    L_E5D2
+        call    check_free_memory
         jp      c,L_E5A3
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_E5A3
         call    L_E4DC
-        call    L_E7C3
+        call    inc_cursor_line
 L_E3F4:
         ld      a,(wf_menu_sel)
         cp      $01
         jr      nz,L_E3FE
-        call    L_E7BB
+        call    dec_cursor_line
 L_E3FE:
         call    L_E541
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_E5A3
         pop     bc
         push    bc
@@ -4861,7 +4896,7 @@ L_E417:
         or      l
         jr      z,L_E431
 L_E423:
-        call    L_ED76
+        call    step_to_prev_record
         ld      hl,(top_line)
         dec     hl
         ld      (top_line),hl
@@ -4897,13 +4932,13 @@ L_E45B:
         ccf
         sbc     hl,bc
         ld      (top_line),hl
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_E23D
         ld      hl,(top_line)
         jr      L_E47E
 L_E471:
-        call    L_ED76
-        call    L_E7BB
+        call    step_to_prev_record
+        call    dec_cursor_line
         ld      hl,(top_line)
         dec     hl
         ld      (top_line),hl
@@ -4911,17 +4946,17 @@ L_E47E:
         ld      a,h
         or      l
         jr      nz,L_E471
-        call    L_CCE2
+        call    take_line_record
         ret
 L_E486:
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      ($1FBC),hl
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      ($1FBE),a
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      bc,$0007
         add     hl,bc
         ld      a,(block_start_col)
@@ -4937,16 +4972,16 @@ L_E486:
         ld      c,a
         ldir
 L_E4B6:
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_E5A3
         call    L_E4DC
-        call    L_E7C3
+        call    inc_cursor_line
         jp      L_E3F4
 L_E4C5:
         jp      z,L_E318
         ld      (top_line),hl
 L_E4CB:
-        call    L_ED9C
+        call    step_to_next_record
         ld      hl,(top_line)
         dec     hl
         ld      (top_line),hl
@@ -5020,13 +5055,13 @@ L_E53C:
         ld      (block_end_line),hl
         ret
 L_E541:
-        call    L_CCE2
+        call    take_line_record
         call    L_E501
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         ret     z
-        ld      a,($1FA1)
+        ld      a,(next_line_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -5045,7 +5080,7 @@ L_E541:
         ld      b,$00
         add     hl,bc
         ex      de,hl
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,(hl)
         sub     $07
         ld      bc,$0007
@@ -5057,10 +5092,10 @@ L_E541:
         add     a,b
         ld      (line_length),a
 L_E583:
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
         ld      bc,$0004
         add     hl,bc
         ld      a,(hl)
@@ -5068,9 +5103,9 @@ L_E583:
         ld      c,(hl)
         inc     hl
         ld      b,(hl)
-        ld      ($1F9F),bc
-        ld      ($1FA1),a
-        call    L_CCE5
+        ld      (next_line_ptr),bc
+        ld      (next_line_bank),a
+        call    free_line_record
         ret
 L_E5A3:
         pop     hl
@@ -5087,12 +5122,13 @@ L_E5A7:
         ld      a,d
         cp      e
         ret
-L_E5B4:
-        ld      a,($1FEA)
+copy_record_to_line_buffer:
+; Binds the record's bank into segment 1, sets line_length = record length - 7 and copies the text into line_buffer.
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(hl)
         sub     $07
         ld      (line_length),a
@@ -5103,8 +5139,9 @@ L_E5B4:
         ld      c,a
         ldir
         ret
-L_E5D2:
-        ld      bc,$8900
+check_free_memory:
+; OS_Nq NQ_Mfs (free memory) for pool_main. Carry set when the high byte returned in A is 0 and B is below 5, i.e. memory is nearly full; callers then refuse the command.
+        ld      bc,NQ_Mfs
         ld      ix,(pool_main)
         oz      Os_nq
         cp      $00
@@ -5131,7 +5168,7 @@ cmd_delete_marked_block:
         jr      c,L_E629
 L_E602:
         ld      hl,L_E7CB
-        call    L_FF46
+        call    open_dialog_centre
         ld      hl,L_E7D3
         oz      Gn_sop
 L_E60E:
@@ -5145,12 +5182,12 @@ L_E60E:
         jr      z,L_E629
         cp      'N'
         jr      nz,L_E60E
-        call    L_F02C
+        call    redefine_window1
         jp      L_CA13
 L_E629:
-        call    L_F02C
+        call    redefine_window1
 L_E62C:
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
         ld      hl,(block_start_line)
         ld      bc,(cursor_line)
@@ -5160,8 +5197,8 @@ L_E62C:
         jr      nc,L_E655
         ld      (top_line),hl
 L_E642:
-        call    L_ED76
-        call    L_E7BB
+        call    step_to_prev_record
+        call    dec_cursor_line
         ld      hl,(top_line)
         inc     hl
         ld      (top_line),hl
@@ -5173,8 +5210,8 @@ L_E655:
         ld      (top_line),hl
         jr      z,L_E66B
 L_E65A:
-        call    L_ED9C
-        call    L_E7C3
+        call    step_to_next_record
+        call    inc_cursor_line
         ld      hl,(top_line)
         dec     hl
         ld      (top_line),hl
@@ -5182,7 +5219,7 @@ L_E65A:
         or      l
         jr      nz,L_E65A
 L_E66B:
-        call    L_CCE2
+        call    take_line_record
         ld      hl,(block_end_line)
         ld      bc,(block_start_line)
         scf
@@ -5199,10 +5236,10 @@ L_E685:
         ld      a,h
         or      l
         jr      z,L_E6B7
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -5214,16 +5251,16 @@ L_E685:
         inc     hl
         ld      b,(hl)
         inc     hl
-        ld      ($1F9F),bc
-        ld      ($1FA1),a
-        call    L_CCE5
+        ld      (next_line_ptr),bc
+        ld      (next_line_bank),a
+        call    free_line_record
         jr      L_E685
 L_E6B7:
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        call    L_ED9C
-        call    L_E7C3
-        call    L_CCE2
+        call    step_to_next_record
+        call    inc_cursor_line
+        call    take_line_record
         ld      hl,(line_buffer)
         ld      a,(block_end_col)
         ld      c,a
@@ -5237,18 +5274,18 @@ L_E6B7:
         ld      de,(line_buffer)
         ldir
 L_E6E0:
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
-        call    L_ED76
-        call    L_CCE2
-        call    L_E7BB
-        ld      a,($1FA1)
-        ld      ($1FEA),a
+        call    step_to_prev_record
+        call    take_line_record
+        call    dec_cursor_line
+        ld      a,(next_line_bank)
+        ld      (line_rec_bank),a
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1F9F)
-        ld      ($1FE8),hl
+        ld      hl,(next_line_ptr)
+        ld      (line_rec_ptr),hl
         ld      a,(hl)
         sub     $07
         ld      b,a
@@ -5263,7 +5300,7 @@ L_E6E0:
         ld      b,$00
         add     hl,bc
         ex      de,hl
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,(hl)
         sub     $07
         jr      z,L_E72F
@@ -5275,7 +5312,7 @@ L_E6E0:
         ld      (line_length),a
         ldir
 L_E72F:
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      bc,$0004
         add     hl,bc
         ld      a,(hl)
@@ -5284,22 +5321,22 @@ L_E72F:
         inc     hl
         ld      b,(hl)
         inc     hl
-        ld      ($1FA1),a
-        ld      ($1F9F),bc
-        call    L_CCE5
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),bc
+        call    free_line_record
 L_E746:
         ld      a,$00
         ld      (marker_flags),a
         call    L_CD44
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_D0D6
         ld      a,($1FE5)
         cp      $00
         jr      z,L_E76C
 L_E75B:
-        call    L_ED76
+        call    step_to_prev_record
         jr      z,L_E76C
-        call    L_E7BB
+        call    dec_cursor_line
         ld      a,($1FE5)
         dec     a
         ld      ($1FE5),a
@@ -5316,7 +5353,7 @@ L_E76C:
         add     a,l
         ld      (cursor_row),a
 L_E77F:
-        call    L_CCE2
+        call    take_line_record
         jp      L_CA13
 L_E785:
         ld      hl,(line_buffer)
@@ -5348,12 +5385,12 @@ L_E7A0:
         ld      a,$00
         ld      (marker_flags),a
         jp      L_E746
-L_E7BB:
+dec_cursor_line:
         ld      hl,(cursor_line)
         dec     hl
         ld      (cursor_line),hl
         ret
-L_E7C3:
+inc_cursor_line:
         ld      hl,(cursor_line)
         inc     hl
         ld      (cursor_line),hl
@@ -5388,7 +5425,7 @@ cmd_information:
 ; Command handler: 'Information' - dispatch code $1A
         ld      a,$00
         call    far_call_bank63
-        call    L_F02C
+        call    redefine_window1
         jp      L_CA13
 L_E80D:
         ld      ($1FBC),hl
@@ -5576,7 +5613,7 @@ L_EC38:
         jr      z,L_EC45
         ld      hl,L_F08E
 L_EC45:
-        call    L_FF46
+        call    open_dialog_centre
         ld      a,(edit_flags)
         and     $80
         jr      nz,L_EC56
@@ -5605,7 +5642,7 @@ L_EC71:
 L_EC73:
         ld      hl,L_F067
         oz      Gn_sop
-        call    L_F0A8
+        call    input_to_buffer_a
         jr      nc,L_EC89
         cp      'g'
         jp      z,L_D0B4
@@ -5621,13 +5658,13 @@ L_EC92:
         ld      a,'!'
         jr      L_EC73
 L_EC96:
-        call    L_F02C
+        call    redefine_window1
         ld      a,(edit_flags)
         and     $80
         jr      nz,L_ECAF
         ld      hl,($1FD4)
         ld      a,($1FD6)
-        call    L_F0F9
+        call    free_sized_record
         ld      hl,$0000
         ld      ($1FD4),hl
 L_ECAF:
@@ -5639,22 +5676,22 @@ L_ECAF:
         ld      a,(edit_flags)
         and     $80
         jr      nz,L_ECDB
-        call    L_F10E
+        call    store_filename_record
         jp      c,L_D0D6
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      ($1FD4),hl
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      ($1FD6),a
         call    L_F139
 L_ECDB:
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_ED6C
-        ld      a,($1FEA)
-        ld      hl,($1FE8)
-        ld      ($1FA1),a
-        ld      ($1F9F),hl
+        ld      a,(line_rec_bank)
+        ld      hl,(line_rec_ptr)
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),hl
 L_ECED:
-        call    L_ED76
+        call    step_to_prev_record
         jr      nz,L_ECED
         ld      a,(edit_flags)
         and     $80
@@ -5673,11 +5710,11 @@ L_ED03:
         cp      $00
         jr      nz,L_ED03
 L_ED13:
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(hl)
         sub     $07
         jr      z,L_ED43
@@ -5705,26 +5742,27 @@ L_ED43:
         oz      Os_pb
         jp      c,L_EF89
 L_ED4E:
-        call    L_ED9C
+        call    step_to_next_record
         jr      nz,L_ED13
         ld      ix,($1F97)
         oz      Gn_cl
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
-        call    L_CCE2
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
+        call    take_line_record
         jp      L_F01C
 L_ED6C:
         ld      ix,($1F97)
         oz      Gn_cl
         jp      L_D0D6
-L_ED76:
-        ld      a,($1FEA)
+step_to_prev_record:
+; Follows the previous link (+1..+3) of the record at line_rec. Z set (line_rec unchanged) if there is no previous line; otherwise line_rec = previous record, bound into segment 1, NZ.
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         inc     hl
         ld      d,(hl)
         inc     hl
@@ -5735,20 +5773,21 @@ L_ED76:
         or      c
         ret     z
         ld      a,d
-        ld      ($1FEA),a
-        ld      ($1FE8),bc
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),bc
         ld      b,a
         ld      c,$01
         oz      Os_mpb
         ld      a,$01
         cp      $00
         ret
-L_ED9C:
-        ld      a,($1FEA)
+step_to_next_record:
+; Follows the next link (+4..+6) of the record at line_rec. Z set (line_rec unchanged) if there is no next line; otherwise line_rec = next record, bound into segment 1, NZ.
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      bc,$0004
         add     hl,bc
         ld      d,(hl)
@@ -5760,8 +5799,8 @@ L_ED9C:
         or      c
         ret     z
         ld      a,d
-        ld      ($1FEA),a
-        ld      ($1FE8),bc
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),bc
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -5771,15 +5810,15 @@ L_ED9C:
 cmd_load_text:
 ; Command handler: 'Load text' - dispatch code $10
         ld      hl,L_F09A
-        call    L_FF46
+        call    open_dialog_centre
         ld      a,(line_length)
         cp      $00
         jr      nz,L_EDE0
-        ld      hl,($1F9C)
+        ld      hl,(prev_line_ptr)
         ld      a,h
         or      l
         jr      nz,L_EDE0
-        ld      hl,($1F9F)
+        ld      hl,(next_line_ptr)
         ld      a,h
         or      l
         jr      z,L_EDF7
@@ -5804,7 +5843,7 @@ L_EDF7:
 L_EE02:
         ld      hl,L_F067
         oz      Gn_sop
-        call    L_F0A8
+        call    input_to_buffer_a
         jr      nc,L_EE16
         cp      'f'
         jr      z,cmd_load_text
@@ -5820,7 +5859,7 @@ L_EE16:
 L_EE23:
         ld      a,($1FD6)
         ld      hl,($1FD4)
-        call    L_F0F9
+        call    free_sized_record
         ld      hl,$0000
         ld      ($1FD4),hl
         ld      hl,(ptr_buffer_a)
@@ -5831,23 +5870,23 @@ L_EE23:
         oz      Gn_opf
         jp      c,L_EFA4
         ld      ($1F97),ix
-        call    L_F10E
+        call    store_filename_record
         jp      c,L_D0D6
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
         ld      ($1FD4),hl
         ld      ($1FD6),a
         call    L_F139
-        call    L_F02C
+        call    redefine_window1
 L_EE61:
-        ld      hl,($1F9C)
-        ld      a,($1F9E)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
+        ld      hl,(prev_line_ptr)
+        ld      a,(prev_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
         ld      a,h
         or      l
         jr      z,L_EE99
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -5858,24 +5897,24 @@ L_EE61:
         ld      c,(hl)
         inc     hl
         ld      b,(hl)
-        ld      ($1F9E),a
-        ld      ($1F9C),bc
+        ld      (prev_line_bank),a
+        ld      (prev_line_ptr),bc
         ld      c,d
         ld      b,$00
         ld      ix,(pool_main)
-        ld      a,($1FEA)
-        ld      hl,($1FE8)
+        ld      a,(line_rec_bank)
+        ld      hl,(line_rec_ptr)
         oz      Os_mfr
         jp      L_EE61
 L_EE99:
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
         ld      a,h
         or      l
         jr      z,L_EED4
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -5887,22 +5926,22 @@ L_EE99:
         ld      c,(hl)
         inc     hl
         ld      b,(hl)
-        ld      ($1FA1),a
-        ld      ($1F9F),bc
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),bc
         ld      c,d
         ld      b,$00
         ld      ix,(pool_main)
-        ld      a,($1FEA)
-        ld      hl,($1FE8)
+        ld      a,(line_rec_bank)
+        ld      hl,(line_rec_ptr)
         oz      Os_mfr
         jp      L_EE99
 L_EED4:
         ld      a,$00
         ld      hl,$0000
-        ld      ($1F9E),a
-        ld      ($1F9C),hl
-        ld      ($1FA1),a
-        ld      ($1F9F),hl
+        ld      (prev_line_bank),a
+        ld      (prev_line_ptr),hl
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),hl
         ld      (cursor_line),hl
         ld      hl,L_F0B6
         oz      Gn_sop
@@ -5973,12 +6012,12 @@ L_EF58:
         cp      $EF
         jr      c,L_EF50
 L_EF69:
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_ED6C
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
-        ld      ($1F9C),hl
-        ld      ($1F9E),a
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      (prev_line_ptr),hl
+        ld      (prev_line_bank),a
         jp      L_EF48
 L_EF7E:
         cp      $09
@@ -5989,11 +6028,11 @@ L_EF7E:
 L_EF89:
         ld      ix,($1F97)
         oz      Gn_cl
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
-        call    L_CCE2
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
+        call    take_line_record
 L_EF9F:
         ld      hl,L_F30B
         jr      L_EFA7
@@ -6003,7 +6042,7 @@ L_EFA7:
         ld      a,$07
         oz      Os_out
         push    hl
-        call    L_F02C
+        call    redefine_window1
         pop     hl
         oz      Gn_sop
 L_EFB3:
@@ -6027,27 +6066,28 @@ L_EFCA:
 L_EFF5:
         ld      ix,($1F97)
         oz      Gn_cl
-        call    L_F02C
+        call    redefine_window1
         ld      a,(line_length)
         cp      $00
         jr      z,L_F00C
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_ED6C
 L_F00C:
-        call    L_ED76
+        call    step_to_prev_record
         jr      nz,L_F00C
-        call    L_CCE2
+        call    take_line_record
         ld      a,$00
         ld      (cursor_row),a
         ld      (cursor_index),a
 L_F01C:
-        call    L_F02C
+        call    redefine_window1
         ld      a,(edit_flags)
         and     $F1
         or      $02
         ld      (edit_flags),a
         jp      L_C5AF
-L_F02C:
+redefine_window1:
+; Prints str_define_window1: redefines and selects the text window, which closes any dialog drawn over it.
         ld      hl,str_define_window1
         oz      Gn_sop
         ret
@@ -6076,7 +6116,8 @@ L_F08E:
 L_F09A:
         defm    "Load new text"
         defb    $00
-L_F0A8:
+input_to_buffer_a:
+; GN_Sip line input into buffer A (buffer size 50, 30 columns shown). Used for filenames. Out: A = the key that ended the input.
         ld      b,'2'
         ld      de,(ptr_buffer_a)
         ld      c,$00
@@ -6099,7 +6140,8 @@ L_F0E5:
         defm    "2JCSaving "
         defb    $01,$33,$2d,$52,$46,$01,$32,$4a
         defb    $4e,$00
-L_F0F9:
+free_sized_record:
+; In: HL = offset, A = bank of a record whose byte 0 is its size. Frees it to pool_main; does nothing if HL = 0.
         ld      d,a
         ld      a,h
         or      l
@@ -6114,7 +6156,9 @@ L_F0F9:
         ld      ix,(pool_main)
         oz      Os_mfr
         ret
-L_F10E:
+store_filename_record:
+; In: C = length of the explicit filename that GN_Opf left in buffer C. Allocates a record of C+2 bytes (line_rec), byte 0 = its size, then copies the name and its terminator.
+; Keeps the filename of the text or user dictionary just loaded or saved. Carry set if there is no room.
         ld      b,$00
         inc     c
         inc     c
@@ -6128,8 +6172,8 @@ L_F10E:
         ret
 L_F120:
         ld      a,b
-        ld      ($1FEA),a
-        ld      ($1FE8),hl
+        ld      (line_rec_bank),a
+        ld      (line_rec_ptr),hl
         oz      Os_mpb
         ex      de,hl
         pop     bc
@@ -6175,12 +6219,12 @@ cmd_save_marked_block:
         jp      z,qe_main_loop
 L_F16F:
         ld      hl,L_F153
-        call    L_FF46
+        call    open_dialog_centre
         ld      a,' '
 L_F177:
         ld      hl,L_F067
         oz      Gn_sop
-        call    L_F0A8
+        call    input_to_buffer_a
         jr      nc,L_F18B
         cp      'g'
         jp      z,L_D0B4
@@ -6194,18 +6238,18 @@ L_F18B:
         ld      a,'!'
         jr      L_F177
 L_F198:
-        call    L_F02C
+        call    redefine_window1
         ld      hl,L_F0D8
         oz      Gn_sop
         call    L_F284
         jp      c,L_EF9F
         ld      ($1F97),ix
-        call    L_CCA2
+        call    store_cursor_line
         jp      c,L_ED6C
-        ld      a,($1FEA)
-        ld      hl,($1FE8)
-        ld      ($1FA1),a
-        ld      ($1F9F),hl
+        ld      a,(line_rec_bank)
+        ld      hl,(line_rec_ptr)
+        ld      (next_line_bank),a
+        ld      (next_line_ptr),hl
         call    L_E171
         ld      hl,(cursor_line)
         ld      bc,(block_start_line)
@@ -6216,7 +6260,7 @@ L_F198:
         jr      z,L_F1F3
         ld      (top_line),hl
 L_F1D2:
-        call    L_ED76
+        call    step_to_prev_record
         ld      hl,(top_line)
         dec     hl
         ld      (top_line),hl
@@ -6227,7 +6271,7 @@ L_F1D2:
 L_F1E2:
         ld      (top_line),hl
 L_F1E5:
-        call    L_ED9C
+        call    step_to_next_record
         ld      hl,(top_line)
         inc     hl
         ld      (top_line),hl
@@ -6235,7 +6279,7 @@ L_F1E5:
         or      l
         jr      nz,L_F1E5
 L_F1F3:
-        call    L_E5B4
+        call    copy_record_to_line_buffer
         ld      hl,(block_end_line)
         ld      bc,(block_start_line)
         scf
@@ -6274,9 +6318,9 @@ L_F235:
         ld      ix,($1F97)
         oz      Os_pb
         jp      c,L_EF89
-        call    L_ED9C
+        call    step_to_next_record
         jr      z,L_F26B
-        call    L_E5B4
+        call    copy_record_to_line_buffer
         ld      hl,(top_line)
         ld      a,h
         or      l
@@ -6298,11 +6342,11 @@ L_F261:
 L_F26B:
         ld      ix,($1F97)
         oz      Gn_cl
-        ld      hl,($1F9F)
-        ld      a,($1FA1)
-        ld      ($1FE8),hl
-        ld      ($1FEA),a
-        call    L_CCE2
+        ld      hl,(next_line_ptr)
+        ld      a,(next_line_bank)
+        ld      (line_rec_ptr),hl
+        ld      (line_rec_bank),a
+        call    take_line_record
         jp      L_F01C
 L_F284:
         ld      hl,(ptr_buffer_a)
@@ -6344,7 +6388,7 @@ L_F2C9:
         cp      'f'
         jr      nz,L_F2DF
         ld      hl,L_F153
-        call    L_FF46
+        call    open_dialog_centre
         ld      hl,L_F2E1
         oz      Gn_sop
 L_F2DF:
@@ -6366,7 +6410,7 @@ L_F30F:
 cmd_change_name:
 ; Command handler: 'Change name' - dispatch code $2A
         ld      hl,L_F071
-        call    L_FF46
+        call    open_dialog_centre
         ld      a,' '
 L_F33F:
         ld      hl,L_F067
@@ -6391,11 +6435,11 @@ L_F35D:
 L_F36A:
         ld      a,($1FD6)
         ld      hl,($1FD4)
-        call    L_F0F9
-        call    L_F10E
+        call    free_sized_record
+        call    store_filename_record
         jp      c,L_D0D6
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
         ld      ($1FD4),hl
         ld      ($1FD6),a
         call    L_F139
@@ -6409,7 +6453,7 @@ L_F398:
         defb    $00
 L_F399:
         ld      hl,L_F880
-        call    L_FF4B
+        call    open_dialog_right
         ld      ix,(pool_main)
         ld      bc,$0040
         ld      a,$00
@@ -6443,9 +6487,9 @@ L_F3DA:
 L_F3DD:
         call    L_F562
 L_F3E0:
-        call    L_D988
+        call    toggle_reverse
         call    L_F5D6
-        call    L_D988
+        call    toggle_reverse
 L_F3E9:
         oz      Os_in
         call    c,L_F586
@@ -6541,7 +6585,7 @@ L_F496:
         ld      ($1FAF),hl
         ld      a,$00
         ld      (dict_word_flags),a
-        call    L_F788
+        call    next_full_word
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
         call    L_F562
@@ -6672,7 +6716,7 @@ L_F586:
         cp      'f'
         jr      nz,L_F59F
         ld      hl,L_F880
-        call    L_FF4B
+        call    open_dialog_right
         ld      hl,L_F887
         oz      Gn_sop
         call    L_F562
@@ -6737,7 +6781,7 @@ L_F5FC:
         ld      hl,dict_stem_length
         dec     (hl)
         dec     (hl)
-        call    L_F788
+        call    next_full_word
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
         ret
@@ -6750,7 +6794,7 @@ L_F60B:
 L_F619:
         ld      a,$00
         ld      (dict_word_flags),a
-        call    L_F788
+        call    next_full_word
         jr      c,L_F635
         call    L_F9DF
         jr      c,L_F62E
@@ -6833,7 +6877,7 @@ L_F6BE:
         call    L_F74D
         ld      a,$00
         ld      (dict_word_flags),a
-        call    L_F788
+        call    next_full_word
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
         call    L_FADE
@@ -6942,7 +6986,9 @@ L_F77C:
 
         defb    $3a,$b3,$1f,$e6,$fd,$32,$b3,$1f
         defb    $37,$c9
-L_F788:
+next_full_word:
+; next_word_form, then writes the two section letters (dict_letter1, dict_letter2) just before buffer C and adds 2 to dict_word_length and dict_stem_length,
+; so the whole word starts two bytes before buffer C. Returns the flags of next_word_form (carry = end of section).
         ld      hl,(ptr_buffer_c)
         dec     hl
         ld      a,(dict_letter2)
@@ -6952,7 +6998,7 @@ L_F788:
         ld      (hl),a
         ld      a,(dict_word_flags)
         push    af
-        call    L_C2AE
+        call    next_word_form
         push    af
         pop     hl
         pop     af
@@ -7006,7 +7052,7 @@ L_F7F6:
         ld      (dict_word_flags),a
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
-        call    L_F788
+        call    next_full_word
         ld      hl,(dict_pos)
         ld      ($1FAF),hl
         jr      L_F817
@@ -7089,10 +7135,18 @@ L_F880:
 L_F887:
         defb    $01
         defb    $32,$2b,$53,$00
-L_F88C:
-        call    L_E5D2
+word_list_add:
+; Word lists. The user dictionary (user_dict_ptr/bank) and the ignored words (ignore_list_ptr/bank) have the same structure:
+; a 78-byte ($4E) table of 26 three-byte heads (bank, offset low, offset high), one per letter A-Z, each the start of a linked list of word records in alphabetical order.
+; A word record is: byte 0 = n, the number of letters stored; bytes 1-3 = next record (bank, offset low, offset high; offset 0 = end of list); then the n letters.
+; The first letter is not stored (it is given by the table slot), so n is the word length minus one. Records come from pool_main.
+; The routines always work on the user dictionary pointer; swap_word_lists exchanges the two so the same code serves the ignored words.
+; Adds the word in buffer A (dict_target_length letters, first letter A-Z) to the list, in alphabetical order. Allocates and clears the table on first use.
+; Returns Z if the word is already there; carry set if the first character is not a letter A-Z. No memory -> show_no_room_error.
+; $1FEB and $1FED hold the link to be patched (its address and the OS_Mpb binding) while the list is searched.
+        call    check_free_memory
         jp      c,L_FC41
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         jr      nz,L_F8B8
@@ -7101,9 +7155,9 @@ L_F88C:
         ld      a,$00
         oz      Os_mal
         jp      c,L_FC41
-        ld      ($1FAC),hl
+        ld      (user_dict_ptr),hl
         ld      a,b
-        ld      ($1FAE),a
+        ld      (user_dict_bank),a
         oz      Os_mpb
         ld      b,'N'
         ld      a,$00
@@ -7112,11 +7166,11 @@ L_F8B4:
         inc     hl
         djnz    L_F8B4
 L_F8B8:
-        ld      a,($1FAE)
+        ld      a,(user_dict_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         ld      bc,(ptr_buffer_a)
         ld      a,(bc)
         sub     'A'
@@ -7141,7 +7195,7 @@ L_F8D1:
         or      c
         jr      nz,L_F931
         ld      ($1FEB),hl
-        ld      a,($1FAE)
+        ld      a,(user_dict_bank)
         ld      b,a
         ld      c,$01
         ld      ($1FED),bc
@@ -7190,19 +7244,19 @@ L_F8EE:
 L_F931:
         ld      ($1FEB),hl
         push    bc
-        ld      a,($1FAE)
+        ld      a,(user_dict_bank)
         ld      b,a
         ld      c,$01
         ld      ($1FED),bc
         pop     bc
 L_F940:
-        ld      ($1FE8),bc
+        ld      (line_rec_ptr),bc
         ld      a,d
-        ld      ($1FEA),a
+        ld      (line_rec_bank),a
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      b,(hl)
         ld      de,$0004
         add     hl,de
@@ -7221,18 +7275,18 @@ L_F962:
         inc     hl
         inc     de
         djnz    L_F962
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(dict_target_length)
         dec     a
         cp      (hl)
         ret     z
         jr      c,L_F995
 L_F977:
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         ld      ($1FED),bc
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         inc     hl
         ld      d,(hl)
         inc     hl
@@ -7260,10 +7314,10 @@ L_F995:
         oz      Os_mpb
         ld      (hl),e
         inc     hl
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      (hl),a
         inc     hl
-        ld      bc,($1FE8)
+        ld      bc,(line_rec_ptr)
         ld      (hl),c
         inc     hl
         ld      (hl),b
@@ -7295,7 +7349,7 @@ L_F9DF:
         ld      a,($1FB3)
         and     $FD
         ld      ($1FB3),a
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         jr      nz,L_F9F0
@@ -7306,18 +7360,18 @@ L_F9F0:
         jp      c,L_FA4B
         ld      hl,(ptr_buffer_a)
         ld      a,(hl)
-        call    L_FB81
+        call    word_list_first_from
         ret     c
 L_F9FE:
         ld      hl,(ptr_buffer_a)
         ld      a,(dict_target_length)
-        call    L_FC44
+        call    word_list_compare
         jr      nc,L_FA45
         ld      hl,(ptr_buffer_c)
         dec     hl
         dec     hl
         ld      a,(dict_stem_length)
-        call    L_FC44
+        call    word_list_compare
         jr      nc,L_FA18
 L_FA16:
         scf
@@ -7331,7 +7385,7 @@ L_FA1A:
         dec     de
         ld      (de),a
         inc     de
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(hl)
         inc     a
         ld      (dict_word_length),a
@@ -7349,48 +7403,48 @@ L_FA1A:
         ld      ($1FB3),a
         ret
 L_FA45:
-        call    L_FB7B
+        call    word_list_next
         jr      nc,L_F9FE
         ret
 L_FA4B:
         ld      a,'A'
-        call    L_FB81
+        call    word_list_first_from
 L_FA50:
         ld      hl,(ptr_buffer_a)
         ld      a,(dict_target_length)
-        call    L_FC44
+        call    word_list_compare
         jp      c,L_FA1A
-        call    L_FB7B
+        call    word_list_next
         jr      nc,L_FA50
         ld      a,'A'
-        call    L_FB81
+        call    word_list_first_from
         ld      hl,(ptr_buffer_c)
         dec     hl
         dec     hl
         ld      a,(dict_stem_length)
-        call    L_FC44
+        call    word_list_compare
         ret     c
         jp      nz,L_FA1A
         scf
         ret
 L_FA77:
         ld      a,'A'
-        call    L_FB81
+        call    word_list_first_from
         ld      hl,$0000
         ld      ($1FBC),hl
 L_FA82:
         ld      hl,(ptr_buffer_a)
         ld      a,(dict_target_length)
-        call    L_FC44
+        call    word_list_compare
         jr      c,L_FAA6
         jr      z,L_FAA6
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
         ld      ($1FBC),hl
         ld      ($1FBE),a
         ld      a,($1FE4)
         ld      ($1FF3),a
-        call    L_FB7B
+        call    word_list_next
         jr      nc,L_FA82
 L_FAA6:
         ld      hl,($1FBC)
@@ -7398,25 +7452,25 @@ L_FAA6:
         or      l
         jr      nz,L_FAC7
         ld      a,'A'
-        call    L_FB81
+        call    word_list_first_from
 L_FAB2:
-        call    L_FB7B
+        call    word_list_next
         jr      nc,L_FAB2
         ld      hl,(ptr_buffer_c)
         dec     hl
         dec     hl
         ld      a,(dict_stem_length)
-        call    L_FC44
+        call    word_list_compare
         jp      c,L_FA1A
 L_FAC5:
         scf
         ret
 L_FAC7:
-        ld      ($1FE8),hl
+        ld      (line_rec_ptr),hl
         ld      a,($1FF3)
         ld      ($1FE4),a
         ld      a,($1FBE)
-        ld      ($1FEA),a
+        ld      (line_rec_bank),a
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -7425,7 +7479,7 @@ L_FADE:
         ld      a,($1FB3)
         and     $FD
         ld      ($1FB3),a
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         jr      nz,L_FAEF
@@ -7436,22 +7490,22 @@ L_FAEF:
         jr      z,L_FAC5
         jp      nc,L_FA77
         ld      a,'A'
-        call    L_FB81
+        call    word_list_first_from
         ld      hl,$0000
         ld      ($1FBC),hl
 L_FB02:
         ld      hl,(ptr_buffer_a)
         ld      a,(dict_target_length)
-        call    L_FC44
+        call    word_list_compare
         jr      c,L_FB26
         jr      z,L_FB26
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
         ld      ($1FBC),hl
         ld      ($1FBE),a
         ld      a,($1FE4)
         ld      ($1FF3),a
-        call    L_FB7B
+        call    word_list_next
         jr      nc,L_FB02
 L_FB26:
         ld      hl,($1FBC)
@@ -7462,11 +7516,11 @@ L_FB2D:
         scf
         ret
 L_FB2F:
-        ld      ($1FE8),hl
+        ld      (line_rec_ptr),hl
         ld      a,($1FF3)
         ld      ($1FE4),a
         ld      a,($1FBE)
-        ld      ($1FEA),a
+        ld      (line_rec_bank),a
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -7474,7 +7528,7 @@ L_FB2F:
         dec     hl
         dec     hl
         ld      a,(dict_stem_length)
-        call    L_FC44
+        call    word_list_compare
         jr      nc,L_FB2D
         jp      L_FA1A
 L_FB53:
@@ -7507,12 +7561,14 @@ L_FB76:
         jr      z,L_FB73
         scf
         ret
-L_FB7B:
-        ld      hl,($1FE8)
+word_list_next:
+; Moves line_rec to the next word record, going on to the following letters at the end of a list. Carry set at the end of the table.
+        ld      hl,(line_rec_ptr)
         inc     hl
         jr      L_FB84
-L_FB81:
-        call    L_FBC6
+word_list_first_from:
+; In: A = letter. Finds the first word record at or after that letter (line_rec). Carry set if there is none.
+        call    word_list_select_letter
 L_FB84:
         ld      d,(hl)
         inc     hl
@@ -7523,9 +7579,9 @@ L_FB84:
         or      c
         jr      z,L_FB9D
 L_FB8D:
-        ld      ($1FE8),bc
+        ld      (line_rec_ptr),bc
         ld      a,d
-        ld      ($1FEA),a
+        ld      (line_rec_bank),a
         ld      b,d
         ld      c,$01
         oz      Os_mpb
@@ -7540,7 +7596,7 @@ L_FBA1:
         inc     a
         cp      '['
         jr      nc,L_FBB8
-        call    L_FBC6
+        call    word_list_select_letter
         ld      d,(hl)
         inc     hl
         ld      c,(hl)
@@ -7554,15 +7610,16 @@ L_FBA1:
 L_FBB8:
         pop     af
         ld      ($1FE4),a
-        ld      a,($1FEA)
+        ld      a,(line_rec_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
         scf
         ret
-L_FBC6:
+word_list_select_letter:
+; In: A = letter 'A'-'Z'. Binds the table, saves the letter in $1FE4 and points line_rec_ptr at that letter's head.
         push    af
-        ld      a,($1FAE)
+        ld      a,(user_dict_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -7574,12 +7631,13 @@ L_FBC6:
         add     a,c
         ld      c,a
         ld      b,$00
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         add     hl,bc
-        ld      ($1FE8),hl
+        ld      (line_rec_ptr),hl
         ret
-L_FBE3:
-        ld      hl,($1FAC)
+word_list_lookup:
+; Looks the word in buffer A up in the list. Carry clear = found. Called from dictionary_lookup after dict_target_length has had 2 subtracted, hence the +1.
+        ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         jr      nz,L_FBEC
@@ -7587,7 +7645,7 @@ L_FBEA:
         scf
         ret
 L_FBEC:
-        ld      a,($1FAE)
+        ld      a,(user_dict_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -7599,7 +7657,7 @@ L_FBEC:
         add     a,c
         ld      c,a
         ld      b,$00
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         add     hl,bc
 L_FC04:
         ld      d,(hl)
@@ -7610,11 +7668,11 @@ L_FC04:
         ld      a,b
         or      c
         jr      z,L_FBEA
-        ld      ($1FE8),bc
+        ld      (line_rec_ptr),bc
         ld      b,d
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(dict_target_length)
         inc     a
         cp      (hl)
@@ -7638,12 +7696,14 @@ L_FC2E:
         ccf
         ret
 L_FC3B:
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         inc     hl
         jr      L_FC04
 L_FC41:
         jp      show_no_room_error
-L_FC44:
+word_list_compare:
+; Compares the word at HL (A letters, first letter included) with the list word at line_rec, whose first letter is in $1FE4.
+; Flags as for CP at the first difference: Z = equal, carry = the word comes first.
         push    hl
         push    af
         ld      a,($1FE4)
@@ -7659,7 +7719,7 @@ L_FC51:
         pop     hl
         push    hl
         ld      b,a
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      c,(hl)
         ld      de,$0004
         add     hl,de
@@ -7683,34 +7743,35 @@ L_FC6D:
         scf
         ccf
         ret
-L_FC71:
-        ld      hl,($1FAC)
-        ld      bc,($1FDA)
-        ld      ($1FDA),hl
-        ld      ($1FAC),bc
-        ld      a,($1FAE)
+swap_word_lists:
+; Exchanges user_dict_ptr/bank with ignore_list_ptr/bank, so the word list routines act on the ignored words. Always called in pairs.
+        ld      hl,(user_dict_ptr)
+        ld      bc,(ignore_list_ptr)
+        ld      (ignore_list_ptr),hl
+        ld      (user_dict_ptr),bc
+        ld      a,(user_dict_bank)
         ld      b,a
-        ld      a,($1FDC)
-        ld      ($1FAE),a
+        ld      a,(ignore_list_bank)
+        ld      (user_dict_bank),a
         ld      a,b
-        ld      ($1FDC),a
+        ld      (ignore_list_bank),a
         ret
 cmd_save_user_dictionary:
 ; Command handler: 'Save user dictionary' - dispatch code $22
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         jp      z,qe_main_loop
         ld      hl,L_FE97
-        call    L_FF46
-        ld      hl,($1FD7)
+        call    open_dialog_centre
+        ld      hl,(user_dict_name_ptr)
         ld      a,h
         or      l
         jr      nz,L_FCA7
         ld      a,' '
         jr      L_FCC0
 L_FCA7:
-        ld      a,($1FD9)
+        ld      a,(user_dict_name_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -7727,7 +7788,7 @@ L_FCBE:
 L_FCC0:
         ld      hl,L_FE8D
         oz      Gn_sop
-        call    L_F0A8
+        call    input_to_buffer_a
         cp      $1B
         jp      z,L_F01C
         cp      $0D
@@ -7735,14 +7796,14 @@ L_FCC0:
         ld      a,'!'
         jr      L_FCC0
 L_FCD6:
-        call    L_F02C
+        call    redefine_window1
         ld      hl,L_F0D8
         oz      Gn_sop
-        ld      hl,($1FD7)
-        ld      a,($1FD9)
-        call    L_F0F9
+        ld      hl,(user_dict_name_ptr)
+        ld      a,(user_dict_name_bank)
+        call    free_sized_record
         ld      hl,$0000
-        ld      ($1FD7),hl
+        ld      (user_dict_name_ptr),hl
         ld      hl,(ptr_buffer_a)
         ld      de,(ptr_buffer_c)
         ld      c,'2'
@@ -7751,15 +7812,15 @@ L_FCD6:
         oz      Gn_opf
         jp      c,L_EF9F
         ld      ($1F97),ix
-        call    L_F10E
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
-        ld      ($1FD9),a
-        ld      ($1FD7),hl
+        call    store_filename_record
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      (user_dict_name_bank),a
+        ld      (user_dict_name_ptr),hl
         ld      a,$00
 L_FD16:
         ld      (dict_letter1),a
-        ld      a,($1FAE)
+        ld      a,(user_dict_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -7769,7 +7830,7 @@ L_FD16:
         add     a,b
         ld      c,a
         ld      b,$00
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         add     hl,bc
 L_FD2E:
         ld      d,(hl)
@@ -7780,7 +7841,7 @@ L_FD2E:
         ld      a,b
         or      c
         jr      z,L_FD7D
-        ld      ($1FE8),bc
+        ld      (line_rec_ptr),bc
         ld      b,d
         ld      c,$01
         oz      Os_mpb
@@ -7792,7 +7853,7 @@ L_FD2E:
         ld      ix,($1F97)
         oz      Os_pb
         jp      c,L_EF89
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      b,(hl)
         ld      de,$0004
         add     hl,de
@@ -7807,7 +7868,7 @@ L_FD5E:
         ld      ix,($1F97)
         oz      Os_pb
         jp      c,L_EF89
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         inc     hl
         jp      L_FD2E
 L_FD7D:
@@ -7825,8 +7886,8 @@ L_FD8F:
 cmd_load_user_dictionary:
 ; Command handler: 'Load user dictionary' - dispatch code $23
         ld      hl,L_FEAC
-        call    L_FF46
-        ld      hl,($1FAC)
+        call    open_dialog_centre
+        ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         jr      z,L_FDB5
@@ -7843,7 +7904,7 @@ L_FDB5:
 L_FDBB:
         ld      hl,L_FE8D
         oz      Gn_sop
-        call    L_F0A8
+        call    input_to_buffer_a
         cp      $1B
         jp      z,L_F01C
         cp      $0D
@@ -7851,11 +7912,11 @@ L_FDBB:
         ld      a,'!'
         jr      L_FDBB
 L_FDD1:
-        ld      hl,($1FD7)
-        ld      a,($1FD9)
-        call    L_F0F9
+        ld      hl,(user_dict_name_ptr)
+        ld      a,(user_dict_name_bank)
+        call    free_sized_record
         ld      hl,$0000
-        ld      ($1FD7),hl
+        ld      (user_dict_name_ptr),hl
         ld      hl,(ptr_buffer_a)
         ld      de,(ptr_buffer_c)
         ld      c,'2'
@@ -7864,17 +7925,19 @@ L_FDD1:
         oz      Gn_opf
         jp      c,L_EFA4
         ld      ($1F97),ix
-        call    L_F10E
+        call    store_filename_record
         jp      c,L_D0D6
-        ld      hl,($1FE8)
-        ld      a,($1FEA)
-        ld      ($1FD9),a
-        ld      ($1FD7),hl
-        call    L_F02C
-        call    L_FEC1
+        ld      hl,(line_rec_ptr)
+        ld      a,(line_rec_bank)
+        ld      (user_dict_name_bank),a
+        ld      (user_dict_name_ptr),hl
+        call    redefine_window1
+        call    word_list_clear
         ld      hl,L_F0B6
         oz      Gn_sop
 L_FE15:
+; Load user dictionary: each run of word characters (is_word_char, at most 64) is one word; any other byte ends it. Words of fewer than 3 characters are skipped.
+; The words are added with word_list_add, so the file needs no particular order; a word starting with an apostrophe is rejected by word_list_add.
         ld      a,$00
         ld      (dict_target_length),a
         ld      hl,(ptr_buffer_a)
@@ -7882,7 +7945,7 @@ L_FE1D:
         ld      ix,($1F97)
         oz      Os_gb
         jr      c,L_FE4A
-        call    L_D922
+        call    is_word_char
         jr      nz,L_FE37
         ld      (hl),a
         inc     hl
@@ -7892,12 +7955,12 @@ L_FE1D:
         cp      '@'
         jr      c,L_FE1D
 L_FE37:
-        call    L_E5D2
+        call    check_free_memory
         jp      c,L_FD8F
         ld      a,(dict_target_length)
         cp      $03
         jr      c,L_FE15
-        call    L_F88C
+        call    word_list_add
         jp      L_FE15
 L_FE4A:
         cp      $09
@@ -7908,7 +7971,7 @@ L_FE4A:
 L_FE55:
         ld      ix,($1F97)
         oz      Gn_cl
-        call    L_F02C
+        call    redefine_window1
         jp      L_F01C
 
 
@@ -7929,15 +7992,16 @@ L_FE97:
 L_FEAC:
         defm    "Load user dictionary"
         defb    $00
-L_FEC1:
-        ld      hl,($1FAC)
+word_list_clear:
+; Frees every word record in the list and clears the 26 heads (the table itself is kept).
+        ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         ret     z
         ld      a,$00
 L_FEC9:
         ld      (dict_letter1),a
-        ld      a,($1FAE)
+        ld      a,(user_dict_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -7947,7 +8011,7 @@ L_FEC9:
         add     a,b
         ld      c,a
         ld      b,$00
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         add     hl,bc
         ld      d,(hl)
         inc     hl
@@ -7964,7 +8028,7 @@ L_FEEE:
         ld      a,h
         or      l
         jr      z,L_FF21
-        ld      ($1FE8),hl
+        ld      (line_rec_ptr),hl
         ld      b,d
         ld      c,$01
         oz      Os_mpb
@@ -7976,7 +8040,7 @@ L_FEEE:
         ld      b,(hl)
         ld      ($1FBC),bc
         ld      ($1FBE),a
-        ld      hl,($1FE8)
+        ld      hl,(line_rec_ptr)
         ld      a,(hl)
         add     a,$04
         ld      c,a
@@ -7986,7 +8050,7 @@ L_FEEE:
         oz      Os_mfr
         jp      L_FEEE
 L_FF21:
-        ld      a,($1FAE)
+        ld      a,(user_dict_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
@@ -7996,7 +8060,7 @@ L_FF21:
         add     a,b
         ld      c,a
         ld      b,$00
-        ld      hl,($1FAC)
+        ld      hl,(user_dict_ptr)
         add     hl,bc
         ld      a,$00
         ld      (hl),a
@@ -8009,10 +8073,12 @@ L_FF21:
         cp      $1A
         jr      c,L_FEC9
         ret
-L_FF46:
+open_dialog_centre:
+; open_dialog_with_title with the centre geometry: x 25, 30 columns, full height (title on row 0).
         ld      bc,L_FFCA
         jr      open_dialog_with_title
-L_FF4B:
+open_dialog_right:
+; open_dialog_with_title with the right-hand geometry: x 38, 35 columns, rows 1-7. (open_dialog_default is the same on the left, x 1.)
         ld      bc,L_FFC0
         jr      open_dialog_with_title
 dialog_window_right:

@@ -105,7 +105,7 @@ $C1B6 bind_dictionary_bank, $C1E2 qe_start
 $C22A, $C245
 $C286 far_call_bank63, $C298
 $C29E, $C2A4
-$C2AA, $C2AE
+$C2AA, $C2AE next_word_form
 $C2E9, $C2FA
 $C30A, $C312
 $C336 expand_word, $C341
@@ -186,9 +186,9 @@ $CBFC, $CC2B
 $CC32, $CC36
 $CC41, $CC47 cmd_cursor_left
 $CC56, $CC6C
-$CC9B, $CCA2
-$CCB9, $CCBC
-$CCE2, $CCE5
+$CC9B, $CCA2 store_cursor_line
+$CCB9, $CCBC load_line_record
+$CCE2 take_line_record, $CCE5 free_line_record
 $CCF6 cmd_format_paragraph, $CCF9
 $CD1F, $CD30
 $CD3E, $CD44
@@ -208,7 +208,7 @@ $CF49, $CF4E
 $CF74, $CF7B
 $CF97, $CFD0
 $CFDE, $CFE8
-$CFE9, $D021
+$CFE9 alloc_line_record, $D021
 $D040, $D06F draw_text_window
 $D089 handle_os_error, $D09F
 $D0B4, $D0C3
@@ -221,7 +221,7 @@ $D1F2, $D207
 $D20C, $D223
 $D227, $D23C
 $D241 redraw_screen, $D247 place_cursor
-$D258, $D264
+$D258, $D264 clamp_cursor_index
 $D273, $D276 translate_key_code
 $D291, $D294
 $D297, $D29A
@@ -271,14 +271,14 @@ $D825, $D83B
 $D85E, $D87D
 $D8AC, $D8B2
 $D8BC, $D8C4
-$D8CA, $D8CE
+$D8CA next_word_from_text, $D8CE
 $D8D7, $D8E1
 $D8E6, $D8E9
 $D8F9, $D8FB
 $D8FF, $D912
-$D91D, $D922
+$D91D, $D922 is_word_char
 $D92F, $D931 cmd_check_this_word_or_escape
-$D978, $D988
+$D978, $D988 toggle_reverse
 $D991 cmd_insert_over, $DA65
 $DA88, $DA91
 $DAA7, $DABC
@@ -300,9 +300,9 @@ $DCD1, $DCDB
 $DCE4, $DCF5
 $DD04, $DD09
 $DD19, $DD22
-$DD33, $DD44
+$DD33 find_word_start, $DD44
 $DD51, $DD59 cmd_check_as_you_type
-$DDBD, $DDE4
+$DDBD guess_correct_word, $DDE4
 $DDE7, $DE02
 $DE12, $DE15
 $DE2B, $DE34
@@ -315,11 +315,11 @@ $DF49, $DF72
 $DF7B, $DF97
 $DFA0, $DFB7
 $DFC0, $DFDC
-$DFEF, $DFF5
+$DFEF, $DFF5 free_guess_list
 $E035, $E04F
 $E05D, $E061
-$E063, $E076
-$E090, $E0B3
+$E063 section_could_match, $E076 append_guess
+$E090 is_one_edit_away, $E0B3
 $E0BA, $E0BE
 $E0C0, $E0CF
 $E0D3, $E0D9
@@ -329,9 +329,9 @@ $E10F, $E11F
 $E12A, $E131 cmd_insert_marker
 $E13D, $E147
 $E169 cmd_remove_markers, $E171
-$E18E, $E1AB
+$E18E, $E1AB is_block_start_line
 $E1B1, $E1BA
-$E1C9, $E1CB
+$E1C9, $E1CB is_block_end_line
 $E1D1, $E1DC
 $E1F1, $E1FA
 $E200, $E215
@@ -359,7 +359,7 @@ $E520, $E524
 $E53A, $E53C
 $E541, $E583
 $E5A3, $E5A7
-$E5B4, $E5D2
+$E5B4 copy_record_to_line_buffer, $E5D2 check_free_memory
 $E5E2 cmd_delete_marked_block, $E602
 $E60E, $E629
 $E62C, $E642
@@ -369,8 +369,8 @@ $E6B7, $E6E0
 $E72F, $E746
 $E75B, $E76C
 $E77F, $E785
-$E7A0, $E7BB
-$E7C3, $E7ED
+$E7A0, $E7BB dec_cursor_line
+$E7C3 inc_cursor_line, $E7ED
 $E7F8, $E7FD
 $E802 cmd_information, $E80D
 $E815, $E823
@@ -385,8 +385,8 @@ $ECAF, $ECDB
 $ECED, $ED03
 $ED13, $ED28
 $ED43, $ED4E
-$ED6C, $ED76
-$ED9C, $EDC5 cmd_load_text
+$ED6C, $ED76 step_to_prev_record
+$ED9C step_to_next_record, $EDC5 cmd_load_text
 $EDE0, $EDE6
 $EDF7, $EE02
 $EE16, $EE23
@@ -400,8 +400,8 @@ $EF9F, $EFA4
 $EFA7, $EFB3
 $EFBE, $EFF5
 $F00C, $F01C
-$F02C, $F0A8
-$F0F9, $F10E
+$F02C redefine_window1, $F0A8 input_to_buffer_a
+$F0F9 free_sized_record, $F10E store_filename_record
 $F120, $F136
 $F139, $F13E
 $F145, $F14F
@@ -453,7 +453,7 @@ $F70A, $F713
 $F730, $F738
 $F73E, $F74D
 $F757, $F766
-$F77C, $F788
+$F77C, $F788 next_full_word
 $F7A6, $F7B9
 $F7D1, $F7EC
 $F7F6, $F80C
@@ -461,7 +461,7 @@ $F817, $F830
 $F83D, $F840
 $F84B, $F857
 $F85A, $F87B
-$F88C, $F8B4
+$F88C word_list_add, $F8B4
 $F8B8, $F8D1
 $F8EE, $F931
 $F940, $F962
@@ -479,16 +479,16 @@ $FB02, $FB26
 $FB2D, $FB2F
 $FB53, $FB64
 $FB73, $FB76
-$FB7B, $FB81
+$FB7B word_list_next, $FB81 word_list_first_from
 $FB84, $FB8D
 $FB9D, $FBA1
-$FBB8, $FBC6
-$FBE3, $FBEA
+$FBB8, $FBC6 word_list_select_letter
+$FBE3 word_list_lookup, $FBEA
 $FBEC, $FC04
 $FC2E, $FC3B
-$FC41, $FC44
+$FC41, $FC44 word_list_compare
 $FC51, $FC60
-$FC6D, $FC71
+$FC6D, $FC71 swap_word_lists
 $FC8E cmd_save_user_dictionary, $FCA7
 $FCBE, $FCC0
 $FCD6, $FD16
@@ -499,9 +499,9 @@ $FDBB, $FDD1
 $FE15, $FE1D
 $FE1F, $FE37
 $FE4A, $FE55
-$FEC1, $FEC9
+$FEC1 word_list_clear, $FEC9
 $FEEE, $FF21
-$FF46, $FF4B
+$FF46 open_dialog_centre, $FF4B open_dialog_right
 $FF50 dialog_window_right, $FF57 dialog_window_left
 $FF5E open_dialog_default, $FF61 open_dialog_with_title
 }
@@ -654,6 +654,7 @@ $B82A
 	($C051,< "Look a word up in the dictionary. The word is in buffer A. Takes its first two letters, finds that section with find_dictionary_section,"
 		 "then reads the records of the section in order, expanding each (expand_word) and comparing it with the rest of the word."
 		 "Because the words are sorted it stops as soon as a word is greater than the target. Returns carry clear if found.")
+	($C083,< "Not in the ROM dictionary: try the user dictionary, then (swapping the lists) the ignored words.")
 	($C093,< "Compare the expanded dictionary word (buffer C) with the target."
 		 "If the stem carries an inflection class (dict_word_flags bit 7) the endings of that class are appended one at a time and compared"
 		 "as well (see inflection_class_table). A bare stem is only accepted when its class is below $13.")
@@ -672,6 +673,8 @@ $B82A
 		 "IN: A = index into the far-call table in bank 63 (far_call_table, 11 entries)."
 		 "Binds bank 63 into segment 1 and jumps to the stub at $7F80 (file offset $3F80 of SPELL.63)."
 		 "BANK-ADDRESSING SITE 2 (patched): INC A after OS_Mgb gives the bank after the running one, bank 63. The ORIGINAL ROM had AND $C0 / OR $3F.")
+	($C2AE,< "Puts the next accepted word form in buffer C: the next ending of the current stem's inflection class if there is one, otherwise the next record of the section, expanded."
+		 "Carry set at the end of the section (from read_dictionary_record).")
 	($C315,< "Window 1, the text window: x=0 y=0, 74 columns by 8 rows, type $81 (bars). Selected and cleared, vertical scroll and cursor on.")
 	($C328,< "Window 2, the side panel: x=75 y=0, 19 columns by 8 rows, type $80. Selected and cleared.")
 	($C336,< "Expand the packed record in buffer B into the full word in buffer C."
@@ -707,7 +710,14 @@ $B82A
 	($CBDA,< "Command handler: 'Cursor up' - dispatch code $06")
 	($CBE5,< "Command handler: 'Cursor right' - dispatch code $04")
 	($CC47,< "Command handler: 'Cursor left' - dispatch code $03")
+	($CCA2,< "Writes the cursor line (line_buffer, line_length characters) into a new line record linked between prev_line and next_line. Carry set if there is no room.")
+	($CCBC,< "Makes the record at line_rec the cursor line: copies its text into line_buffer (copy_record_to_line_buffer) and takes its previous and next links as prev_line and next_line.")
+	($CCE2,< "load_line_record, then frees the record (free_line_record): the line now exists only in the edit buffer.")
+	($CCE5,< "Frees the record at line_rec back to pool_main (OS_Mfr, size from its length byte).")
 	($CCF6,< "Command handler: 'Format paragraph' - dispatch code $0E")
+	($CFE9,< "In: A = text length. Allocates a line record of A+7 bytes from pool_main and points line_rec_ptr/line_rec_bank at it."
+		 "Links it between prev_line and next_line: prev's next link (+4) and next's prev link (+1) are set to it, and its own header gets the length and both links."
+		 "Out: carry set if OS_Mal failed. E = text length on exit.")
 	($D06F,< "Draw the text window. This is only: A = 7, call far_call_bank63. The work is done by far_redraw_text_window in bank 63.")
 	($D089,< "Called after every key read (carry set when the read returned an OZ error, A = error code)."
 		 "RC_Draw: the screen was corrupted by another application - redefine window 1 and redraw."
@@ -726,14 +736,23 @@ $B82A
 	($D241,< "Redraw the whole screen: the text window (far call 7 into bank 63), then the status line, then place the cursor.")
 	($D247,< "Position the cursor in window 1: x = the smaller of cursor_col_limit and cursor_index, y = cursor_row."
 		 "Both are sent as the coordinate plus SD_COORD (32), after the cursor-to prefix string.")
+	($D264,< "If cursor_index is beyond line_length, sets it to line_length. Out: A = C = cursor_index. BC preserved apart from C.")
 	($D276,< "Maps raw command codes to dispatch codes: $C3 Delete line -> $15, $D3 Delete character -> $14,"
 		 "$F4 Start of line -> $09, $F5 End of line -> $0A, $F8 Previous word -> $17, $F9 Next word -> $16.")
 	($D2A0,< "Command handler: 'Check from cursor' - dispatch code $1D")
 	($D2B9,< "Command handler: 'Check marked block' - dispatch code $28")
 	($D3D5,< "Command handler: 'Check all text' - dispatch code $12")
+	($D467,< "End of the check: the ignored words are only for this check. Swap the lists, free every ignored word and the table, swap back.")
+	($D5CA,< "Correction menu option 2 'Add word to user dictionary': word_list_add. Option 1 'Ignore word' (below) adds it to the ignored words instead.")
+	($D8CA,< "In: HL -> text, scan_chars_left = characters left to scan. Skips to the next word character, then copies the word into buffer A through is_word_char,"
+		 "so every letter is upper case: capital letters make no difference to the check. A leading apostrophe is dropped."
+		 "The length goes to dict_target_length, leaving out a final apostrophe and a final 'S (JOHN'S is checked as JOHN). word_start_ptr = where the word starts."
+		 "Z set if no word is left; NZ when a word was found.")
+	($D922,< "Z set if A is a letter or an apostrophe. A letter is returned in upper case (AND $DF); an apostrophe is returned unchanged.")
 	($D931,< "Command handler: 'Check this word' - dispatch code $0F"
 		 "Command handler: 'Escape' - dispatch code $1B"
 		 "Two dispatch codes share this handler.")
+	($D988,< "Prints the 'toggle reverse video' sequence (1 R). HL preserved.")
 	($D991,< "Command handler: 'Insert/Over' - dispatch code $1C")
 	($DB17,< "Command handler: 'Split line' - dispatch code $13")
 	($DB9F,< "Command handler: 'Search and Replace' - dispatch code $26")
@@ -741,14 +760,32 @@ $B82A
 	($DBFD,< "Command handler: 'Search for string' - dispatch code $25")
 	($DC12,< "Command handler: 'Merge text at cursor' - dispatch code $27")
 	($DC61,< "Command handler: 'Tab' - dispatch code $29")
+	($DD33,< "From cursor_index, moves back to the start of the word at or before the cursor. Out: HL -> that character in line_buffer, C = its index. Z if at the start of the line.")
 	($DD59,< "Command handler: 'Check as you type' - dispatch code $19")
 	($DDAF,< "7 words: inflection class $10 to $16 -> list of endings. The list holds endings each starting with a letter that has bit 7 set, ending with $80."
 		 "$10 = ED ING S;  $11 = S;  $12 = ED ES ING;  $13 = E ED ES ING (the stem has lost its final E);  $14 = IES Y;  $15 = E Y;"
 		 "$16 = ISE ISED ISES ISING IZE IZED IZES IZING.")
+	($DDBD,< "Correction menu option 3 'Guess correct word'. The word is in buffer A (dict_target_length letters)."
+		 "Scans every section of the ROM dictionary (first letters A-Z, second letters apostrophe and A-Z) that section_could_match allows, every word form (next_word_form),"
+		 "then every word of the user dictionary. Each word that is_one_edit_away accepts is appended to the guess list (append_guess)."
+		 "A key pressed during the scan stops it (checked with OS_Xin after each first letter). The guesses are then shown six at a time in the right-hand dialog:"
+		 "up and down move the highlight, Enter puts the chosen word in buffer C and returns, 1-5 go to that Correction menu option, Escape cancels."
+		 "Out: A = 1, or the menu key pressed. edit_flags bit 6 ($40) is set when no word was chosen. top_line is borrowed as a row counter while the list is drawn.")
+	($DFF5,< "Frees every record of the guess list and clears guess_list_ptr.")
+	($E063,< "Z set if the section's first letter (dict_letter1) or second letter (dict_letter2) equals the first or the second letter of the typed word."
+		 "Only those sections are searched, so a guess must share one of its first two letters with the typed word.")
+	($E076,< "Far call 6 (far_append_guess in bank 63): appends the word in buffer C - 2 to the guess list. Carry set if there is no room.")
+	($E090,< "Compares the word being scanned (buffer C - 2, dict_word_length + 2 letters) with the typed word (buffer A, dict_target_length letters)."
+		 "Z set (a guess) when they differ by one edit: same length with one letter different, or with two adjacent letters swapped ($E0C0);"
+		 "typed word one letter shorter, i.e. a letter missing ($E0EF); typed word one letter longer, i.e. an extra letter ($E10F). Lengths further apart are rejected.")
 	($E131,< "Command handler: 'Insert marker' - dispatch code $1E")
 	($E169,< "Command handler: 'Remove markers' - dispatch code $20")
+	($E1AB,< "Carry clear if the start marker is set and is on the cursor line; carry set otherwise. BC preserved.")
+	($E1CB,< "Carry clear if both markers are set and the end marker is on the cursor line; carry set otherwise. BC preserved.")
 	($E225,< "Command handler: 'Move marked block' - dispatch code $21")
 	($E22D,< "Command handler: 'Copy marked block' - dispatch code $1F")
+	($E5B4,< "Binds the record's bank into segment 1, sets line_length = record length - 7 and copies the text into line_buffer.")
+	($E5D2,< "OS_Nq NQ_Mfs (free memory) for pool_main. Carry set when the high byte returned in A is 0 and B is below 5, i.e. memory is nearly full; callers then refuse the command.")
 	($E5E2,< "Command handler: 'Delete marked block' - dispatch code $18")
 	($E802,< "Command handler: 'Information' - dispatch code $1A")
 	($E84E,< "26 words, one per first letter A to Z: the address of that letter's list of 3-byte section entries."
@@ -756,11 +793,40 @@ $B82A
 		 "A list ends with $FF. There are 302 sections in all.")
 	($EC26,< "Command handler: 'Export text' - dispatch code $2B")
 	($EC30,< "Command handler: 'Save text' - dispatch code $11")
+	($ED76,< "Follows the previous link (+1..+3) of the record at line_rec. Z set (line_rec unchanged) if there is no previous line; otherwise line_rec = previous record, bound into segment 1, NZ.")
+	($ED9C,< "Follows the next link (+4..+6) of the record at line_rec. Z set (line_rec unchanged) if there is no next line; otherwise line_rec = next record, bound into segment 1, NZ.")
 	($EDC5,< "Command handler: 'Load text' - dispatch code $10")
+	($F02C,< "Prints str_define_window1: redefines and selects the text window, which closes any dialog drawn over it.")
+	($F0A8,< "GN_Sip line input into buffer A (buffer size 50, 30 columns shown). Used for filenames. Out: A = the key that ended the input.")
+	($F0F9,< "In: HL = offset, A = bank of a record whose byte 0 is its size. Frees it to pool_main; does nothing if HL = 0.")
+	($F10E,< "In: C = length of the explicit filename that GN_Opf left in buffer C. Allocates a record of C+2 bytes (line_rec), byte 0 = its size, then copies the name and its terminator."
+		 "Keeps the filename of the text or user dictionary just loaded or saved. Carry set if there is no room.")
 	($F167,< "Command handler: 'Save marked block' - dispatch code $24")
 	($F337,< "Command handler: 'Change name' - dispatch code $2A")
+	($F788,< "next_word_form, then writes the two section letters (dict_letter1, dict_letter2) just before buffer C and adds 2 to dict_word_length and dict_stem_length,"
+		 "so the whole word starts two bytes before buffer C. Returns the flags of next_word_form (carry = end of section).")
+	($F88C,< "Word lists. The user dictionary (user_dict_ptr/bank) and the ignored words (ignore_list_ptr/bank) have the same structure:"
+		 "a 78-byte ($4E) table of 26 three-byte heads (bank, offset low, offset high), one per letter A-Z, each the start of a linked list of word records in alphabetical order."
+		 "A word record is: byte 0 = n, the number of letters stored; bytes 1-3 = next record (bank, offset low, offset high; offset 0 = end of list); then the n letters."
+		 "The first letter is not stored (it is given by the table slot), so n is the word length minus one. Records come from pool_main."
+		 "The routines always work on the user dictionary pointer; swap_word_lists exchanges the two so the same code serves the ignored words."
+		 "Adds the word in buffer A (dict_target_length letters, first letter A-Z) to the list, in alphabetical order. Allocates and clears the table on first use."
+		 "Returns Z if the word is already there; carry set if the first character is not a letter A-Z. No memory -> show_no_room_error."
+		 "$1FEB and $1FED hold the link to be patched (its address and the OS_Mpb binding) while the list is searched.")
+	($FB7B,< "Moves line_rec to the next word record, going on to the following letters at the end of a list. Carry set at the end of the table.")
+	($FB81,< "In: A = letter. Finds the first word record at or after that letter (line_rec). Carry set if there is none.")
+	($FBC6,< "In: A = letter 'A'-'Z'. Binds the table, saves the letter in $1FE4 and points line_rec_ptr at that letter's head.")
+	($FBE3,< "Looks the word in buffer A up in the list. Carry clear = found. Called from dictionary_lookup after dict_target_length has had 2 subtracted, hence the +1.")
+	($FC44,< "Compares the word at HL (A letters, first letter included) with the list word at line_rec, whose first letter is in $1FE4."
+		 "Flags as for CP at the first difference: Z = equal, carry = the word comes first.")
+	($FC71,< "Exchanges user_dict_ptr/bank with ignore_list_ptr/bank, so the word list routines act on the ignored words. Always called in pairs.")
 	($FC8E,< "Command handler: 'Save user dictionary' - dispatch code $22")
 	($FD99,< "Command handler: 'Load user dictionary' - dispatch code $23")
+	($FE15,< "Load user dictionary: each run of word characters (is_word_char, at most 64) is one word; any other byte ends it. Words of fewer than 3 characters are skipped."
+		 "The words are added with word_list_add, so the file needs no particular order; a word starting with an apostrophe is rejected by word_list_add.")
+	($FEC1,< "Frees every word record in the list and clears the 26 heads (the table itself is kept).")
+	($FF46,< "open_dialog_with_title with the centre geometry: x 25, 30 columns, full height (title on row 0).")
+	($FF4B,< "open_dialog_with_title with the right-hand geometry: x 38, 35 columns, rows 1-7. (open_dialog_default is the same on the left, x 1.)")
 	($FF50,< "Opens dialog window 3 in the RIGHT half of the screen (x=37, 37 columns, 7 rows). Called from several routines (menus and lists).")
 	($FF57,< "Opens dialog window 3 in the LEFT half of the screen (x=0, 37 columns, 7 rows). Called from one place only.")
 	($FF61,< "Open a dialog box with a title bar in window 3."
@@ -777,13 +843,16 @@ $B82A
 	($D127,"EF_CHECK_ON"EF_CHECK_ON)
 	($D259,"SD_COORD"SD_COORD)
 	($D260,"SD_COORD"SD_COORD)
+	($E5D3,"NQ_Mfs"NQ_Mfs)
 }
 
 ; Global constants:
 {
 
 	$1F82 dict_pos, $1F84 dict_bank, $1F85 dict_target_length, $1F86 dict_letter1, $1F87 dict_letter2, $1F88 dict_word_length, $1F89 dict_word_flags, $1F8A dict_ending_ptr
-	$1F8C dict_stem_length, $1F8D ptr_buffer_b, $1F8F ptr_buffer_c, $1F91 ptr_buffer_a, $1F93 pool_buffers, $1F99 line_buffer, $1F9B line_buffer_bank, $1FA2 cursor_row
-	$1FA4 cursor_col_limit, $1FA5 cursor_index, $1FA6 line_length, $1FA7 pool_main, $1FA9 pool_second, $1FAB edit_flags, $1FC8 block_start_line, $1FCA block_start_col
-	$1FCB block_end_line, $1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel
+	$1F8C dict_stem_length, $1F8D ptr_buffer_b, $1F8F ptr_buffer_c, $1F91 ptr_buffer_a, $1F93 pool_buffers, $1F99 line_buffer, $1F9B line_buffer_bank, $1F9C prev_line_ptr
+	$1F9E prev_line_bank, $1F9F next_line_ptr, $1FA1 next_line_bank, $1FA2 cursor_row, $1FA4 cursor_col_limit, $1FA5 cursor_index, $1FA6 line_length, $1FA7 pool_main
+	$1FA9 pool_second, $1FAB edit_flags, $1FAC user_dict_ptr, $1FAE user_dict_bank, $1FB7 scan_chars_left, $1FBA word_start_ptr, $1FC2 guess_list_ptr, $1FC4 guess_list_bank
+	$1FC8 block_start_line, $1FCA block_start_col, $1FCB block_end_line, $1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel
+	$1FD7 user_dict_name_ptr, $1FD9 user_dict_name_bank, $1FDA ignore_list_ptr, $1FDC ignore_list_bank, $1FE8 line_rec_ptr, $1FEA line_rec_bank
 }
