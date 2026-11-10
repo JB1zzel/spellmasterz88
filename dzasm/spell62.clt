@@ -376,7 +376,7 @@ $E802 cmd_information, $E80D
 $E815, $E823
 $E830, $E837
 $E83D, $EC26 cmd_export_text
-$EC30 cmd_save_text, $EC38
+$EC30 cmd_save_text, $EC38 save_or_export
 $EC45, $EC56
 $EC5A, $EC71
 $EC73, $EC89
@@ -388,9 +388,9 @@ $ED43, $ED4E
 $ED6C, $ED76 step_to_prev_record
 $ED9C step_to_next_record, $EDC5 cmd_load_text
 $EDE0, $EDE6
-$EDF7, $EE02
+$EDF7 load_text_file, $EE02
 $EE16, $EE23
-$EE61, $EE99
+$EE61 free_all_lines, $EE99
 $EED4, $EF05
 $EF35, $EF45
 $EF48, $EF50
@@ -398,12 +398,12 @@ $EF58, $EF69
 $EF7E, $EF89
 $EF9F, $EFA4
 $EFA7, $EFB3
-$EFBE, $EFF5
-$F00C, $F01C
+$EFBE, $EFF5 finish_load
+$F00C, $F01C return_to_editor
 $F02C redefine_window1, $F0A8 input_to_buffer_a
 $F0F9 free_sized_record, $F10E store_filename_record
 $F120, $F136
-$F139, $F13E
+$F139 name_activity, $F13E
 $F145, $F14F
 $F167 cmd_save_marked_block, $F16F
 $F177, $F18B
@@ -412,7 +412,7 @@ $F1E2, $F1E5
 $F1F3, $F21C
 $F224, $F227
 $F235, $F261
-$F26B, $F284
+$F26B, $F284 open_output_file
 $F29F, $F2B0
 $F2C7, $F2C9
 $F2DF, $F337 cmd_change_name
@@ -549,7 +549,7 @@ $F0B6, $F0C3
 $F0D8, $F0E5
 $F153, $F2E1
 $F2E5, $F30B
-$F30F, $F38C
+$F30F, $F38C str_pipedream_header
 $F398, $F5CC
 $F880, $F887
 $FE62, $FE64
@@ -821,18 +821,36 @@ $B82A
 	($E84E,< "26 words, one per first letter A to Z: the address of that letter's list of 3-byte section entries."
 		 "Each entry is [bank*32 + second letter (0 = apostrophe, 1 to 26 = A to Z)] [offset low] [offset high]; offsets are in segment 2 ($8000-$BFFF)."
 		 "A list ends with $FF. There are 302 sections in all.")
-	($EC26,< "Command handler: 'Export text' - dispatch code $2B")
-	($EC30,< "Command handler: 'Save text' - dispatch code $11")
+	($EC26,< "Sets edit_flags bit 7 (Export) and goes to save_or_export."
+		 "Command handler: 'Export text' - dispatch code $2B")
+	($EC30,< "Save text writes the text as plain characters, each line followed by a CR ($0D). The first line of the file is the PipeDream option"
+		 "'%CO:A,72,72%' (str_pipedream_header: column A, width 72, right margin 72) unless own_header_flag is set because the loaded file began with its own %...% line."
+		 "The filename is offered from text_name_ptr and kept there afterwards; the leaf name becomes the activity name in the Index (name_activity)."
+		 "Command handler: 'Save text' - dispatch code $11")
+	($EC38,< "Shared by Save text and Export text (edit_flags bit 7 set = Export). Export writes no header, does not keep the filename,"
+		 "and leaves out the CR after any line that ends in a space, so the lines of a word-wrapped paragraph are joined into one line.")
 	($ED76,< "Follows the previous link (+1..+3) of the record at line_rec. Z set (line_rec unchanged) if there is no previous line; otherwise line_rec = previous record, bound into segment 1, NZ.")
 	($ED9C,< "Follows the next link (+4..+6) of the record at line_rec. Z set (line_rec unchanged) if there is no next line; otherwise line_rec = next record, bound into segment 1, NZ.")
 	($EDC5,< "Command handler: 'Load text' - dispatch code $10")
+	($EDF7,< "Load text: asks for the filename, opens it, frees the whole current text (free_all_lines), then reads the file a byte at a time."
+		 "A first line that is exactly '%CO:A,72,72%' is dropped. A first line that starts with some other %...% option (up to 15 characters) is kept as text and own_header_flag is set,"
+		 "so Save will not add a second header. Lines end at CR only: a LF is kept as a character (a file with CR LF line ends shows ^J at the start of each line after the first)."
+		 "A line longer than 239 characters is cut into pieces of 239. The lines are not rewrapped. Reading stops at end of file (RC_Eof) or Escape (RC_Esc);"
+		 "other read errors make it read again ($EF7E).")
+	($EE61,< "Frees every line record before the cursor line (the prev_line chain) and after it (the next_line chain).")
+	($EFF5,< "Closes the file, stores the last line and makes the first line the cursor line.")
+	($F01C,< "Redefines window 1, asks for a full redraw and goes back to the main loop.")
 	($F02C,< "Prints str_define_window1: redefines and selects the text window, which closes any dialog drawn over it.")
 	($F0A8,< "GN_Sip line input into buffer A (buffer size 50, 30 columns shown). Used for filenames. Out: A = the key that ended the input.")
 	($F0F9,< "In: HL = offset, A = bank of a record whose byte 0 is its size. Frees it to pool_main; does nothing if HL = 0.")
 	($F10E,< "In: C = length of the explicit filename that GN_Opf left in buffer C. Allocates a record of C+2 bytes (line_rec), byte 0 = its size, then copies the name and its terminator."
 		 "Keeps the filename of the text or user dictionary just loaded or saved. Carry set if there is no room.")
+	($F139,< "Passes the filename just opened (buffer C), without its path, to DC_Nam so the activity is shown under that name in the Index.")
 	($F167,< "Command handler: 'Save marked block' - dispatch code $24")
+	($F16F,< "Save marked block writes only the marked text, from the start marker column to the end marker column, as plain lines ending in CR, with no header.")
+	($F284,< "Opens the file named in buffer A for writing (GN_Opf). If it already exists, asks 'Overwrite text? (Y/N)'; carry set if the answer is not Y. Out: IX = handle.")
 	($F337,< "Command handler: 'Change name' - dispatch code $2A")
+	($F38C,< "'%CO:A,72,72%': the PipeDream option line written at the start of a saved text and recognised (and dropped) when a text is loaded.")
 	($F399,< "Browse through dictionary (Correction menu option 5). Window 'Browse'. The typed word (up to 64 letters) is copied to a work record ($1FBF/$1FC1)"
 		 "and its length kept in wf_menu_sel (borrowed); browse_seek_prefix finds the first dictionary word at or after it and draw_browse_page shows the words around it."
 		 "Plain keys: a letter (or an apostrophe after the first letter) is added to the prefix and the list seeks again; Enter takes the highlighted word; any other key clears the prefix."
@@ -883,12 +901,15 @@ $B82A
 
 ; Expressions added to code:
 {
+	($CA63,"block_start_line+1"block_start_line+1)
+	($CA81,"block_end_line+1"block_end_line+1)
 	($D096,"RC_Draw"RC_Draw)
 	($D09A,"RC_Quit"RC_Quit)
 	($D10E,"EF_OVERTYPE"EF_OVERTYPE)
 	($D127,"EF_CHECK_ON"EF_CHECK_ON)
 	($D259,"SD_COORD"SD_COORD)
 	($D260,"SD_COORD"SD_COORD)
+	($E14D,"cursor_line+1"cursor_line+1)
 	($E5D3,"NQ_Mfs"NQ_Mfs)
 }
 
@@ -896,10 +917,12 @@ $B82A
 {
 
 	$1F82 dict_pos, $1F84 dict_bank, $1F85 dict_target_length, $1F86 dict_letter1, $1F87 dict_letter2, $1F88 dict_word_length, $1F89 dict_word_flags, $1F8A dict_ending_ptr
-	$1F8C dict_stem_length, $1F8D ptr_buffer_b, $1F8F ptr_buffer_c, $1F91 ptr_buffer_a, $1F93 pool_buffers, $1F99 line_buffer, $1F9B line_buffer_bank, $1F9C prev_line_ptr
-	$1F9E prev_line_bank, $1F9F next_line_ptr, $1FA1 next_line_bank, $1FA2 cursor_row, $1FA3 wrap_column, $1FA4 cursor_col_limit, $1FA5 cursor_index, $1FA6 line_length
-	$1FA7 pool_main, $1FA9 pool_second, $1FAB edit_flags, $1FAC user_dict_ptr, $1FAE user_dict_bank, $1FAF browse_pos, $1FB1 typing_word_pending, $1FB4 saved_word_bank
-	$1FB5 saved_word_ptr, $1FB7 scan_chars_left, $1FB8 scan_ptr, $1FBA word_start_ptr, $1FC2 guess_list_ptr, $1FC4 guess_list_bank, $1FC8 block_start_line, $1FCA block_start_col
-	$1FCB block_end_line, $1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel, $1FD7 user_dict_name_ptr, $1FD9 user_dict_name_bank
-	$1FDA ignore_list_ptr, $1FDC ignore_list_bank, $1FE5 line_counter, $1FE8 line_rec_ptr, $1FEA line_rec_bank
+	$1F8C dict_stem_length, $1F8D ptr_buffer_b, $1F8F ptr_buffer_c, $1F91 ptr_buffer_a, $1F93 pool_buffers, $1F95 buffers_binding, $1F97 file_handle, $1F99 line_buffer
+	$1F9B line_buffer_bank, $1F9C prev_line_ptr, $1F9E prev_line_bank, $1F9F next_line_ptr, $1FA1 next_line_bank, $1FA2 cursor_row, $1FA3 wrap_column, $1FA4 cursor_col_limit
+	$1FA5 cursor_index, $1FA6 line_length, $1FA7 pool_main, $1FA9 pool_second, $1FAB edit_flags, $1FAC user_dict_ptr, $1FAE user_dict_bank, $1FAF browse_pos
+	$1FB1 typing_word_pending, $1FB3 misc_flags, $1FB4 saved_word_bank, $1FB5 saved_word_ptr, $1FB7 scan_chars_left, $1FB8 scan_ptr, $1FBA word_start_ptr, $1FBC temp_ptr
+	$1FBE temp_bank, $1FBF temp2_ptr, $1FC1 temp2_bank, $1FC2 guess_list_ptr, $1FC4 guess_list_bank, $1FC8 block_start_line, $1FCA block_start_col, $1FCB block_end_line
+	$1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel, $1FD4 text_name_ptr, $1FD6 text_name_bank, $1FD7 user_dict_name_ptr
+	$1FD9 user_dict_name_bank, $1FDA ignore_list_ptr, $1FDC ignore_list_bank, $1FE3 own_header_flag, $1FE4 char_scratch, $1FE5 line_counter, $1FE7 pull_count, $1FE8 line_rec_ptr
+	$1FEA line_rec_bank, $1FEB link_ptr, $1FED link_binding, $1FF3 saved_letter
 }

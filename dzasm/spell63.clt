@@ -238,13 +238,13 @@ $CE47, $CE4F
 $CE60, $CE6F
 $CE80, $CE88
 $CE9B, $CEA7
-$CEA8, $CEB4
+$CEA8, $CEB4 print_name_record
 $CEBF, $CECD
-$CED7, $CEE5
+$CED7 is_word_char_nz, $CEE5
 $CEE8, $CF70
 $CF8B, $CF8C
 $CF9A, $CFA2
-$CFA5, $CFAD
+$CFA5 print_decimal, $CFAD
 $CFBB, $CFC8
 $CFCF, $CFD5
 $CFE6 far_call_dispatch, $D007
@@ -259,7 +259,7 @@ $D0EF, $D0F5
 $D100 far_print_text, $D11F
 $D121, $D126
 $D13B, $D144
-$D155, $D174
+$D155 end_printout, $D174 print_error
 $D19D far_search_and_replace, $D1B7
 $D1C3, $D1D2
 $D1E1, $D1F5
@@ -312,13 +312,13 @@ $D9AE, $D9B9
 $D9C4, $D9D8
 $D9DA, $D9E5
 $D9F6, $D9FE
-$DA23, $DA56
+$DA23 input_merge_filename, $DA56
 $DA68, $DA84
 $DAB7, $DACF
 $DAD1 check_free_memory, $DAE1
 $DAF2, $DAF6
-$DB01, $DB06
-$DB25, $DB3E
+$DB01, $DB06 select_window1
+$DB25 far_call_5_unused, $DB3E
 $DB53, $DB71
 $DB74, $DB88
 $DBA2, $DBB5
@@ -692,18 +692,30 @@ $8900
 	($CA36,< "Highlight the part of the marked block that falls on the row just drawn, using the toggle-over-N sequence with reverse video.")
 	($CB05,< "Copy of bank 62 expand_word, with append_token inline (its own token table at $CC73).")
 	($CC73,< "Bank 63 copy of the 128-word token pointer table (bank 62: $C4A4).")
-	($CD87,< "Far-call table entry 0."
+	($CD87,< "Shows: the text filename (text_name_ptr), number of lines, free memory in K (NQ_Mfs, divided by 4: the result is in 256-byte pages), word count,"
+		 "and the user dictionary filename (or 'None'). A word is a run of letters and apostrophes, so numbers are not counted."
+		 "The line and word counts walk the whole text and are left out if a key is pressed while counting (OS_Xin). top_line is borrowed as the word counter."
+		 "Far-call table entry 0."
 		 "Called from the QuickEdit handler for Information (command $1A)."
 		 "Shows the Information window ('Currently editing', number of lines, memory, word count, user dictionary).")
+	($CEB4,< "Prints the filename kept in the record HL (bank B): text_name or user_dict_name. Prints 'None' if HL = 0.")
+	($CED7,< "NZ if A is a letter or an apostrophe, Z otherwise (the opposite sense to is_word_char in bank 62). Used to count words.")
+	($CFA5,< "Prints HL in decimal, using the table of powers of ten at $CFDA (leading zeros suppressed). Borrows $1FBC and line_counter.")
 	($CFE6,< "Runs far-call routine number A: pops the index, looks it up in far_call_table, calls it, then returns to bank 62."
 		 "Entered from the stub at $7F80 with this bank bound into segment 3.")
 	($D008,< "Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63."
-		 "Index 1 (find_next_match, $D54F) and index 5 ($DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.")
-	($D01E,< "Far-call table entry 8."
+		 "Index 1 (find_next_match, $D54F) and index 5 (far_call_5_unused, $DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.")
+	($D01E,< "Tab stops are every 8 columns. If the characters up to the next stop are all spaces the cursor just moves over them (returns A = 1);"
+		 "otherwise enough spaces are inserted to reach the stop, and block markers to the right on this line move with the text. (Insert real tab, command $2D, inserts a $09 instead.)"
+		 "Far-call table entry 8."
 		 "Called from the QuickEdit handler for Tab (command $29).")
-	($D100,< "Far-call table entry 10."
+	($D100,< "Enables Escape detection (OS_Esc SC_ENA), sends $05 '[' to the printer filter, then every line of the whole text followed by LF CR (through OS_Prt),"
+		 "then $05 ']' and disables Escape detection again (SC_DIS). An error from OS_Prt (for example Escape) beeps and ends the printout."
+		 "The $05 '[' and $05 ']' pairs appear to mark the start and end of the job for the printer filter. Tabs and control characters are sent as they are."
+		 "Far-call table entry 10."
 		 "Called from the QuickEdit handler for Print out text (command $2E)."
 		 "Shows the 'Printing' window and sends the text to the printer.")
+	($D174,< "OS_Prt returned an error: beep and finish the printout.")
 	($D19D,< "Asks 'Global or selective ? (G/S)': selective sets $1FB3 bit 7, global clears it. Then Find and Replace (each up to 63 characters, the last ones offered again;"
 		 "up and down move between the two fields). Both strings are saved (search_str_ptr, replace_str_ptr). For each match (find_next_match), in selective mode the text is redrawn"
 		 "and 'Replace ? (Y/N)' asked: N moves on one character, Escape stops. A replacement is refused (the search ends) if it would make the line 240 ($F0) characters or longer."
@@ -735,9 +747,17 @@ $8900
 		 "Called from append_guess (bank 62 $E076) by Guess correct word, once for each dictionary or user word that is one edit away from the typed word."
 		 "Allocates a record of (word length + 7) bytes and appends it to the guess list: byte 0 = word length, bytes 1-3 = previous guess, bytes 4-6 = next guess (0), then the whole word from buffer C - 2."
 		 "The first guess becomes the list head (guess_list_ptr/bank); $1FBC/$1FBE hold the last guess, $1FBF/$1FC1 the new one. Carry set if there is no room.")
-	($D909,< "Far-call table entry 4."
+	($D909,< "Merge text at cursor: reads the file like Load text (lines end at CR, at most 239 characters) and inserts the lines at the cursor."
+		 "Unlike Load text it does not recognise the '%CO:A,72,72%' header, so that line is merged as ordinary text. It checks free memory before each line"
+		 "(check_free_memory) and stops when memory is nearly full. If the file cannot be opened it only beeps."
+		 "Far-call table entry 4."
 		 "Called from the QuickEdit handler for Merge text at cursor (command $27).")
+	($DA23,< "GN_Sip into buffer A (50 bytes, 15 columns shown).")
 	($DAD1,< "Same routine as check_free_memory in bank 62: carry set when memory is nearly full.")
+	($DB06,< "Prints a short sequence that selects window 1 again (1 H 1 ...), used before redrawing the text.")
+	($DB25,< "Far-call table entry 5. Nothing calls it: bank 62 never uses index 5 and nothing in this bank jumps here."
+		 "It and the routines only it uses ($DB25-$DCFD, about 470 bytes) look the word in buffer A up in the dictionary, positioning at the first word not before it,"
+		 "and also consult the user dictionary (user_dict_ptr). Probably left over from an earlier design. The 'Opened file' string at $DB17 is not used either.")
 	($DCFE,< "Option 3 uses the same test as Guess correct word (section_could_match, is_one_edit_away) over the whole ROM dictionary, without the user dictionary and without stopping for a key press."
 		 "Menu option 3: Find close matches (window title 'Find close matches').")
 	($DD8A,< "Same routine as is_one_edit_away in bank 62 (identical apart from the jump addresses): Z if the word is one letter different, missing, extra or swapped.")
@@ -788,6 +808,8 @@ $8900
 	($CAFA,"SD_COORD"SD_COORD)
 	($CB01,"SD_COORD"SD_COORD)
 	($CDB6,"NQ_Mfs"NQ_Mfs)
+	($D107,"SC_ENA"SC_ENA)
+	($D15E,"SC_DIS"SC_DIS)
 	($DAD2,"NQ_Mfs"NQ_Mfs)
 }
 
@@ -795,10 +817,11 @@ $8900
 {
 
 	$1F82 dict_pos, $1F84 dict_bank, $1F85 dict_target_length, $1F86 dict_letter1, $1F87 dict_letter2, $1F88 dict_word_length, $1F89 dict_word_flags, $1F8A dict_ending_ptr
-	$1F8C dict_stem_length, $1F8D ptr_buffer_b, $1F8F ptr_buffer_c, $1F91 ptr_buffer_a, $1F93 pool_buffers, $1F99 line_buffer, $1F9B line_buffer_bank, $1F9C prev_line_ptr
-	$1F9E prev_line_bank, $1F9F next_line_ptr, $1FA1 next_line_bank, $1FA2 cursor_row, $1FA3 wrap_column, $1FA4 cursor_col_limit, $1FA5 cursor_index, $1FA6 line_length
-	$1FA7 pool_main, $1FA9 pool_second, $1FAB edit_flags, $1FAC user_dict_ptr, $1FAE user_dict_bank, $1FAF browse_pos, $1FC2 guess_list_ptr, $1FC4 guess_list_bank
-	$1FC8 block_start_line, $1FCA block_start_col, $1FCB block_end_line, $1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel
-	$1FD7 user_dict_name_ptr, $1FD9 user_dict_name_bank, $1FDA ignore_list_ptr, $1FDC ignore_list_bank, $1FDD search_str_ptr, $1FDF search_str_bank, $1FE0 replace_str_ptr, $1FE2 replace_str_bank
-	$1FE5 line_counter, $1FE8 line_rec_ptr, $1FEA line_rec_bank
+	$1F8C dict_stem_length, $1F8D ptr_buffer_b, $1F8F ptr_buffer_c, $1F91 ptr_buffer_a, $1F93 pool_buffers, $1F95 buffers_binding, $1F97 file_handle, $1F99 line_buffer
+	$1F9B line_buffer_bank, $1F9C prev_line_ptr, $1F9E prev_line_bank, $1F9F next_line_ptr, $1FA1 next_line_bank, $1FA2 cursor_row, $1FA3 wrap_column, $1FA4 cursor_col_limit
+	$1FA5 cursor_index, $1FA6 line_length, $1FA7 pool_main, $1FA9 pool_second, $1FAB edit_flags, $1FAC user_dict_ptr, $1FAE user_dict_bank, $1FAF browse_pos
+	$1FB3 misc_flags, $1FBC temp_ptr, $1FBE temp_bank, $1FBF temp2_ptr, $1FC1 temp2_bank, $1FC2 guess_list_ptr, $1FC4 guess_list_bank, $1FC8 block_start_line
+	$1FCA block_start_col, $1FCB block_end_line, $1FCD block_end_col, $1FCE marker_flags, $1FCF cursor_line, $1FD1 top_line, $1FD3 wf_menu_sel, $1FD4 text_name_ptr
+	$1FD6 text_name_bank, $1FD7 user_dict_name_ptr, $1FD9 user_dict_name_bank, $1FDA ignore_list_ptr, $1FDC ignore_list_bank, $1FDD search_str_ptr, $1FDF search_str_bank, $1FE0 replace_str_ptr
+	$1FE2 replace_str_bank, $1FE3 own_header_flag, $1FE4 char_scratch, $1FE5 line_counter, $1FE8 line_rec_ptr, $1FEA line_rec_bank, $1FEB link_ptr
 }

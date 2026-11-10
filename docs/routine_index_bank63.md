@@ -202,10 +202,10 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $CE9B | L_CE9B | 0 | Os_in |  | 8 |
 | $CEA7 | L_CEA7 | 0 |  |  | 1 |
 | $CEA8 | L_CEA8 | 0 |  |  | 5 |
-| $CEB4 | L_CEB4 | 2 | Gn_sop |  | 7 |
+| $CEB4 | print_name_record | 2 | Gn_sop |  | 7 |
 | $CEBF | L_CEBF | 0 | Os_mpb |  | 10 |
 | $CECD | L_CECD | 0 | Os_out |  | 8 |
-| $CED7 | L_CED7 | 1 |  |  | 7 |
+| $CED7 | is_word_char_nz | 1 |  |  | 7 |
 | $CEE5 | L_CEE5 | 0 |  |  | 2 |
 | $CEE8 | L_CEE8 | 0 |  |  | 2 |
 | $CEEB | L_CEEB | 0 |  | Currently editing : | 2 |
@@ -225,7 +225,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $CF8C | L_CF8C | 0 |  |  | 7 |
 | $CF9A | L_CF9A | 1 |  |  | 4 |
 | $CFA2 | L_CFA2 | 0 | Os_out |  | 3 |
-| $CFA5 | L_CFA5 | 3 |  |  | 3 |
+| $CFA5 | print_decimal | 3 |  |  | 3 |
 | $CFAD | L_CFAD | 0 |  |  | 11 |
 | $CFBB | L_CFBB | 0 |  |  | 6 |
 | $CFC8 | L_CFC8 | 0 |  |  | 4 |
@@ -256,8 +256,8 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D126 | L_D126 | 0 | Os_mpb |  | 12 |
 | $D13B | L_D13B | 0 | Os_prt |  | 7 |
 | $D144 | L_D144 | 0 | Os_prt |  | 10 |
-| $D155 | L_D155 | 0 | Os_esc, Os_prt |  | 16 |
-| $D174 | L_D174 | 0 | Os_out |  | 4 |
+| $D155 | end_printout | 0 | Os_esc, Os_prt |  | 16 |
+| $D174 | print_error | 0 | Os_out |  | 4 |
 | $D17A | L_D17A | 0 |  |  | 2 |
 | $D187 | L_D187 | 0 |  | 2JCPrinting  | 3 |
 | $D19D | far_search_and_replace | 0 |  |  | 8 |
@@ -377,7 +377,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D9FE | L_D9FE | 0 |  |  | 3 |
 | $DA05 | L_DA05 | 0 |  |  | 2 |
 | $DA0F | L_DA0F | 0 |  | Load text at cursor | 2 |
-| $DA23 | L_DA23 | 1 | Gn_sip |  | 7 |
+| $DA23 | input_merge_filename | 1 | Gn_sip |  | 7 |
 | $DA31 | L_DA31 | 0 |  |  | 2 |
 | $DA41 | L_DA41 | 0 |  | 2JCLoading  | 3 |
 | $DA56 | L_DA56 | 1 |  |  | 8 |
@@ -390,10 +390,10 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $DAF2 | L_DAF2 | 0 |  |  | 2 |
 | $DAF6 | L_DAF6 | 0 |  |  | 8 |
 | $DB01 | L_DB01 | 0 |  |  | 3 |
-| $DB06 | L_DB06 | 3 | Gn_sop |  | 4 |
+| $DB06 | select_window1 | 3 | Gn_sop |  | 4 |
 | $DB0D | L_DB0D | 0 |  |  | 2 |
 | $DB17 | L_DB17 | 0 |  | Opened file | 2 |
-| $DB25 | L_DB25 | 0 |  |  | 11 |
+| $DB25 | far_call_5_unused | 0 |  |  | 11 |
 | $DB3E | L_DB3E | 0 |  |  | 9 |
 | $DB53 | L_DB53 | 0 |  |  | 14 |
 | $DB71 | L_DB71 | 0 |  |  | 1 |

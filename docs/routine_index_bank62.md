@@ -620,7 +620,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $E84E | first_letter_index | 0 |  |  | 124 |
 | $EC26 | cmd_export_text | 0 |  |  | 4 |
 | $EC30 | cmd_save_text | 0 |  |  | 3 |
-| $EC38 | L_EC38 | 0 |  |  | 5 |
+| $EC38 | save_or_export | 0 |  |  | 5 |
 | $EC45 | L_EC45 | 0 |  |  | 8 |
 | $EC56 | L_EC56 | 0 |  |  | 2 |
 | $EC5A | L_EC5A | 0 | Os_mpb |  | 13 |
@@ -643,11 +643,11 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $EDC5 | cmd_load_text | 0 |  |  | 13 |
 | $EDE0 | L_EDE0 | 0 | Gn_sop |  | 3 |
 | $EDE6 | L_EDE6 | 0 | Os_in |  | 9 |
-| $EDF7 | L_EDF7 | 0 | Os_out |  | 6 |
+| $EDF7 | load_text_file | 0 | Os_out |  | 6 |
 | $EE02 | L_EE02 | 0 | Gn_sop |  | 9 |
 | $EE16 | L_EE16 | 0 |  |  | 6 |
 | $EE23 | L_EE23 | 0 | Gn_opf |  | 22 |
-| $EE61 | L_EE61 | 0 | Os_mfr, Os_mpb |  | 29 |
+| $EE61 | free_all_lines | 0 | Os_mfr, Os_mpb |  | 29 |
 | $EE99 | L_EE99 | 0 | Os_mfr, Os_mpb |  | 30 |
 | $EED4 | L_EED4 | 0 | Gn_sop, Os_gb |  | 20 |
 | $EF05 | L_EF05 | 0 | Os_gb |  | 25 |
@@ -666,9 +666,9 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $EFBE | L_EFBE | 0 |  |  | 3 |
 | $EFC6 | L_EFC6 | 0 |  |  | 1 |
 | $EFEA | L_EFCA | 0 |  | 2JCFile not found - Press any  | 3 |
-| $EFF5 | L_EFF5 | 0 | Gn_cl |  | 9 |
+| $EFF5 | finish_load | 0 | Gn_cl |  | 9 |
 | $F00C | L_F00C | 0 |  |  | 6 |
-| $F01C | L_F01C | 0 |  |  | 6 |
+| $F01C | return_to_editor | 0 |  |  | 6 |
 | $F02C | redefine_window1 | 19 | Gn_sop |  | 4 |
 | $F033 | L_F033 | 0 |  |  | 1 |
 | $F035 | L_F035 | 0 |  | 2JCOverwrite text? (Y/N)  | 5 |
@@ -686,7 +686,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $F10E | store_filename_record | 5 | Os_mal |  | 12 |
 | $F120 | L_F120 | 0 | Os_mpb |  | 14 |
 | $F136 | L_F136 | 0 |  |  | 3 |
-| $F139 | L_F139 | 3 |  |  | 2 |
+| $F139 | name_activity | 3 |  |  | 2 |
 | $F13E | L_F13E | 0 |  |  | 5 |
 | $F145 | L_F145 | 0 |  |  | 7 |
 | $F14F | L_F14F | 0 | Dc_nam |  | 3 |
@@ -706,7 +706,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $F235 | L_F235 | 0 | Os_pb |  | 21 |
 | $F261 | L_F261 | 0 |  |  | 4 |
 | $F26B | L_F26B | 0 | Gn_cl |  | 9 |
-| $F284 | L_F284 | 2 | Gn_cl, Gn_opf, Gn_sop |  | 13 |
+| $F284 | open_output_file | 2 | Gn_cl, Gn_opf, Gn_sop |  | 13 |
 | $F29F | L_F29F | 0 | Os_in |  | 9 |
 | $F2B0 | L_F2B0 | 0 | Gn_opf, Gn_sop |  | 11 |
 | $F2C7 | L_F2C7 | 0 |  |  | 2 |
@@ -720,7 +720,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $F33F | L_F33F | 0 | Gn_sip, Gn_sop |  | 14 |
 | $F35D | L_F35D | 0 |  |  | 6 |
 | $F36A | L_F36A | 0 |  |  | 12 |
-| $F38C | L_F38C | 0 |  |  | 2 |
+| $F38C | str_pipedream_header | 0 |  |  | 2 |
 | $F398 | L_F398 | 0 |  |  | 1 |
 | $F399 | browse_dictionary | 1 | Os_mal, Os_mpb |  | 19 |
 | $F3C4 | L_F3C4 | 0 |  |  | 5 |

@@ -305,7 +305,7 @@ wf_start:
         ld      a,$00
         oz      Os_mal
         jp      c,L_C2FC
-        ld      ($1F95),bc
+        ld      (buffers_binding),bc
         ld      (ptr_buffer_a),hl
         ld      bc,$0040
         add     hl,bc
@@ -313,7 +313,7 @@ wf_start:
         ld      bc,$0042
         add     hl,bc
         ld      (ptr_buffer_c),hl
-        ld      bc,($1F95)
+        ld      bc,(buffers_binding)
         oz      Os_mpb
 wf_show_menu:
 ; Draws the WordFinder window and menu ('Browse through dictionary', 'Find anagrams', 'Find close matches', 'Solve crossword').
@@ -724,8 +724,8 @@ L_C5C4:
         jr      z,L_C5C4
         ld      (line_rec_ptr),de
         ld      a,b
-        ld      ($1FBC),a
-        ld      ($1FEB),hl
+        ld      (temp_ptr),a
+        ld      (link_ptr),hl
         ld      a,c
         ld      ($1FBD),a
 L_C5E0:
@@ -734,7 +734,7 @@ L_C5E0:
         jr      z,L_C5A9
 L_C5E4:
         inc     hl
-        ld      ($1FEB),hl
+        ld      (link_ptr),hl
         dec     c
         ld      a,c
         ld      ($1FBD),a
@@ -745,8 +745,8 @@ L_C5F1:
         ld      a,d
         or      e
         jp      z,L_C576
-        ld      hl,($1FEB)
-        ld      a,($1FBC)
+        ld      hl,(link_ptr)
+        ld      a,(temp_ptr)
         ld      b,a
         ld      a,($1FBD)
         ld      c,a
@@ -1357,7 +1357,7 @@ L_CA4F:
         add     a,SD_COORD
         oz      Os_out
         ld      a,$00
-        ld      ($1FE4),a
+        ld      (char_scratch),a
         jr      L_CA8A
 L_CA67:
         ret     nz
@@ -1372,7 +1372,7 @@ L_CA67:
         ld      hl,str_cursor_to_prefix_b
         oz      Gn_sop
         ld      a,b
-        ld      ($1FE4),a
+        ld      (char_scratch),a
         add     a,SD_COORD
         oz      Os_out
         ld      a,(line_counter)
@@ -1403,13 +1403,13 @@ L_CAA5:
         ld      a,(cursor_col_limit)
         cp      b
         jr      c,L_CAC0
-        ld      a,($1FE4)
+        ld      a,(char_scratch)
         ld      d,a
         ld      a,b
         sub     d
         jp      L_CA93
 L_CAC0:
-        ld      a,($1FE4)
+        ld      a,(char_scratch)
         ld      b,a
         ld      a,(cursor_col_limit)
         sub     b
@@ -1599,6 +1599,9 @@ L_CD73:
         defm    "Into detokenising"
         defb    $0a,$0d,$00
 far_information:
+; Shows: the text filename (text_name_ptr), number of lines, free memory in K (NQ_Mfs, divided by 4: the result is in 256-byte pages), word count,
+; and the user dictionary filename (or 'None'). A word is a run of letters and apostrophes, so numbers are not counted.
+; The line and word counts walk the whole text and are left out if a key is pressed while counting (OS_Xin). top_line is borrowed as the word counter.
 ; Far-call table entry 0.
 ; Called from the QuickEdit handler for Information (command $1A).
 ; Shows the Information window ('Currently editing', number of lines, memory, word count, user dictionary).
@@ -1610,10 +1613,10 @@ far_information:
         oz      Gn_sop
         ld      hl,L_CF7E
         oz      Gn_sop
-        ld      hl,($1FD4)
-        ld      a,($1FD6)
+        ld      hl,(text_name_ptr)
+        ld      a,(text_name_bank)
         ld      b,a
-        call    L_CEB4
+        call    print_name_record
         oz      Gn_nln
         oz      Gn_nln
         ld      hl,L_CF7E
@@ -1627,7 +1630,7 @@ far_information:
         rr      b
         ld      h,a
         ld      l,b
-        call    L_CFA5
+        call    print_decimal
         ld      hl,L_CF5F
         oz      Gn_sop
         ld      hl,L_CF7E
@@ -1643,7 +1646,7 @@ L_CDE6:
         ld      a,(user_dict_name_bank)
         ld      b,a
         ld      hl,(user_dict_name_ptr)
-        call    L_CEB4
+        call    print_name_record
 L_CDF0:
         ld      hl,(cursor_line)
         push    hl
@@ -1667,7 +1670,7 @@ L_CE05:
         ld      c,$00
 L_CE1D:
         ld      a,(hl)
-        call    L_CED7
+        call    is_word_char_nz
         jr      z,L_CE43
         ld      a,c
         ld      c,$01
@@ -1693,11 +1696,11 @@ L_CE47:
         oz      Gn_sop
         ld      hl,(cursor_line)
         inc     hl
-        call    L_CFA5
+        call    print_decimal
         ld      hl,L_CF59
         oz      Gn_sop
         ld      hl,(top_line)
-        call    L_CFA5
+        call    print_decimal
 L_CE60:
         ld      hl,(cursor_line)
         pop     bc
@@ -1745,7 +1748,8 @@ L_CEA8:
         cp      'f'
         jp      z,far_information
         jr      L_CE9B
-L_CEB4:
+print_name_record:
+; Prints the filename kept in the record HL (bank B): text_name or user_dict_name. Prints 'None' if HL = 0.
         ld      a,h
         or      l
         jr      nz,L_CEBF
@@ -1770,7 +1774,8 @@ L_CECD:
         oz      Os_out
         djnz    L_CECD
         ret
-L_CED7:
+is_word_char_nz:
+; NZ if A is a letter or an apostrophe, Z otherwise (the opposite sense to is_word_char in bank 62). Used to count words.
         cp      '''
         jr      z,L_CEE5
         and     $DF
@@ -1848,8 +1853,9 @@ L_CF9A:
 L_CFA2:
         oz      Os_out
         ret
-L_CFA5:
-        ld      ($1FBC),hl
+print_decimal:
+; Prints HL in decimal, using the table of powers of ten at $CFDA (leading zeros suppressed). Borrows $1FBC and line_counter.
+        ld      (temp_ptr),hl
         ld      d,$00
         ld      hl,L_CFDA
 L_CFAD:
@@ -1865,10 +1871,10 @@ L_CFAD:
         ccf
         ld      a,$00
 L_CFBB:
-        ld      hl,($1FBC)
+        ld      hl,(temp_ptr)
         sbc     hl,bc
         jr      c,L_CFC8
-        ld      ($1FBC),hl
+        ld      (temp_ptr),hl
         inc     a
         jr      L_CFBB
 L_CFC8:
@@ -1917,19 +1923,21 @@ L_D007:
 
 far_call_table:
 ; Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63.
-; Index 1 (find_next_match, $D54F) and index 5 ($DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.
+; Index 1 (find_next_match, $D54F) and index 5 (far_call_5_unused, $DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.
         defw    far_information
         defw    find_next_match
         defw    far_search_for_string
         defw    far_search_and_replace
         defw    far_load_text_at_cursor
-        defw    L_DB25
+        defw    far_call_5_unused
         defw    far_append_guess
         defw    far_redraw_text_window
         defw    far_tab
         defw    far_next_match
         defw    far_print_text
 far_tab:
+; Tab stops are every 8 columns. If the characters up to the next stop are all spaces the cursor just moves over them (returns A = 1);
+; otherwise enough spaces are inserted to reach the stop, and block markers to the right on this line move with the text. (Insert real tab, command $2D, inserts a $09 instead.)
 ; Far-call table entry 8.
 ; Called from the QuickEdit handler for Tab (command $29).
         ld      a,(cursor_index)
@@ -2086,12 +2094,15 @@ L_D0F5:
         ld      hl,(block_end_line)
         jr      L_D0DE
 far_print_text:
+; Enables Escape detection (OS_Esc SC_ENA), sends $05 '[' to the printer filter, then every line of the whole text followed by LF CR (through OS_Prt),
+; then $05 ']' and disables Escape detection again (SC_DIS). An error from OS_Prt (for example Escape) beeps and ends the printout.
+; The $05 '[' and $05 ']' pairs appear to mark the start and end of the job for the printer filter. Tabs and control characters are sent as they are.
 ; Far-call table entry 10.
 ; Called from the QuickEdit handler for Print out text (command $2E).
 ; Shows the 'Printing' window and sends the text to the printer.
         ld      hl,L_D17A
         oz      Gn_sop
-        ld      a,$05
+        ld      a,SC_ENA
         oz      Os_esc
         ld      a,$05
         oz      Os_prt
@@ -2120,25 +2131,25 @@ L_D126:
 L_D13B:
         ld      a,(hl)
         oz      Os_prt
-        jr      c,L_D174
+        jr      c,print_error
         inc     hl
         dec     d
         jr      nz,L_D13B
 L_D144:
         ld      a,$0A
         oz      Os_prt
-        jr      c,L_D174
+        jr      c,print_error
         ld      a,$0D
         oz      Os_prt
-        jr      c,L_D174
+        jr      c,print_error
         call    step_to_next_record
         jr      nz,L_D126
-L_D155:
+end_printout:
         ld      a,$05
         oz      Os_prt
         ld      a,']'
         oz      Os_prt
-        ld      a,$06
+        ld      a,SC_DIS
         oz      Os_esc
         ld      hl,(next_line_ptr)
         ld      a,(next_line_bank)
@@ -2147,10 +2158,11 @@ L_D155:
         call    load_line_record
         call    free_line_record
         ret
-L_D174:
+print_error:
+; OS_Prt returned an error: beep and finish the printout.
         ld      a,$07
         oz      Os_out
-        jr      L_D155
+        jr      end_printout
 
 
 L_D17A:
@@ -2202,14 +2214,14 @@ L_D1E1:
         jr      z,L_D1F5
         cp      'S'
         jr      nz,L_D1C3
-        ld      a,($1FB3)
+        ld      a,(misc_flags)
         or      $80
-        ld      ($1FB3),a
+        ld      (misc_flags),a
         jr      L_D1FD
 L_D1F5:
-        ld      a,($1FB3)
+        ld      a,(misc_flags)
         and     ''
-        ld      ($1FB3),a
+        ld      (misc_flags),a
 L_D1FD:
         ld      a,$0C
         oz      Os_out
@@ -2354,7 +2366,7 @@ L_D302:
         cp      $F0
         jp      nc,L_D3EC
 L_D313:
-        ld      a,($1FB3)
+        ld      a,(misc_flags)
         and     $80
         jr      z,L_D378
         ld      hl,(cursor_line)
@@ -2369,7 +2381,7 @@ L_D327:
 L_D329:
         ld      (cursor_row),a
 L_D32C:
-        call    L_DB06
+        call    select_window1
         ld      a,(edit_flags)
         and     $F1
         or      $02
@@ -2668,7 +2680,7 @@ find_next_match:
         ld      a,b
         ld      (cursor_index),a
 L_D55D:
-        ld      ($1FE4),a
+        ld      (char_scratch),a
         ld      hl,(cursor_line)
         ld      (top_line),hl
         ld      hl,(line_buffer)
@@ -3079,17 +3091,17 @@ far_append_guess:
         ld      ix,(pool_main)
         oz      Os_mal
         ret     c
-        ld      ($1FBF),hl
+        ld      (temp2_ptr),hl
         ld      a,b
-        ld      ($1FC1),a
+        ld      (temp2_bank),a
         oz      Os_mpb
         ld      a,e
         ld      (hl),a
         inc     hl
-        ld      a,($1FBE)
+        ld      a,(temp_bank)
         ld      (hl),a
         inc     hl
-        ld      bc,($1FBC)
+        ld      bc,(temp_ptr)
         ld      (hl),c
         inc     hl
         ld      (hl),b
@@ -3097,8 +3109,8 @@ far_append_guess:
         ld      a,b
         or      c
         jr      nz,L_D8C1
-        ld      hl,($1FBF)
-        ld      a,($1FC1)
+        ld      hl,(temp2_ptr)
+        ld      a,(temp2_bank)
         ld      (guess_list_ptr),hl
         ld      (guess_list_bank),a
         ld      bc,$0004
@@ -3124,32 +3136,35 @@ L_D8D5:
         inc     hl
         inc     de
         djnz    L_D8D5
-        ld      hl,($1FBC)
+        ld      hl,(temp_ptr)
         ld      a,h
         or      l
         jr      z,L_D8FA
-        ld      a,($1FBE)
+        ld      a,(temp_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
         ld      bc,$0004
         add     hl,bc
-        ld      a,($1FC1)
-        ld      bc,($1FBF)
+        ld      a,(temp2_bank)
+        ld      bc,(temp2_ptr)
         ld      (hl),a
         inc     hl
         ld      (hl),c
         inc     hl
         ld      (hl),b
 L_D8FA:
-        ld      a,($1FC1)
-        ld      hl,($1FBF)
-        ld      ($1FBE),a
-        ld      ($1FBC),hl
+        ld      a,(temp2_bank)
+        ld      hl,(temp2_ptr)
+        ld      (temp_bank),a
+        ld      (temp_ptr),hl
         scf
         ccf
         ret
 far_load_text_at_cursor:
+; Merge text at cursor: reads the file like Load text (lines end at CR, at most 239 characters) and inserts the lines at the cursor.
+; Unlike Load text it does not recognise the '%CO:A,72,72%' header, so that line is merged as ordinary text. It checks free memory before each line
+; (check_free_memory) and stops when memory is nearly full. If the file cannot be opened it only beeps.
 ; Far-call table entry 4.
 ; Called from the QuickEdit handler for Merge text at cursor (command $27).
         ld      hl,L_DA0F
@@ -3160,7 +3175,7 @@ far_load_text_at_cursor:
         oz      Gn_sop
         ld      a,' '
 L_D91B:
-        call    L_DA23
+        call    input_merge_filename
         cp      $1B
         jr      nz,L_D925
         ld      a,$01
@@ -3182,8 +3197,8 @@ L_D939:
         ld      a,$01
         oz      Gn_opf
         jp      c,L_D9B9
-        ld      ($1F97),ix
-        call    L_DB06
+        ld      (file_handle),ix
+        call    select_window1
         call    L_DA56
         call    store_cursor_line
         ld      hl,(line_rec_ptr)
@@ -3201,7 +3216,7 @@ L_D96F:
         jp      c,L_D9FE
         ld      hl,(line_buffer)
 L_D97D:
-        ld      ix,($1F97)
+        ld      ix,(file_handle)
         oz      Os_gb
         jr      c,L_D9AE
         cp      $0D
@@ -3236,9 +3251,9 @@ L_D9B9:
 
         defb    $0a,$20,$20,$00
 L_D9C4:
-        ld      ix,($1F97)
+        ld      ix,(file_handle)
         oz      Gn_cl
-        call    L_DB06
+        call    select_window1
         ld      a,(line_length)
         cp      $00
         jr      z,L_D9D8
@@ -3279,7 +3294,8 @@ L_DA05:
 L_DA0F:
         defm    "Load text at cursor"
         defb    $00
-L_DA23:
+input_merge_filename:
+; GN_Sip into buffer A (50 bytes, 15 columns shown).
         ld      b,'2'
         ld      de,(ptr_buffer_a)
         ld      c,$00
@@ -3397,7 +3413,8 @@ L_DB01:
         inc     hl
         ld      (block_end_line),hl
         ret
-L_DB06:
+select_window1:
+; Prints a short sequence that selects window 1 again (1 H 1 ...), used before redrawing the text.
         ld      hl,L_DB0D
         oz      Gn_sop
         ret
@@ -3409,9 +3426,12 @@ L_DB0D:
 L_DB17:
         defm    "Opened file"
         defb    $0d,$0a,$00
-L_DB25:
+far_call_5_unused:
+; Far-call table entry 5. Nothing calls it: bank 62 never uses index 5 and nothing in this bank jumps here.
+; It and the routines only it uses ($DB25-$DCFD, about 470 bytes) look the word in buffer A up in the dictionary, positioning at the first word not before it,
+; and also consult the user dictionary (user_dict_ptr). Probably left over from an earlier design. The 'Opened file' string at $DB17 is not used either.
         ld      a,$00
-        ld      ($1FB3),a
+        ld      (misc_flags),a
         ld      hl,dict_target_length
         ld      hl,(ptr_buffer_a)
         ld      a,(hl)
@@ -3670,9 +3690,9 @@ L_DCD2:
         ld      c,a
         ld      b,$00
         ldir
-        ld      a,($1FB3)
+        ld      a,(misc_flags)
         or      $02
-        ld      ($1FB3),a
+        ld      (misc_flags),a
         scf
         ccf
         ret
@@ -3995,9 +4015,9 @@ wf_option_1_browse_dictionary:
         ld      bc,$0040
         ld      a,$00
         oz      Os_mal
-        ld      ($1FBF),hl
+        ld      (temp2_ptr),hl
         ld      a,b
-        ld      ($1FC1),a
+        ld      (temp2_bank),a
         oz      Os_mpb
         ld      a,$02
         ld      (wf_menu_sel),a
@@ -4075,11 +4095,11 @@ L_E2AA:
         jr      L_E23D
 L_E2B1:
         push    af
-        ld      a,($1FC1)
+        ld      a,(temp2_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FBF)
+        ld      hl,(temp2_ptr)
         ld      a,(wf_menu_sel)
         ld      c,a
         inc     a
@@ -4272,9 +4292,9 @@ L_E40C:
 L_E413:
         ld      hl,L_E429
         oz      Gn_sop
-        ld      hl,($1FBF)
+        ld      hl,(temp2_ptr)
         ld      bc,$0040
-        ld      a,($1FC1)
+        ld      a,(temp2_bank)
         ld      ix,(pool_main)
         oz      Os_mfr
         ret
@@ -4315,9 +4335,9 @@ L_E459:
         ld      (browse_pos),hl
         ret
 L_E468:
-        ld      a,($1FB3)
+        ld      a,(misc_flags)
         and     $BF
-        ld      ($1FB3),a
+        ld      (misc_flags),a
         ld      hl,(browse_pos)
         ld      (dict_pos),hl
 L_E476:
@@ -4398,7 +4418,7 @@ L_E508:
         ld      hl,(browse_pos)
         ld      (dict_pos),hl
         call    L_E553
-        ld      a,($1FB3)
+        ld      a,(misc_flags)
         and     $02
         jr      nz,L_E51B
         call    L_E553
@@ -4514,9 +4534,9 @@ L_E5D9:
         ret
 no_user_word:
 ; Stands in for the user dictionary lookups of the bank 62 Browse (L_F9DF, L_FADE): clears $1FB3 bit 1 and returns carry (no user word). WordFinder has no user dictionary.
-        ld      a,($1FB3)
+        ld      a,(misc_flags)
         and     $FD
-        ld      ($1FB3),a
+        ld      (misc_flags),a
         scf
         ret
 next_full_word:
@@ -4561,11 +4581,11 @@ L_E616:
         ldir
         ret
 browse_seek_prefix:
-        ld      a,($1FC1)
+        ld      a,(temp2_bank)
         ld      b,a
         ld      c,$01
         oz      Os_mpb
-        ld      hl,($1FBF)
+        ld      hl,(temp2_ptr)
         ld      a,(wf_menu_sel)
         cp      $02
         jr      c,L_E669
@@ -4602,7 +4622,7 @@ L_E674:
         ld      hl,(ptr_buffer_c)
         dec     hl
         dec     hl
-        ld      de,($1FBF)
+        ld      de,(temp2_ptr)
 L_E685:
         ld      a,(de)
         cp      (hl)

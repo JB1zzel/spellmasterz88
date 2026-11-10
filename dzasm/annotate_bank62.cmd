@@ -17,6 +17,8 @@ dc 1F8D ptr_buffer_b
 dc 1F8F ptr_buffer_c
 dc 1F91 ptr_buffer_a
 dc 1F93 pool_buffers
+dc 1F95 buffers_binding
+dc 1F97 file_handle
 dc 1F99 line_buffer
 dc 1F9B line_buffer_bank
 dc 1F9C prev_line_ptr
@@ -35,10 +37,15 @@ dc 1FAC user_dict_ptr
 dc 1FAE user_dict_bank
 dc 1FAF browse_pos
 dc 1FB1 typing_word_pending
+dc 1FB3 misc_flags
 dc 1FB4 saved_word_bank
 dc 1FB5 saved_word_ptr
 dc 1FB7 scan_chars_left
 dc 1FB8 scan_ptr
+dc 1FBC temp_ptr
+dc 1FBE temp_bank
+dc 1FBF temp2_ptr
+dc 1FC1 temp2_bank
 dc 1FBA word_start_ptr
 dc 1FC2 guess_list_ptr
 dc 1FC4 guess_list_bank
@@ -50,13 +57,21 @@ dc 1FCE marker_flags
 dc 1FCF cursor_line
 dc 1FD1 top_line
 dc 1FD3 wf_menu_sel
+dc 1FD4 text_name_ptr
+dc 1FD6 text_name_bank
 dc 1FD7 user_dict_name_ptr
 dc 1FD9 user_dict_name_bank
 dc 1FDA ignore_list_ptr
 dc 1FDC ignore_list_bank
+dc 1FE3 own_header_flag
+dc 1FE4 char_scratch
 dc 1FE5 line_counter
+dc 1FE7 pull_count
 dc 1FE8 line_rec_ptr
 dc 1FEA line_rec_bank
+dc 1FEB link_ptr
+dc 1FED link_binding
+dc 1FF3 saved_letter
 rem F88C < Word lists. The user dictionary (user_dict_ptr/bank) and the ignored words (ignore_list_ptr/bank) have the same structure:
 rem F88C < a 78-byte ($4E) table of 26 three-byte heads (bank, offset low, offset high), one per letter A-Z, each the start of a linked list of word records in alphabetical order.
 rem F88C < A word record is: byte 0 = n, the number of letters stored; bytes 1-3 = next record (bank, offset low, offset high; offset 0 = end of list); then the n letters.
@@ -204,6 +219,35 @@ rem CCF6 < Format paragraph: rewraps the cursor line and each following line (st
 rem CCF6 < line_counter counts the lines moved down; cursor_row is moved down by that much (back to row 3 if it would leave the window).
 rem F77E < $F77E-$F787 are code left as data, and nothing calls them: LD A,($1FB3) / AND $FD / LD ($1FB3),A / SCF / RET.
 rem F77E < The same bytes are the no_user_word stub of the WordFinder Browse in bank 63 ($E5DB); here they are unused.
+rem EC30 < Save text writes the text as plain characters, each line followed by a CR ($0D). The first line of the file is the PipeDream option
+rem EC30 < '%CO:A,72,72%' (str_pipedream_header: column A, width 72, right margin 72) unless own_header_flag is set because the loaded file began with its own %...% line.
+rem EC30 < The filename is offered from text_name_ptr and kept there afterwards; the leaf name becomes the activity name in the Index (name_activity).
+dl EC38 save_or_export
+rem EC38 < Shared by Save text and Export text (edit_flags bit 7 set = Export). Export writes no header, does not keep the filename,
+rem EC38 < and leaves out the CR after any line that ends in a space, so the lines of a word-wrapped paragraph are joined into one line.
+rem EC26 < Sets edit_flags bit 7 (Export) and goes to save_or_export.
+dl F284 open_output_file
+rem F284 < Opens the file named in buffer A for writing (GN_Opf). If it already exists, asks 'Overwrite text? (Y/N)'; carry set if the answer is not Y. Out: IX = handle.
+dl F139 name_activity
+rem F139 < Passes the filename just opened (buffer C), without its path, to DC_Nam so the activity is shown under that name in the Index.
+dl F38C str_pipedream_header
+rem F38C < '%CO:A,72,72%': the PipeDream option line written at the start of a saved text and recognised (and dropped) when a text is loaded.
+dl EDF7 load_text_file
+rem EDF7 < Load text: asks for the filename, opens it, frees the whole current text (free_all_lines), then reads the file a byte at a time.
+rem EDF7 < A first line that is exactly '%CO:A,72,72%' is dropped. A first line that starts with some other %...% option (up to 15 characters) is kept as text and own_header_flag is set,
+rem EDF7 < so Save will not add a second header. Lines end at CR only: a LF is kept as a character (a file with CR LF line ends shows ^J at the start of each line after the first).
+rem EDF7 < A line longer than 239 characters is cut into pieces of 239. The lines are not rewrapped. Reading stops at end of file (RC_Eof) or Escape (RC_Esc);
+rem EDF7 < other read errors make it read again ($EF7E).
+dl EE61 free_all_lines
+rem EE61 < Frees every line record before the cursor line (the prev_line chain) and after it (the next_line chain).
+dl EFF5 finish_load
+rem EFF5 < Closes the file, stores the last line and makes the first line the cursor line.
+dl F01C return_to_editor
+rem F01C < Redefines window 1, asks for a full redraw and goes back to the main loop.
+rem F16F < Save marked block writes only the marked text, from the start marker column to the end marker column, as plain lines ending in CR, with no header.
+de CA63 "block_start_line+1"
+de CA81 "block_end_line+1"
+de E14D "cursor_line+1"
 dl D922 is_word_char
 rem D922 < Z set if A is a letter or an apostrophe. A letter is returned in upper case (AND $DF); an apostrophe is returned unchanged.
 rem FE15 < Load user dictionary: each run of word characters (is_word_char, at most 64) is one word; any other byte ends it. Words of fewer than 3 characters are skipped.

@@ -31,6 +31,8 @@ dc 1F8D ptr_buffer_b
 dc 1F8F ptr_buffer_c
 dc 1F91 ptr_buffer_a
 dc 1F93 pool_buffers
+dc 1F95 buffers_binding
+dc 1F97 file_handle
 dc 1F99 line_buffer
 dc 1F9B line_buffer_bank
 dc 1F9C prev_line_ptr
@@ -50,6 +52,11 @@ dc 1FAE user_dict_bank
 dc 1FC2 guess_list_ptr
 dc 1FC4 guess_list_bank
 dc 1FAF browse_pos
+dc 1FB3 misc_flags
+dc 1FBC temp_ptr
+dc 1FBE temp_bank
+dc 1FBF temp2_ptr
+dc 1FC1 temp2_bank
 dc 1FC8 block_start_line
 dc 1FCA block_start_col
 dc 1FCB block_end_line
@@ -58,10 +65,14 @@ dc 1FCE marker_flags
 dc 1FCF cursor_line
 dc 1FD1 top_line
 dc 1FD3 wf_menu_sel
+dc 1FD4 text_name_ptr
+dc 1FD6 text_name_bank
 dc 1FD7 user_dict_name_ptr
 dc 1FD9 user_dict_name_bank
 dc 1FDA ignore_list_ptr
 dc 1FDC ignore_list_bank
+dc 1FE3 own_header_flag
+dc 1FE4 char_scratch
 dc 1FE5 line_counter
 dc 1FDD search_str_ptr
 dc 1FDF search_str_bank
@@ -69,6 +80,7 @@ dc 1FE0 replace_str_ptr
 dc 1FE2 replace_str_bank
 dc 1FE8 line_rec_ptr
 dc 1FEA line_rec_bank
+dc 1FEB link_ptr
 rem C576 < WordFinder reuses the line_rec_ptr word ($1FE8) here: in the crossword solver it holds a pointer into the pattern
 rem C576 < (set after a '*' or '#' at $C5C4, 0 = none), not a line record. Likewise $1FEB holds a pointer into the dictionary word.
 dl C087 find_dictionary_section
@@ -162,9 +174,39 @@ rem D19D < Asks 'Global or selective ? (G/S)': selective sets $1FB3 bit 7, globa
 rem D19D < up and down move between the two fields). Both strings are saved (search_str_ptr, replace_str_ptr). For each match (find_next_match), in selective mode the text is redrawn
 rem D19D < and 'Replace ? (Y/N)' asked: N moves on one character, Escape stops. A replacement is refused (the search ends) if it would make the line 240 ($F0) characters or longer.
 rem D19D < The replacement may also run over the end of a line, matching how find_next_match crosses lines. Afterwards QuickEdit rewraps the whole text ($DBD3 in bank 62).
+rem D100 < Enables Escape detection (OS_Esc SC_ENA), sends $05 '[' to the printer filter, then every line of the whole text followed by LF CR (through OS_Prt),
+rem D100 < then $05 ']' and disables Escape detection again (SC_DIS). An error from OS_Prt (for example Escape) beeps and ends the printout.
+rem D100 < The $05 '[' and $05 ']' pairs appear to mark the start and end of the job for the printer filter. Tabs and control characters are sent as they are.
+de D107 "SC_ENA"
+de D15E "SC_DIS"
+dl D155 end_printout
+dl D174 print_error
+rem D174 < OS_Prt returned an error: beep and finish the printout.
+rem D909 < Merge text at cursor: reads the file like Load text (lines end at CR, at most 239 characters) and inserts the lines at the cursor.
+rem D909 < Unlike Load text it does not recognise the '%CO:A,72,72%' header, so that line is merged as ordinary text. It checks free memory before each line
+rem D909 < (check_free_memory) and stops when memory is nearly full. If the file cannot be opened it only beeps.
+dl DA23 input_merge_filename
+rem DA23 < GN_Sip into buffer A (50 bytes, 15 columns shown).
+dl DB06 select_window1
+rem DB06 < Prints a short sequence that selects window 1 again (1 H 1 ...), used before redrawing the text.
+dl CEB4 print_name_record
+rem CEB4 < Prints the filename kept in the record HL (bank B): text_name or user_dict_name. Prints 'None' if HL = 0.
+dl CED7 is_word_char_nz
+rem CED7 < NZ if A is a letter or an apostrophe, Z otherwise (the opposite sense to is_word_char in bank 62). Used to count words.
+dl CFA5 print_decimal
+rem CFA5 < Prints HL in decimal, using the table of powers of ten at $CFDA (leading zeros suppressed). Borrows $1FBC and line_counter.
+rem CD87 < Shows: the text filename (text_name_ptr), number of lines, free memory in K (NQ_Mfs, divided by 4: the result is in 256-byte pages), word count,
+rem CD87 < and the user dictionary filename (or 'None'). A word is a run of letters and apostrophes, so numbers are not counted.
+rem CD87 < The line and word counts walk the whole text and are left out if a key is pressed while counting (OS_Xin). top_line is borrowed as the word counter.
+rem D01E < Tab stops are every 8 columns. If the characters up to the next stop are all spaces the cursor just moves over them (returns A = 1);
+rem D01E < otherwise enough spaces are inserted to reach the stop, and block markers to the right on this line move with the text. (Insert real tab, command $2D, inserts a $09 instead.)
+dl DB25 far_call_5_unused
+rem DB25 < Far-call table entry 5. Nothing calls it: bank 62 never uses index 5 and nothing in this bank jumps here.
+rem DB25 < It and the routines only it uses ($DB25-$DCFD, about 470 bytes) look the word in buffer A up in the dictionary, positioning at the first word not before it,
+rem DB25 < and also consult the user dictionary (user_dict_ptr). Probably left over from an earlier design. The 'Opened file' string at $DB17 is not used either.
 dl D008 far_call_table
 rem D008 < Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63.
-rem D008 < Index 1 (find_next_match, $D54F) and index 5 ($DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.
+rem D008 < Index 1 (find_next_match, $D54F) and index 5 (far_call_5_unused, $DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.
 dl CD87 far_information
 rem CD87 < Far-call table entry 0.
 rem CD87 < Called from the QuickEdit handler for Information (command $1A).

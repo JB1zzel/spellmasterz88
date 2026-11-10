@@ -14,6 +14,8 @@
         DEFC ptr_buffer_c = $1F8F  ; Pointer to a 0x40-byte work buffer (third part of the 0xC2-byte block)
         DEFC ptr_buffer_a = $1F91  ; Pointer to a 0x40-byte work buffer (first part of the 0xC2-byte block; also the typed word in WordFinder)
         DEFC pool_buffers = $1F93  ; Memory pool handle for the 0xC2-byte buffer block
+        DEFC buffers_binding = $1F95  ; BC for OS_Mpb that binds the three work buffers (B = their bank), from the OS_Mal at start-up
+        DEFC file_handle = $1F97  ; IX handle of the file being loaded, saved or merged (GN_Opf)
         DEFC line_buffer = $1F99  ; Pointer to the current-line edit buffer (0xF8 bytes, allocated at start-up)
         DEFC line_buffer_bank = $1F9B  ; Bank of the current-line edit buffer
         DEFC prev_line_ptr = $1F9C  ; Offset (segment 1) of the line record above the cursor line; 0 = the cursor line is the first line
@@ -32,11 +34,16 @@
         DEFC user_dict_bank = $1FAE  ; Bank of that table
         DEFC browse_pos = $1FAF  ; Browse: position (in the bound dictionary bank) of the record of the current word, used to step back
         DEFC typing_word_pending = $1FB1  ; Check as you type: 1 while a word is being typed or edited and has not been checked yet
+        DEFC misc_flags = $1FB3  ; Bit 1 = the current Browse word comes from the user dictionary; bit 6 cleared by Browse when it re-reads a record; bit 7 = Search and Replace is selective (ask Y/N)
         DEFC saved_word_bank = $1FB4  ; Bank of the record holding the typed word while Browse runs (save_typed_word)
         DEFC saved_word_ptr = $1FB5  ; Offset of that record
         DEFC scan_chars_left = $1FB7  ; Characters of the line still to scan for the next word (next_word_from_text)
         DEFC scan_ptr = $1FB8  ; Address in the line buffer just after the word being checked; where the scan for the next word continues
         DEFC word_start_ptr = $1FBA  ; Address in the line buffer where the word just taken by next_word_from_text starts
+        DEFC temp_ptr = $1FBC  ; Scratch banked pointer, offset (last guess, user dictionary walk, number printing, WordFinder crossword counters at $1FBC/$1FBD)
+        DEFC temp_bank = $1FBE  ; Bank for temp_ptr
+        DEFC temp2_ptr = $1FBF  ; Second scratch banked pointer, offset (new guess, Browse prefix record)
+        DEFC temp2_bank = $1FC1  ; Bank for temp2_ptr
         DEFC guess_list_ptr = $1FC2  ; Offset of the first record of the guess list (Guess correct word); 0 = no guesses
         DEFC guess_list_bank = $1FC4  ; Bank of that record
         DEFC block_start_line = $1FC8  ; Block start marker: line number
@@ -47,6 +54,8 @@
         DEFC cursor_line = $1FCF  ; Number of the line the cursor is on
         DEFC top_line = $1FD1  ; Number of the line shown on row 0 of the text window
         DEFC wf_menu_sel = $1FD3  ; WordFinder: currently selected menu line (0 to 3)
+        DEFC text_name_ptr = $1FD4  ; Offset of a record holding the text filename last loaded or saved (byte 0 = record size); 0 = none
+        DEFC text_name_bank = $1FD6  ; Bank of that record
         DEFC user_dict_name_ptr = $1FD7  ; Offset of a record holding the user dictionary filename last used (byte 0 = length); 0 = none
         DEFC user_dict_name_bank = $1FD9  ; Bank of that record
         DEFC ignore_list_ptr = $1FDA  ; Offset of the table of ignored words (same structure as the user dictionary); freed when a check ends
@@ -55,9 +64,15 @@
         DEFC search_str_bank = $1FDF  ; Bank of that record
         DEFC replace_str_ptr = $1FE0  ; Offset of the record holding the last Replace string; 0 = none
         DEFC replace_str_bank = $1FE2  ; Bank of that record
+        DEFC own_header_flag = $1FE3  ; 1 if the loaded file began with its own %...% option line, so Save does not write %CO:A,72,72%
+        DEFC char_scratch = $1FE4  ; Scratch byte: the character just typed, the current letter A-Z while walking a word list, the start column of a search attempt
         DEFC line_counter = $1FE5  ; Scratch line counter: lines moved down by word wrap, Format paragraph and Replace (bank 62); a row counter while the text window is redrawn (bank 63)
+        DEFC pull_count = $1FE7  ; Word wrap: number of characters pulled up from the next line
         DEFC line_rec_ptr = $1FE8  ; Offset (segment 1) of the line record being worked on: just allocated, or reached by walking the links (WordFinder reuses this word for a pattern pointer)
         DEFC line_rec_bank = $1FEA  ; Bank of that record
+        DEFC link_ptr = $1FEB  ; word_list_add: address of the link to patch (WordFinder crossword: pointer into the dictionary word)
+        DEFC link_binding = $1FED  ; word_list_add: BC for OS_Mpb that binds that link's bank
+        DEFC saved_letter = $1FF3  ; Copy of char_scratch kept while looking for the nearest user dictionary word
 
 ; Screen driver
         DEFC SD_COORD = 32        ; added to every window/cursor coordinate sent to the screen driver

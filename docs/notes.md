@@ -62,7 +62,7 @@ Some QuickEdit commands are implemented in bank 63. `far_call_bank63` (bank 62, 
 | 9 | far_next_match ($D479) | Next Match |
 | 10 | far_print_text ($D100) | Print out text |
 | 1 | find_next_match ($D54F) | not called through the table; used directly by Search, Next Match and Search and Replace in bank 63 (section 17) |
-| 5 | $DB25 | not used by bank 62 |
+| 5 | far_call_5_unused ($DB25) | nothing calls it; unreachable code (section 18) |
 
 ## 5. Dictionary access and bank addressing
 
@@ -84,7 +84,7 @@ The dictionary stores common groups of letters as single bytes ($80 or more). Th
 
 ## 7. Workspace
 
-Both apps use the application workspace $1F80-$1FFF with the same layout. `docs/workspace.md` lists every address used and names those the code establishes: the buffer pointers, the pool handles, the dictionary position and bank, the current-line buffer, the cursor row, column limit, index and line length, the block markers, the cursor and top line numbers, the links around the cursor line and the working line-record pointer, the user dictionary, the ignored words and the user dictionary filename (see "How the text is stored" in section 12), `edit_flags` and `wf_menu_sel`. The rest are unidentified.
+Both apps use the application workspace $1F80-$1FFF with the same layout. `docs/workspace.md` lists every address used and names those the code establishes: the buffer pointers, the pool handles, the dictionary position and bank, the current-line buffer, the cursor row, column limit, index and line length, the block markers, the cursor and top line numbers, the links around the cursor line and the working line-record pointer, the user dictionary, the ignored words and the user dictionary filename (see "How the text is stored" in section 12), `edit_flags` and `wf_menu_sel`, the file handle and filenames, the search strings, and a handful of scratch locations shared by several commands. Every address used now has a description; a few are only scratch space and some are borrowed for other purposes in particular commands (noted in the table).
 
 ## 8. RAM installation under OZ 5 (learned along the way)
 
@@ -105,8 +105,8 @@ From reading the OZ ROM (`ozs0-7e93476`) and the developer notes; untested.
 
 - Most unnamed routines (`docs/routine_index_bank*.md`).
 - Regions that decode as code may be data that happens to assemble; the byte-identical check cannot tell.
-- Most workspace variables.
-- Behaviour has not been traced on a running machine.
+- Some names of scratch locations and borrowed variables describe their main use only.
+- Behaviour has not been traced on a running machine. Worth testing in OZvm: the last word before Enter is not checked as you type (section 15); a failed search leaves the cursor at the end of the text (section 17).
 
 ## 13. The dictionary
 
@@ -237,3 +237,27 @@ These run in bank 63 through the far-call table. The last Find and Replace strin
 
 `save_string_record` does not check whether `OS_Mal` succeeded before writing into the new record.
 
+## 18. Files, printing, Information and Tab
+
+**Save text** (`cmd_save_text`, sharing `save_or_export` with Export text) writes the text as plain characters, each line followed by a CR ($0D). The file starts with the PipeDream option line `%CO:A,72,72%` (column A, width 72, right margin 72; `str_pipedream_header`), so a QuickEdit file opens in PipeDream with the same layout. The header is left out if the file that was loaded began with its own `%...%` option line (`own_header_flag`, $1FE3). If the file exists, "Overwrite text? (Y/N)" is asked first (`open_output_file`). The filename is kept (`text_name_ptr`/`text_name_bank`, $1FD4/$1FD6), offered next time, and its leaf name becomes the activity name in the Index (`name_activity`, DC_Nam).
+
+**Export text** sets `edit_flags` bit 7 and uses the same code, but writes no header, does not keep the filename, and leaves out the CR after any line that ends in a space. Because word wrap leaves a space at the end of each wrapped line, every paragraph comes out as a single line: the form other programs expect.
+
+**Save marked block** writes only the marked text, plain lines ending in CR, with no header.
+
+**Load text** (`load_text_file`, $EDF7) frees the whole current text (`free_all_lines`) and reads the file a byte at a time:
+
+- a first line that is exactly `%CO:A,72,72%` is dropped; a first line that starts with another `%...%` option (up to 15 characters) is kept as text and sets `own_header_flag`;
+- lines end at CR only. A LF is kept as a character, so a file with CR LF line ends shows ^J at the start of each line after the first, and a file with LF only comes in as one long line cut into pieces;
+- a line longer than 239 characters is cut into pieces of 239; lines are not rewrapped;
+- reading stops at end of file or Escape. Any other read error makes it read again, which would loop if the error persisted.
+
+**Merge text at cursor** (bank 63, $D909) reads a file the same way and inserts its lines at the cursor. It does not recognise the header, so `%CO:A,72,72%` would be merged as a line of text. It checks free memory before each line and stops when memory is nearly full; if the file cannot be opened it only beeps.
+
+**Print out text** (bank 63, `far_print_text`) enables Escape detection, sends $05 `[` to the printer filter, then every line of the whole text followed by LF CR through `OS_Prt`, then $05 `]`, and disables Escape detection again. The $05 pairs appear to mark the start and end of the job for the printer filter. An error from `OS_Prt` (for example Escape) beeps and ends the printout. Tabs and control characters are passed through unchanged.
+
+**Information** (bank 63, `far_information`) shows the text filename, number of lines, free memory in K (`NQ_Mfs`, pages divided by 4), word count and the user dictionary filename (or "None"). A word is a run of letters and apostrophes, so numbers are not counted. Counting walks the whole text; if a key is pressed meanwhile the line and word counts are left out.
+
+**Tab** (bank 63, `far_tab`) uses stops every 8 columns. If the characters up to the next stop are all spaces the cursor just moves over them; otherwise spaces are inserted up to the stop. Insert real tab (command $2D) inserts a $09 character instead.
+
+**Unreachable code.** Far-call entry 5 (`far_call_5_unused`, $DB25) is never called, and nothing else reaches the code from $DB25 to $DCFD (about 470 bytes). It looks a word up in the dictionary, positions at the first word not before it, and consults the user dictionary: probably left over from an earlier design. The "Opened file" string at $DB17 is unused too. Smaller unused pieces are noted in the source at bank 63 $C709 and $D756 and bank 62 $F77E.
