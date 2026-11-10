@@ -173,17 +173,17 @@ $C2E4, $C2EA
 $C2F0, $C2F6
 $C2FC, $C302
 $C308, $C30E
-$C312, $C31B
+$C312, $C31B wf_quit
 $C332, $C334
 $C3D8, $C3E6
-$C3EE, $C3F6
+$C3EE show_found_word, $C3F6
 $C401, $C410
 $C421, $C42A
 $C433, $C445
 $C448, $C469
-$C46E, $C476
-$C4B8, $C4D0
-$C4DB, $C506 wf_option_4_solve_crossword
+$C46E check_quit, $C476 open_words_found
+$C4B8 input_wf_word, $C4D0
+$C4DB bad_character, $C506 wf_option_4_solve_crossword
 $C522, $C539
 $C547, $C555
 $C55A, $C56B
@@ -197,7 +197,7 @@ $C62D wf_option_2_find_anagrams, $C649
 $C66E, $C678
 $C6A0, $C6BF
 $C6CE, $C6D7
-$C6F4, $C712
+$C6F4 end_of_search, $C712 sort_letters
 $C719, $C722
 $C777, $C799 far_redraw_text_window
 $C7B1, $C7C5 draw_cursor_line
@@ -302,7 +302,7 @@ $D738 copy_record_to_line_buffer, $D7AA
 $D7AD, $D7CE
 $D7DD, $D7F2
 $D7FB, $D800
-$D862, $D880 far_append_guess
+$D862 section_could_match, $D880 far_append_guess
 $D8C1, $D8D5
 $D8FA, $D909 far_load_text_at_cursor
 $D91B, $D925
@@ -333,7 +333,7 @@ $DCA8, $DCD2
 $DCF8, $DCFE wf_option_3_find_close_matches
 $DD17, $DD35
 $DD53, $DD64
-$DD6D, $DD8A
+$DD6D, $DD8A is_one_edit_away
 $DDAD, $DDB4
 $DDB8, $DDBA
 $DDC9, $DDCD
@@ -354,19 +354,19 @@ $E320, $E325
 $E32C, $E33A
 $E33D, $E348
 $E34C, $E35A
-$E36D, $E375
-$E37E, $E39A
-$E3A3, $E3BF
+$E36D, $E375 next_section_letters
+$E37E, $E39A prev_section_letters
+$E3A3, $E3BF draw_browse_page
 $E3C5, $E3D6
 $E3E3, $E3FC
 $E3FE, $E40C
-$E413, $E433
-$E43C, $E447
+$E413, $E433 print_current_word
+$E43C, $E447 browse_next_word
 $E459, $E468
 $E476, $E48B
 $E492, $E49B
 $E4B3, $E4C0
-$E4D3, $E4E0
+$E4D3 browse_prev_word, $E4E0
 $E4E8, $E502
 $E508, $E51B
 $E537, $E540
@@ -376,15 +376,15 @@ $E570, $E58D
 $E595, $E59B
 $E5AA, $E5B4
 $E5C3, $E5D9
-$E5DB, $E5E5 next_full_word
+$E5DB no_user_word, $E5E5 next_full_word
 $E603, $E616
-$E62E, $E649
+$E62E browse_seek_prefix, $E649
 $E653, $E669
 $E674, $E685
 $E692, $E695
 $E6A0, $E6AC
 $E6AF, $E6D0
-$E6E1, $E6EB QuickEdit_topics
+$E6E1 toggle_reverse, $E6EB QuickEdit_topics
 $E6EC QuickEdit_tpc1, $E6F7 QuickEdit_tpc1_end
 $E6F8 QuickEdit_tpc2, $E703 QuickEdit_tpc2_end
 $E704 QuickEdit_tpc3, $E70D QuickEdit_tpc3_end
@@ -457,12 +457,12 @@ $EC27, $EC36 WordFinder_cmd7_end
 $EC37 WordFinder_cmd8, $EC3E
 $EC4F WordFinder_cmd8_end, $EC50 WordFinder_cmd9
 $EC51, $EC53
-$EC5B WordFinder_cmd9_end, $EC5D
-$EC5F, $EC62
-$EC67, $EC6C
-$EC70, $EC71
+$EC5B WordFinder_cmd9_end, $EC5D open_dialog_centre
+$EC5F, $EC62 open_dialog_wide
+$EC67 open_dialog_mid, $EC6C open_dialog_wf
+$EC70, $EC71 open_dialog_right
 $EC74, $EC82
-$EC90, $EC91
+$EC90 open_dialog_with_title, $EC91
 $EC9C, $ECAA
 $ECB5, $ED62
 $ED71, $ED76
@@ -649,10 +649,23 @@ $8900
 	($C267,< "WordFinder menu loop: reads keys. Keys 1 to 4 choose an option, Cursor up/down moves wf_menu_sel,"
 		 "Enter runs the selected option, Escape frees the pools and exits (OS_Bye).")
 	($C2C7,< "Handles a key typed in the WordFinder menu.")
-	($C506,< "Menu option 4: Solve crossword (window title 'Crossword').")
+	($C31B,< "RC_Quit: closes the three memory pools and leaves WordFinder with OS_Bye.")
+	($C3EE,< "Prints the found word (the two section letters, then buffer C) in 16-column slots, four to a 64-column row, using cursor_index and cursor_row (borrowed) as column and row."
+		 "After six rows: 'Press SPACE to continue'. Any key clears the window and goes on; an extended Escape stops the search (carry set).")
+	($C46E,< "After an OS_In error: if it is RC_Quit ('g', $67) leaves WordFinder (wf_quit); otherwise returns.")
+	($C476,< "Opens the 'Words found' dialog (wide window) and clears cursor_row and cursor_index.")
+	($C4B8,< "GN_Sip into buffer A (32 bytes, 32 columns). Out: dict_target_length = the length typed; A = the key that ended the input (Escape returns to the menu).")
+	($C4DB,< "Shows 'Bad character in word' and waits for a key (end_of_search).")
+	($C506,< "Option 4: the pattern may use letters, an apostrophe, '#' (any one letter) and '*' (any run of letters, including none). Other characters: 'Bad character in word'."
+		 "If the pattern starts with letters only the matching sections are searched. Matching backtracks to the last '*' on a mismatch (line_rec_ptr, $1FEB, $1FBC, $1FBD)."
+		 "Unlike Find anagrams this search does not stop for a key press; only the 'Press SPACE' page prompt can end it early."
+		 "Menu option 4: Solve crossword (window title 'Crossword').")
 	($C576,< "WordFinder reuses the line_rec_ptr word ($1FE8) here: in the crossword solver it holds a pointer into the pattern"
 		 "(set after a '*' or '#' at $C5C4, 0 = none), not a line record. Likewise $1FEB holds a pointer into the dictionary word.")
 	($C62D,< "Menu option 2: Find anagrams (window title 'Anagram'). Asks for a word, checks it is letters only, then searches.")
+	($C6F4,< "Shows 'Press SPACE to continue' and waits for a key before going back to the menu.")
+	($C709,< "$C709-$C711 are code left as data, and nothing calls them: SCF / RET, then PUSH AF / LD A,7 / OS_Out / POP AF / RET (a beep).")
+	($C712,< "Sorts the B letters at HL into alphabetical order (a simple exchange sort). Find anagrams sorts the typed word once, then each dictionary word of the same length, and compares.")
 	($C799,< "Far-call table entry 7."
 		 "Called by draw_text_window (bank 62), which redraw_screen calls. Draws the text in window 1: the cursor line from the edit buffer,"
 		 "then the rows above and below it by following the line records, then the End of text marker and blank rows."
@@ -701,6 +714,7 @@ $8900
 	($D61A,< "Copies the record at line_rec into the edit buffer, takes its links as prev_line and next_line, then frees it (falls into free_line_record).")
 	($D756,< "$D756-$D765 (16 bytes) are code, left as data because nothing calls them: an unused copy of check_free_memory"
 		 "(LD BC,NQ_Mfs / LD IX,(pool_main) / OS_Nq / CP 0 / RET NZ / LD A,B / CP 5 / RET). The bank's own copy is at $DAD1.")
+	($D862,< "Same routine as section_could_match in bank 62 (identical bytes).")
 	($D880,< "Far-call table entry 6."
 		 "Called from append_guess (bank 62 $E076) by Guess correct word, once for each dictionary or user word that is one edit away from the typed word."
 		 "Allocates a record of (word length + 7) bytes and appends it to the guess list: byte 0 = word length, bytes 1-3 = previous guess, bytes 4-6 = next guess (0), then the whole word from buffer C - 2."
@@ -708,12 +722,23 @@ $8900
 	($D909,< "Far-call table entry 4."
 		 "Called from the QuickEdit handler for Merge text at cursor (command $27).")
 	($DAD1,< "Same routine as check_free_memory in bank 62: carry set when memory is nearly full.")
-	($DCFE,< "Menu option 3: Find close matches (window title 'Find close matches').")
-	($E203,< "Menu option 1: Browse through dictionary.")
+	($DCFE,< "Option 3 uses the same test as Guess correct word (section_could_match, is_one_edit_away) over the whole ROM dictionary, without the user dictionary and without stopping for a key press."
+		 "Menu option 3: Find close matches (window title 'Find close matches').")
+	($DD8A,< "Same routine as is_one_edit_away in bank 62 (identical apart from the jump addresses): Z if the word is one letter different, missing, extra or swapped.")
+	($E203,< "Option 1 is the bank 62 Browse (browse_dictionary) almost instruction for instruction: same keys, same routines (names as in bank 62),"
+		 "except that it starts at 'AA' instead of the typed word and calls no_user_word where QuickEdit looks in the user dictionary."
+		 "Menu option 1: Browse through dictionary.")
+	($E5DB,< "Stands in for the user dictionary lookups of the bank 62 Browse (L_F9DF, L_FADE): clears $1FB3 bit 1 and returns carry (no user word). WordFinder has no user dictionary.")
 	($E5E5,< "Same routine as next_full_word in bank 62: next_word_form, with the two section letters written just before buffer C.")
 	($E6EB,< "QuickEdit menu topics ('Blocks', 'Cursor', 'Edit', 'Files', 'SPELLING') - kept as raw bytes.")
 	($E728,< "QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See NOTES.md for the full table.")
 	($EBAE,< "Menu commands for the Correction/spelling menu.")
+	($EC5D,< "Titled dialog x 25, 30 columns, full height (as open_dialog_centre in bank 62).")
+	($EC62,< "Titled dialog x 5, 70 columns, full height ('Words found').")
+	($EC67,< "Titled dialog x 18, 44 columns, full height.")
+	($EC6C,< "Titled dialog x 20, 40 columns, full height (the WordFinder option windows: Anagram, Find close matches, Crossword).")
+	($EC71,< "Titled dialog x 40, 35 columns, rows 1-7 (Browse).")
+	($EC90,< "Same routine as open_dialog_with_title in bank 62. In: HL = title, BC = window description.")
 	($FF80,< "STUB entered from bank 62 (far_call_bank63): copies the bank bound in segment 1 (this bank) into segment 3"
 		 "and jumps to far_call_dispatch.")
 	($FF8B,< "STUB used on the way back: re-binds bank 62 into segment 3, restores the registers saved on the stack, RET."

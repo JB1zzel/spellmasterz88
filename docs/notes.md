@@ -37,6 +37,15 @@ QuickEdit is a text editor with spell checking. `qe_start` creates memory pools 
 
 The menu offers four options: 1 Browse through dictionary, 2 Find anagrams, 3 Find close matches, 4 Solve crossword. Keys 1-4 select directly, cursor up/down moves `wf_menu_sel`, Enter runs it, Escape frees the pools and exits. The option routines are `wf_option_1_...` to `wf_option_4_...`. The window titles ("Anagram", "Find close matches", "Crossword") confirm which is which.
 
+All four work on the ROM dictionary only: WordFinder has no user dictionary (`wf_start` clears `user_dict_ptr`). Words are typed with `input_wf_word` (up to 32 characters) and checked for bad characters (`bad_character`); results are printed by `show_found_word` in four 16-column slots per row, six rows to a page, with "Press SPACE to continue" between pages (an extended Escape there stops the search).
+
+- **1 Browse through dictionary** is the QuickEdit Browse (section 15) almost instruction for instruction, with the same routine names. It starts at "AA" instead of a typed word, and where QuickEdit looks in the user dictionary it calls `no_user_word` ($E5DB), a stub that always answers "none". (Bank 62 holds an unused copy of the same stub as data at $F77E.)
+- **2 Find anagrams** accepts letters only. It sorts the letters of the typed word (`sort_letters`, $C712), then for every word form of the same length in the whole dictionary sorts its letters too and compares. A key pressed during the search stops it (checked after each first letter).
+- **3 Find close matches** is Guess correct word without the user dictionary: the same section filter and the same one-edit test (`section_could_match`, `is_one_edit_away`, copies of the bank 62 routines). It does not stop for a key press.
+- **4 Solve crossword** takes a pattern of letters, apostrophes, `#` (any one letter) and `*` (any run of letters, including none). If the pattern starts with letters only those sections are searched. Matching backtracks to the most recent `*` on a mismatch; while it runs `line_rec_ptr` and `$1FEB` are borrowed as pointers into the pattern and the word. It does not stop for a key press either.
+
+Bank 63 also has its own copies of the dialog routines: `open_dialog_with_title` ($EC90) with five window sizes (`open_dialog_centre`, `open_dialog_wide`, `open_dialog_mid`, `open_dialog_wf`, `open_dialog_right`).
+
 ## 4. Calls between the two banks
 
 Some QuickEdit commands are implemented in bank 63. `far_call_bank63` (bank 62, $C286) takes an index in A, binds bank 63 into segment 1 and jumps to a stub at $7F80 (file offset $3F80 of SPELL.63). The stub binds that bank into segment 3 and enters `far_call_dispatch`, which looks the index up in `far_call_table` (11 words, bank 63 $D008), calls the routine and returns through a second stub that rebinds bank 62.

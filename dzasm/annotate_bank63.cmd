@@ -86,6 +86,56 @@ dl D730 dec_cursor_line
 dl D738 copy_record_to_line_buffer
 rem D756 < $D756-$D765 (16 bytes) are code, left as data because nothing calls them: an unused copy of check_free_memory
 rem D756 < (LD BC,NQ_Mfs / LD IX,(pool_main) / OS_Nq / CP 0 / RET NZ / LD A,B / CP 5 / RET). The bank's own copy is at $DAD1.
+dl C31B wf_quit
+rem C31B < RC_Quit: closes the three memory pools and leaves WordFinder with OS_Bye.
+dl C3EE show_found_word
+rem C3EE < Prints the found word (the two section letters, then buffer C) in 16-column slots, four to a 64-column row, using cursor_index and cursor_row (borrowed) as column and row.
+rem C3EE < After six rows: 'Press SPACE to continue'. Any key clears the window and goes on; an extended Escape stops the search (carry set).
+dl C46E check_quit
+rem C46E < After an OS_In error: if it is RC_Quit ('g', $67) leaves WordFinder (wf_quit); otherwise returns.
+dl C476 open_words_found
+rem C476 < Opens the 'Words found' dialog (wide window) and clears cursor_row and cursor_index.
+dl C4B8 input_wf_word
+rem C4B8 < GN_Sip into buffer A (32 bytes, 32 columns). Out: dict_target_length = the length typed; A = the key that ended the input (Escape returns to the menu).
+dl C4DB bad_character
+rem C4DB < Shows 'Bad character in word' and waits for a key (end_of_search).
+dl C6F4 end_of_search
+rem C6F4 < Shows 'Press SPACE to continue' and waits for a key before going back to the menu.
+dl C712 sort_letters
+rem C712 < Sorts the B letters at HL into alphabetical order (a simple exchange sort). Find anagrams sorts the typed word once, then each dictionary word of the same length, and compares.
+rem C709 < $C709-$C711 are code left as data, and nothing calls them: SCF / RET, then PUSH AF / LD A,7 / OS_Out / POP AF / RET (a beep).
+dl D862 section_could_match
+rem D862 < Same routine as section_could_match in bank 62 (identical bytes).
+dl DD8A is_one_edit_away
+rem DD8A < Same routine as is_one_edit_away in bank 62 (identical apart from the jump addresses): Z if the word is one letter different, missing, extra or swapped.
+dl EC90 open_dialog_with_title
+rem EC90 < Same routine as open_dialog_with_title in bank 62. In: HL = title, BC = window description.
+dl EC5D open_dialog_centre
+rem EC5D < Titled dialog x 25, 30 columns, full height (as open_dialog_centre in bank 62).
+dl EC62 open_dialog_wide
+rem EC62 < Titled dialog x 5, 70 columns, full height ('Words found').
+dl EC67 open_dialog_mid
+rem EC67 < Titled dialog x 18, 44 columns, full height.
+dl EC6C open_dialog_wf
+rem EC6C < Titled dialog x 20, 40 columns, full height (the WordFinder option windows: Anagram, Find close matches, Crossword).
+dl EC71 open_dialog_right
+rem EC71 < Titled dialog x 40, 35 columns, rows 1-7 (Browse).
+dl E375 next_section_letters
+dl E39A prev_section_letters
+dl E3BF draw_browse_page
+dl E433 print_current_word
+dl E447 browse_next_word
+dl E4D3 browse_prev_word
+dl E62E browse_seek_prefix
+dl E6E1 toggle_reverse
+dl E5DB no_user_word
+rem E5DB < Stands in for the user dictionary lookups of the bank 62 Browse (L_F9DF, L_FADE): clears $1FB3 bit 1 and returns carry (no user word). WordFinder has no user dictionary.
+rem E203 < Option 1 is the bank 62 Browse (browse_dictionary) almost instruction for instruction: same keys, same routines (names as in bank 62),
+rem E203 < except that it starts at 'AA' instead of the typed word and calls no_user_word where QuickEdit looks in the user dictionary.
+rem C506 < Option 4: the pattern may use letters, an apostrophe, '#' (any one letter) and '*' (any run of letters, including none). Other characters: 'Bad character in word'.
+rem C506 < If the pattern starts with letters only the matching sections are searched. Matching backtracks to the last '*' on a mismatch (line_rec_ptr, $1FEB, $1FBC, $1FBD).
+rem C506 < Unlike Find anagrams this search does not stop for a key press; only the 'Press SPACE' page prompt can end it early.
+rem DCFE < Option 3 uses the same test as Guess correct word (section_could_match, is_one_edit_away) over the whole ROM dictionary, without the user dictionary and without stopping for a key press.
 dl D008 far_call_table
 rem D008 < Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63.
 rem D008 < Index 1 ($D54F) and index 5 ($DB25) are not used by any caller in bank 62.

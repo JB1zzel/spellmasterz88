@@ -54,7 +54,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $C308 | L_C308 | 0 | Os_mcl |  | 3 |
 | $C30E | L_C30E | 0 | Os_bye |  | 3 |
 | $C312 | L_C312 | 2 |  |  | 5 |
-| $C31B | L_C31B | 0 | Os_bye, Os_mcl |  | 13 |
+| $C31B | wf_quit | 0 | Os_bye, Os_mcl |  | 13 |
 | $C332 | L_C332 | 0 |  |  | 2 |
 | $C334 | L_C334 | 0 |  |  | 3 |
 | $C339 | L_C339 | 0 |  | WordFinder | 2 |
@@ -66,20 +66,20 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $C3B7 | L_C3B7 | 0 |  | Which category : | 2 |
 | $C3CA | L_C3CA | 0 |  | Bad category! | 2 |
 | $C3D8 | L_C3D8 | 0 | Os_bye, Os_mcl |  | 12 |
-| $C3EE | L_C3EE | 3 | Os_out |  | 17 |
+| $C3EE | show_found_word | 3 | Os_out |  | 17 |
 | $C410 | L_C410 | 0 | Os_out |  | 16 |
 | $C42A | L_C42A | 0 | Os_out |  | 7 |
 | $C433 | L_C433 | 0 | Gn_nln |  | 10 |
 | $C448 | L_C448 | 0 | Gn_sop, Os_in |  | 18 |
 | $C469 | L_C469 | 0 |  |  | 2 |
-| $C46E | L_C46E | 4 |  |  | 5 |
-| $C476 | L_C476 | 4 |  |  | 6 |
+| $C46E | check_quit | 4 |  |  | 5 |
+| $C476 | open_words_found | 4 |  |  | 6 |
 | $C485 | L_C485 | 0 |  |  | 1 |
 | $C48C | L_C48C | 0 |  | RPress SPACE to continue  | 2 |
 | $C4AC | L_C4AC | 0 |  | Words found | 2 |
-| $C4B8 | L_C4B8 | 3 | Gn_sip |  | 11 |
+| $C4B8 | input_wf_word | 3 | Gn_sip |  | 11 |
 | $C4D0 | L_C4D0 | 0 | Gn_nln |  | 8 |
-| $C4DB | L_C4DB | 0 | Gn_sop |  | 4 |
+| $C4DB | bad_character | 0 | Gn_sop |  | 4 |
 | $C4E4 | L_C4E4 | 0 |  |  | 1 |
 | $C4E8 | L_C4E8 | 0 |  | 2JCBad character in word  | 2 |
 | $C506 | wf_option_4_solve_crossword | 1 | Gn_sop |  | 12 |
@@ -108,8 +108,8 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $C6BF | L_C6BF | 0 |  |  | 10 |
 | $C6CE | L_C6CE | 0 |  |  | 4 |
 | $C6D7 | L_C6D7 | 0 | Os_xin |  | 14 |
-| $C6F4 | L_C6F4 | 0 | Gn_sop, Os_in |  | 15 |
-| $C712 | L_C712 | 2 |  |  | 6 |
+| $C6F4 | end_of_search | 0 | Gn_sop, Os_in |  | 15 |
+| $C712 | sort_letters | 2 |  |  | 6 |
 | $C719 | L_C719 | 0 |  |  | 8 |
 | $C722 | L_C722 | 0 |  |  | 19 |
 | $C737 | L_C737 | 0 |  | Crossword | 2 |
@@ -354,7 +354,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D809 | L_D809 | 0 |  |  | 9 |
 | $D84D | L_D84D | 0 |  |  | 2 |
 | $D854 | L_D854 | 0 |  |  | 3 |
-| $D862 | L_D862 | 1 |  |  | 14 |
+| $D862 | section_could_match | 1 |  |  | 14 |
 | $D87A | L_D87A | 0 |  |  | 2 |
 | $D880 | far_append_guess | 0 | Os_mal, Os_mpb |  | 36 |
 | $D8C1 | L_D8C1 | 0 |  |  | 14 |
@@ -424,7 +424,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $DD53 | L_DD53 | 0 |  |  | 7 |
 | $DD64 | L_DD64 | 0 |  |  | 4 |
 | $DD6D | L_DD6D | 0 |  |  | 12 |
-| $DD8A | L_DD8A | 1 |  |  | 17 |
+| $DD8A | is_one_edit_away | 1 |  |  | 17 |
 | $DDAD | L_DDAD | 0 |  |  | 5 |
 | $DDB4 | L_DDB4 | 0 |  |  | 3 |
 | $DDB8 | L_DDB8 | 0 |  |  | 2 |
@@ -467,11 +467,11 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $E34C | L_E34C | 0 |  |  | 5 |
 | $E35A | L_E35A | 0 |  |  | 8 |
 | $E36D | L_E36D | 0 |  |  | 3 |
-| $E375 | L_E375 | 3 |  |  | 4 |
+| $E375 | next_section_letters | 3 |  |  | 4 |
 | $E37E | L_E37E | 0 |  |  | 14 |
-| $E39A | L_E39A | 2 |  |  | 4 |
+| $E39A | prev_section_letters | 2 |  |  | 4 |
 | $E3A3 | L_E3A3 | 0 |  |  | 14 |
-| $E3BF | L_E3BF | 3 | Os_out |  | 4 |
+| $E3BF | draw_browse_page | 3 | Os_out |  | 4 |
 | $E3C5 | L_E3C5 | 0 | Os_out |  | 10 |
 | $E3D6 | L_E3D6 | 0 | Os_out |  | 9 |
 | $E3E3 | L_E3E3 | 2 | Gn_sop |  | 11 |
@@ -480,9 +480,9 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $E40C | L_E40C | 0 |  |  | 6 |
 | $E413 | L_E413 | 0 | Gn_sop, Os_mfr |  | 10 |
 | $E429 | L_E429 | 0 |  |  | 2 |
-| $E433 | L_E433 | 4 |  |  | 5 |
+| $E433 | print_current_word | 4 |  |  | 5 |
 | $E43C | L_E43C | 0 | Os_out |  | 9 |
-| $E447 | L_E447 | 4 |  |  | 8 |
+| $E447 | browse_next_word | 4 |  |  | 8 |
 | $E459 | L_E459 | 0 |  |  | 7 |
 | $E468 | L_E468 | 0 |  |  | 5 |
 | $E476 | L_E476 | 0 |  |  | 9 |
@@ -491,7 +491,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $E49B | L_E49B | 0 |  |  | 11 |
 | $E4B3 | L_E4B3 | 0 |  |  | 5 |
 | $E4C0 | L_E4C0 | 0 |  |  | 7 |
-| $E4D3 | L_E4D3 | 2 |  |  | 5 |
+| $E4D3 | browse_prev_word | 2 |  |  | 5 |
 | $E4E0 | L_E4E0 | 0 |  |  | 5 |
 | $E4E8 | L_E4E8 | 0 |  |  | 13 |
 | $E502 | L_E502 | 0 |  |  | 2 |
@@ -511,11 +511,11 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $E5B4 | L_E5B4 | 0 |  |  | 8 |
 | $E5C3 | L_E5C3 | 0 |  |  | 11 |
 | $E5D9 | L_E5D9 | 0 |  |  | 2 |
-| $E5DB | L_E5DB | 2 |  |  | 5 |
+| $E5DB | no_user_word | 2 |  |  | 5 |
 | $E5E5 | next_full_word | 6 |  |  | 16 |
 | $E603 | L_E603 | 0 |  |  | 9 |
 | $E616 | L_E616 | 2 |  |  | 12 |
-| $E62E | L_E62E | 2 | Os_mpb |  | 14 |
+| $E62E | browse_seek_prefix | 2 | Os_mpb |  | 14 |
 | $E649 | L_E649 | 0 |  |  | 4 |
 | $E653 | L_E653 | 0 |  |  | 8 |
 | $E669 | L_E669 | 0 |  |  | 5 |
@@ -529,7 +529,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $E6D0 | L_E6D0 | 0 |  |  | 2 |
 | $E6D5 | L_E6D5 | 0 |  |  | 1 |
 | $E6DC | L_E6DC | 0 |  |  | 2 |
-| $E6E1 | L_E6E1 | 2 | Gn_sop |  | 4 |
+| $E6E1 | toggle_reverse | 2 | Gn_sop |  | 4 |
 | $E6E8 | L_E6E8 | 0 |  |  | 1 |
 | $E6EB | QuickEdit_topics | 0 |  |  | 1 |
 | $E6EC | QuickEdit_tpc1 | 0 |  |  | 2 |
@@ -732,14 +732,14 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $EC51 | L_EC51 | 0 |  |  | 1 |
 | $EC53 | L_EC53 | 0 |  |  | 2 |
 | $EC5B | WordFinder_cmd9_end | 0 |  |  | 1 |
-| $EC5D | L_EC5D | 3 |  |  | 2 |
-| $EC62 | L_EC62 | 1 |  |  | 2 |
-| $EC67 | L_EC67 | 3 |  |  | 2 |
-| $EC6C | L_EC6C | 4 |  |  | 2 |
-| $EC71 | L_EC71 | 1 |  |  | 1 |
+| $EC5D | open_dialog_centre | 3 |  |  | 2 |
+| $EC62 | open_dialog_wide | 1 |  |  | 2 |
+| $EC67 | open_dialog_mid | 3 |  |  | 2 |
+| $EC6C | open_dialog_wf | 4 |  |  | 2 |
+| $EC71 | open_dialog_right | 1 |  |  | 1 |
 | $EC74 | L_EC74 | 0 |  |  | 3 |
 | $EC82 | L_EC82 | 1 | Gn_sop |  | 5 |
-| $EC90 | L_EC90 | 0 |  |  | 1 |
+| $EC90 | open_dialog_with_title | 0 |  |  | 1 |
 | $EC91 | L_EC91 | 0 | Gn_sop |  | 7 |
 | $EC9C | L_EC9C | 0 | Gn_sop |  | 10 |
 | $ECAA | L_ECAA | 0 | Gn_sop |  | 10 |

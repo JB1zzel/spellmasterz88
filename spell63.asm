@@ -320,7 +320,7 @@ wf_show_menu:
         ld      hl,L_ED4B
         oz      Gn_sop
         ld      hl,L_C339
-        call    L_EC6C
+        call    open_dialog_wf
         ld      hl,L_C344
         oz      Gn_sop
         ld      a,$00
@@ -424,7 +424,8 @@ L_C312:
         jr      z,L_C334
         cp      'g'
         jr      nz,L_C332
-L_C31B:
+wf_quit:
+; RC_Quit: closes the three memory pools and leaves WordFinder with OS_Bye.
         pop     af
         ld      ix,(pool_buffers)
         oz      Os_mcl
@@ -474,7 +475,9 @@ L_C3D8:
         oz      Os_mcl
         ld      a,$00
         oz      Os_bye
-L_C3EE:
+show_found_word:
+; Prints the found word (the two section letters, then buffer C) in 16-column slots, four to a 64-column row, using cursor_index and cursor_row (borrowed) as column and row.
+; After six rows: 'Press SPACE to continue'. Any key clears the window and goes on; an extended Escape stops the search (carry set).
         ld      a,(dict_word_length)
         add     a,$02
         ld      b,a
@@ -522,17 +525,17 @@ L_C433:
         jr      nc,L_C448
         ld      (cursor_row),a
         oz      Gn_nln
-        jr      L_C3EE
+        jr      show_found_word
 L_C448:
         ld      hl,L_C485
         oz      Gn_sop
         oz      Os_in
-        call    c,L_C46E
+        call    c,check_quit
         jr      c,L_C469
         cp      $00
         jr      nz,L_C469
         oz      Os_in
-        call    c,L_C46E
+        call    c,check_quit
         jr      c,L_C469
         cp      $1B
         jr      nz,L_C469
@@ -540,17 +543,19 @@ L_C448:
         scf
         ret
 L_C469:
-        call    L_C476
-        jr      L_C3EE
-L_C46E:
+        call    open_words_found
+        jr      show_found_word
+check_quit:
+; After an OS_In error: if it is RC_Quit ('g', $67) leaves WordFinder (wf_quit); otherwise returns.
         push    af
         cp      'g'
-        jp      z,L_C31B
+        jp      z,wf_quit
         pop     af
         ret
-L_C476:
+open_words_found:
+; Opens the 'Words found' dialog (wide window) and clears cursor_row and cursor_index.
         ld      hl,L_C4AC
-        call    L_EC62
+        call    open_dialog_wide
         ld      a,$00
         ld      (cursor_row),a
         ld      (cursor_index),a
@@ -565,7 +570,8 @@ L_C48C:
 L_C4AC:
         defm    "Words found"
         defb    $00
-L_C4B8:
+input_wf_word:
+; GN_Sip into buffer A (32 bytes, 32 columns). Out: dict_target_length = the length typed; A = the key that ended the input (Escape returns to the menu).
         ld      b,' '
         ld      de,(ptr_buffer_a)
         ld      c,$00
@@ -574,8 +580,8 @@ L_C4B8:
         oz      Gn_sip
         jr      nc,L_C4D0
         cp      'g'
-        jp      z,L_C31B
-        jr      L_C4B8
+        jp      z,wf_quit
+        jr      input_wf_word
 L_C4D0:
         push    af
         dec     b
@@ -584,10 +590,11 @@ L_C4D0:
         oz      Gn_nln
         pop     af
         ret
-L_C4DB:
+bad_character:
+; Shows 'Bad character in word' and waits for a key (end_of_search).
         ld      hl,L_C4E4
         oz      Gn_sop
-        jp      L_C6F4
+        jp      end_of_search
 
 
 L_C4E4:
@@ -596,15 +603,18 @@ L_C4E8:
         defm    "2JCBad character in word "
         defb    $01,$32,$4a,$4e,$00
 wf_option_4_solve_crossword:
+; Option 4: the pattern may use letters, an apostrophe, '#' (any one letter) and '*' (any run of letters, including none). Other characters: 'Bad character in word'.
+; If the pattern starts with letters only the matching sections are searched. Matching backtracks to the last '*' on a mismatch (line_rec_ptr, $1FEB, $1FBC, $1FBD).
+; Unlike Find anagrams this search does not stop for a key press; only the 'Press SPACE' page prompt can end it early.
 ; Menu option 4: Solve crossword (window title 'Crossword').
         ld      hl,L_C737
-        call    L_EC6C
+        call    open_dialog_wf
         ld      hl,L_C75C
         oz      Gn_sop
-        call    L_C4B8
+        call    input_wf_word
         cp      $1B
         ret     z
-        call    L_C476
+        call    open_words_found
         ld      hl,(ptr_buffer_a)
         ld      a,(dict_target_length)
         ld      b,a
@@ -618,9 +628,9 @@ L_C522:
         jr      z,L_C539
         and     $DF
         cp      'A'
-        jr      c,L_C4DB
+        jr      c,bad_character
         cp      '['
-        jr      nc,L_C4DB
+        jr      nc,bad_character
 L_C539:
         ld      (hl),a
         inc     hl
@@ -690,7 +700,7 @@ L_C5A9:
         dec     c
         jr      nz,L_C5F1
 L_C5B1:
-        call    L_C3EE
+        call    show_found_word
         ret     c
         jr      L_C576
 L_C5B7:
@@ -758,17 +768,17 @@ L_C610:
         ld      (dict_letter1),a
         cp      '['
         jp      c,L_C547
-        jp      L_C6F4
+        jp      end_of_search
 wf_option_2_find_anagrams:
 ; Menu option 2: Find anagrams (window title 'Anagram'). Asks for a word, checks it is letters only, then searches.
         ld      hl,L_C741
-        call    L_EC6C
+        call    open_dialog_wf
         ld      hl,L_C75C
         oz      Gn_sop
-        call    L_C4B8
+        call    input_wf_word
         cp      $1B
         ret     z
-        call    L_C476
+        call    open_words_found
         ld      hl,(ptr_buffer_a)
         ld      a,(dict_target_length)
         ld      b,a
@@ -776,16 +786,16 @@ L_C649:
         ld      a,(hl)
         and     $DF
         cp      'A'
-        jp      c,L_C4DB
+        jp      c,bad_character
         cp      '['
-        jp      nc,L_C4DB
+        jp      nc,bad_character
         ld      (hl),a
         inc     hl
         djnz    L_C649
         ld      hl,(ptr_buffer_a)
         ld      a,(dict_target_length)
         ld      b,a
-        call    L_C712
+        call    sort_letters
         ld      a,'A'
         ld      (dict_letter1),a
         ld      a,'''
@@ -822,7 +832,7 @@ L_C6A0:
         ld      hl,(ptr_buffer_b)
         ld      a,(dict_target_length)
         ld      b,a
-        call    L_C712
+        call    sort_letters
         ld      a,(dict_target_length)
         ld      c,a
         ld      hl,(ptr_buffer_a)
@@ -835,7 +845,7 @@ L_C6BF:
         inc     hl
         dec     c
         jr      nz,L_C6BF
-        call    L_C3EE
+        call    show_found_word
         ret     c
         jr      L_C678
 L_C6CE:
@@ -851,27 +861,30 @@ L_C6D7:
         ld      a,'''
         ld      (dict_letter2),a
         oz      Os_xin
-        jr      nc,L_C6F4
+        jr      nc,end_of_search
         ld      a,(dict_letter1)
         inc     a
         ld      (dict_letter1),a
         cp      '['
         jp      c,L_C66E
-L_C6F4:
+end_of_search:
+; Shows 'Press SPACE to continue' and waits for a key before going back to the menu.
         ld      hl,L_C485
         oz      Gn_sop
         oz      Os_in
-        call    c,L_C46E
+        call    c,check_quit
         ret     c
         cp      $00
         ret     nz
         oz      Os_in
-        call    c,L_C46E
+        call    c,check_quit
         ret
 
+; $C709-$C711 are code left as data, and nothing calls them: SCF / RET, then PUSH AF / LD A,7 / OS_Out / POP AF / RET (a beep).
         defb    $37,$c9,$f5,$3e,$07,$e7,$27,$f1
         defb    $c9
-L_C712:
+sort_letters:
+; Sorts the B letters at HL into alphabetical order (a simple exchange sort). Find anagrams sorts the typed word once, then each dictionary word of the same length, and compares.
         push    hl
         ld      d,h
         ld      e,l
@@ -1590,7 +1603,7 @@ far_information:
 ; Called from the QuickEdit handler for Information (command $1A).
 ; Shows the Information window ('Currently editing', number of lines, memory, word count, user dictionary).
         ld      hl,L_CF72
-        call    L_EC67
+        call    open_dialog_mid
         ld      hl,L_CEEB
         oz      Gn_sop
         ld      hl,L_D87A
@@ -2160,7 +2173,7 @@ far_search_and_replace:
         call    L_D7F2
 L_D1B7:
         ld      hl,L_D519
-        call    L_EC67
+        call    open_dialog_mid
         ld      hl,L_D783
         oz      Gn_sop
 L_D1C3:
@@ -2569,7 +2582,7 @@ far_search_for_string:
         call    L_D7F2
 L_D4A5:
         ld      hl,L_D512
-        call    L_EC67
+        call    open_dialog_mid
         ld      hl,L_D52C
         oz      Gn_sop
         ld      de,(ptr_buffer_a)
@@ -3015,7 +3028,8 @@ L_D854:
         defb    $0a,$d8,$11,$d8,$1c
         defb    $d8,$13,$d8,$24,$d8,$29,$d8,$2c
         defb    $d8
-L_D862:
+section_could_match:
+; Same routine as section_could_match in bank 62 (identical bytes).
         ld      hl,(ptr_buffer_a)
         ld      a,(dict_letter1)
         cp      (hl)
@@ -3123,7 +3137,7 @@ far_load_text_at_cursor:
 ; Far-call table entry 4.
 ; Called from the QuickEdit handler for Merge text at cursor (command $27).
         ld      hl,L_DA0F
-        call    L_EC5D
+        call    open_dialog_centre
         ld      a,$0C
         oz      Os_out
         ld      hl,L_DA05
@@ -3139,7 +3153,7 @@ L_D925:
         cp      $0D
         jr      z,L_D939
         ld      hl,L_DA0F
-        call    L_EC5D
+        call    open_dialog_centre
         ld      hl,L_DA05
         oz      Gn_sop
         ld      a,'!'
@@ -3392,7 +3406,7 @@ L_DB25:
         call    find_dictionary_section
         jr      nc,L_DB53
 L_DB3E:
-        call    L_E375
+        call    next_section_letters
         call    find_dictionary_section
         jr      c,L_DB3E
         ld      a,$00
@@ -3651,12 +3665,13 @@ L_DCF8:
         inc     hl
         jr      L_DCA8
 wf_option_3_find_close_matches:
+; Option 3 uses the same test as Guess correct word (section_could_match, is_one_edit_away) over the whole ROM dictionary, without the user dictionary and without stopping for a key press.
 ; Menu option 3: Find close matches (window title 'Find close matches').
         ld      hl,L_C749
-        call    L_EC6C
+        call    open_dialog_wf
         ld      hl,L_C75C
         oz      Gn_sop
-        call    L_C4B8
+        call    input_wf_word
         cp      $1B
         ret     z
         ld      hl,(ptr_buffer_a)
@@ -3666,19 +3681,19 @@ L_DD17:
         ld      a,(hl)
         and     $DF
         cp      'A'
-        jp      c,L_C4DB
+        jp      c,bad_character
         cp      '['
-        jp      nc,L_C4DB
+        jp      nc,bad_character
         ld      (hl),a
         inc     hl
         djnz    L_DD17
-        call    L_C476
+        call    open_words_found
         ld      a,'A'
         ld      (dict_letter1),a
         ld      a,'''
         ld      (dict_letter2),a
 L_DD35:
-        call    L_D862
+        call    section_could_match
         jp      nz,L_DD64
         call    find_dictionary_section
         jp      c,L_DD64
@@ -3694,9 +3709,9 @@ L_DD35:
 L_DD53:
         call    next_word_form
         jp      c,L_DD64
-        call    L_DD8A
+        call    is_one_edit_away
         jr      nz,L_DD53
-        call    L_C3EE
+        call    show_found_word
         ret     c
         jr      L_DD53
 L_DD64:
@@ -3716,8 +3731,9 @@ L_DD6D:
         ld      (dict_letter1),a
         cp      '['
         jp      c,L_DD35
-        jp      L_C6F4
-L_DD8A:
+        jp      end_of_search
+is_one_edit_away:
+; Same routine as is_one_edit_away in bank 62 (identical apart from the jump addresses): Z if the word is one letter different, missing, extra or swapped.
         ld      a,(dict_word_length)
         ld      b,a
         ld      a,(dict_target_length)
@@ -3954,9 +3970,11 @@ L_DE2B:
         defb    $b2,$95,$fc,$bf,$b9,$6f,$b2,$ff
 
 wf_option_1_browse_dictionary:
+; Option 1 is the bank 62 Browse (browse_dictionary) almost instruction for instruction: same keys, same routines (names as in bank 62),
+; except that it starts at 'AA' instead of the typed word and calls no_user_word where QuickEdit looks in the user dictionary.
 ; Menu option 1: Browse through dictionary.
         ld      hl,L_E6D5
-        call    L_EC71
+        call    open_dialog_right
         ld      ix,(pool_main)
         ld      bc,$0040
         ld      a,$00
@@ -3971,20 +3989,20 @@ wf_option_1_browse_dictionary:
         ld      (hl),a
         inc     hl
         ld      (hl),a
-        call    L_E62E
+        call    browse_seek_prefix
         ld      hl,L_E6DC
         oz      Gn_sop
         ld      a,$00
         ld      (wf_menu_sel),a
         jr      L_E23A
 L_E237:
-        call    L_E62E
+        call    browse_seek_prefix
 L_E23A:
-        call    L_E3BF
+        call    draw_browse_page
 L_E23D:
-        call    L_E6E1
-        call    L_E433
-        call    L_E6E1
+        call    toggle_reverse
+        call    print_current_word
+        call    toggle_reverse
 L_E246:
         oz      Os_in
         call    c,L_E3E3
@@ -3998,18 +4016,18 @@ L_E246:
         jr      c,L_E246
         cp      $FF
         jr      nz,L_E26D
-        call    L_E433
+        call    print_current_word
         ld      a,$0B
         oz      Os_out
-        call    L_E4D3
+        call    browse_prev_word
         jr      L_E23D
 L_E26D:
         cp      $FE
         jr      nz,L_E27D
-        call    L_E433
+        call    print_current_word
         ld      a,$0A
         oz      Os_out
-        call    L_E447
+        call    browse_next_word
         jr      L_E23D
 L_E27D:
         cp      $1B
@@ -4070,7 +4088,7 @@ L_E2E3:
         ld      (dict_letter1),a
         jr      L_E2EB
 L_E2E8:
-        call    L_E375
+        call    next_section_letters
 L_E2EB:
         call    find_dictionary_section
         jr      c,L_E2E8
@@ -4083,7 +4101,7 @@ L_E2F3:
         call    next_full_word
         ld      hl,(dict_pos)
         ld      (browse_pos),hl
-        call    L_E3BF
+        call    draw_browse_page
         jp      L_E23D
 L_E30D:
         cp      $08
@@ -4113,7 +4131,7 @@ L_E32C:
         cp      $0F
         jr      nz,L_E33D
 L_E33A:
-        call    L_E39A
+        call    prev_section_letters
 L_E33D:
         call    find_dictionary_section
         jr      c,L_E33A
@@ -4123,7 +4141,7 @@ L_E348:
         cp      $02
         jr      nz,L_E35A
 L_E34C:
-        call    L_E375
+        call    next_section_letters
         call    find_dictionary_section
         jr      c,L_E34C
         ld      hl,(dict_pos)
@@ -4141,7 +4159,7 @@ L_E36D:
         cp      $FC
         jp      nz,L_E23D
         jp      L_E281
-L_E375:
+next_section_letters:
         ld      a,(dict_letter2)
         cp      '''
         jr      nz,L_E37E
@@ -4161,7 +4179,7 @@ L_E37E:
         ld      a,'A'
         ld      (dict_letter1),a
         ret
-L_E39A:
+prev_section_letters:
         ld      a,(dict_letter2)
         cp      'A'
         jr      nz,L_E3A3
@@ -4181,7 +4199,7 @@ L_E3A3:
         ld      a,'Z'
         ld      (dict_letter1),a
         ret
-L_E3BF:
+draw_browse_page:
         ld      a,$0C
         oz      Os_out
         ld      a,$05
@@ -4189,15 +4207,15 @@ L_E3C5:
         push    af
         ld      a,$0A
         oz      Os_out
-        call    L_E447
-        call    L_E433
+        call    browse_next_word
+        call    print_current_word
         pop     af
         dec     a
         jr      nz,L_E3C5
         ld      a,$05
 L_E3D6:
         push    af
-        call    L_E4D3
+        call    browse_prev_word
         ld      a,$0B
         oz      Os_out
         pop     af
@@ -4211,10 +4229,10 @@ L_E3E3:
         cp      'f'
         jr      nz,L_E3FC
         ld      hl,L_E6D5
-        call    L_EC5D
+        call    open_dialog_centre
         ld      hl,L_E6DC
         oz      Gn_sop
-        call    L_E3BF
+        call    draw_browse_page
 L_E3FC:
         pop     af
         ret
@@ -4249,7 +4267,7 @@ L_E413:
 L_E429:
         defb    $01,$32,$43,$31,$01,$33,$2b,$43
         defb    $53,$00
-L_E433:
+print_current_word:
         ld      hl,(ptr_buffer_c)
         dec     hl
         dec     hl
@@ -4263,7 +4281,7 @@ L_E43C:
         ld      a,$0D
         oz      Os_out
         ret
-L_E447:
+browse_next_word:
         call    L_E616
         ld      a,(dict_word_flags)
         cp      $00
@@ -4291,7 +4309,7 @@ L_E476:
         ld      (dict_word_flags),a
         call    next_full_word
         jr      c,L_E492
-        call    L_E5DB
+        call    no_user_word
         jr      c,L_E48B
         ld      a,$00
         ld      (dict_word_flags),a
@@ -4331,7 +4349,7 @@ L_E4C0:
         ld      hl,(dict_pos)
         ld      (browse_pos),hl
         jr      L_E476
-L_E4D3:
+browse_prev_word:
         call    L_E616
         ld      a,(dict_word_flags)
         cp      $00
@@ -4375,7 +4393,7 @@ L_E51B:
         call    next_full_word
         ld      hl,(dict_pos)
         ld      (browse_pos),hl
-        call    L_E5DB
+        call    no_user_word
         jr      c,L_E537
         ld      a,$00
         ld      (dict_word_flags),a
@@ -4478,7 +4496,8 @@ L_E5C3:
 L_E5D9:
         scf
         ret
-L_E5DB:
+no_user_word:
+; Stands in for the user dictionary lookups of the bank 62 Browse (L_F9DF, L_FADE): clears $1FB3 bit 1 and returns carry (no user word). WordFinder has no user dictionary.
         ld      a,($1FB3)
         and     $FD
         ld      ($1FB3),a
@@ -4525,7 +4544,7 @@ L_E616:
         ld      b,$00
         ldir
         ret
-L_E62E:
+browse_seek_prefix:
         ld      a,($1FC1)
         ld      b,a
         ld      c,$01
@@ -4542,7 +4561,7 @@ L_E62E:
 L_E649:
         call    find_dictionary_section
         jr      nc,L_E653
-        call    L_E39A
+        call    prev_section_letters
         jr      L_E649
 L_E653:
         ld      a,$00
@@ -4616,10 +4635,10 @@ L_E6AF:
         ld      a,(dict_letter1)
         cp      'Z'
         jr      nz,L_E6D0
-        call    L_E447
+        call    browse_next_word
         ret
 L_E6D0:
-        call    L_E447
+        call    browse_next_word
         jr      L_E674
 
 
@@ -4628,7 +4647,7 @@ L_E6D5:
 L_E6DC:
         defb    $01
         defb    $32,$2b,$53,$00
-L_E6E1:
+toggle_reverse:
         ld      hl,L_E6E8
         oz      Gn_sop
         ret
@@ -5132,22 +5151,27 @@ L_EC53:
         defb    $63,$61,$70,$65,$00
 WordFinder_cmd9_end:
         defb    $0c,$00
-L_EC5D:
+open_dialog_centre:
+; Titled dialog x 25, 30 columns, full height (as open_dialog_centre in bank 62).
         ld      bc,L_ECF9
-        jr      L_EC90
-L_EC62:
+        jr      open_dialog_with_title
+open_dialog_wide:
+; Titled dialog x 5, 70 columns, full height ('Words found').
         ld      bc,L_ED0D
-        jr      L_EC90
-L_EC67:
+        jr      open_dialog_with_title
+open_dialog_mid:
+; Titled dialog x 18, 44 columns, full height.
         ld      bc,L_ED03
-        jr      L_EC90
-L_EC6C:
+        jr      open_dialog_with_title
+open_dialog_wf:
+; Titled dialog x 20, 40 columns, full height (the WordFinder option windows: Anagram, Find close matches, Crossword).
         ld      bc,L_ED17
-        jr      L_EC90
-L_EC71:
+        jr      open_dialog_with_title
+open_dialog_right:
+; Titled dialog x 40, 35 columns, rows 1-7 (Browse).
         ld      bc,L_ECEF
 L_EC74:
-        jr      L_EC90
+        jr      open_dialog_with_title
 
         defb    $01,$e5,$ec,$18,$15,$21,$21,$ed
         defb    $e7,$09,$3a,$c9
@@ -5157,7 +5181,8 @@ L_EC82:
         ret
 
         defb    $21,$2f,$ed,$e7,$09,$3a,$c9
-L_EC90:
+open_dialog_with_title:
+; Same routine as open_dialog_with_title in bank 62. In: HL = title, BC = window description.
         push    hl
 L_EC91:
         push    bc

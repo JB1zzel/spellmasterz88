@@ -7027,6 +7027,8 @@ L_F77C:
         scf
         ret
 
+; $F77E-$F787 are code left as data, and nothing calls them: LD A,($1FB3) / AND $FD / LD ($1FB3),A / SCF / RET.
+; The same bytes are the no_user_word stub of the WordFinder Browse in bank 63 ($E5DB); here they are unused.
         defb    $3a,$b3,$1f,$e6,$fd,$32,$b3,$1f
         defb    $37,$c9
 next_full_word:

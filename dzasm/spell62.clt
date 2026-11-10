@@ -846,6 +846,8 @@ $B82A
 	($F5EA,< "Moves to the next word for Browse: the next ending of the current stem, or the next record, with any user dictionary word that falls in between (L_F9DF)."
 		 "browse_pos keeps the dictionary position of the current word. $1FB3 bit 1 is set while the current word comes from the user dictionary.")
 	($F676,< "Moves to the previous word for Browse (previous ending, or back one record from browse_pos), with any user dictionary word in between (L_FADE).")
+	($F77E,< "$F77E-$F787 are code left as data, and nothing calls them: LD A,($1FB3) / AND $FD / LD ($1FB3),A / SCF / RET."
+		 "The same bytes are the no_user_word stub of the WordFinder Browse in bank 63 ($E5DB); here they are unused.")
 	($F788,< "next_word_form, then writes the two section letters (dict_letter1, dict_letter2) just before buffer C and adds 2 to dict_word_length and dict_stem_length,"
 		 "so the whole word starts two bytes before buffer C. Returns the flags of next_word_form (carry = end of section).")
 	($F7D1,< "Finds the first word at or after the typed prefix: its first two letters select the section (stepping back with prev_section_letters if there is none), then words are read forward.")

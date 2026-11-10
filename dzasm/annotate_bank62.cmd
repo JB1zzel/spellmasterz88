@@ -202,6 +202,8 @@ rem CD49 < the first part becomes a new line record above (alloc_line_record), t
 rem CD49 < If the line fits ($CE14), it pulls up the next line, or as many words of it as fit, unless the next line is empty or starts with a space (the end of the paragraph).
 rem CCF6 < Format paragraph: rewraps the cursor line and each following line (store, take the next, wrap again) until a line that is empty or starts with a space.
 rem CCF6 < line_counter counts the lines moved down; cursor_row is moved down by that much (back to row 3 if it would leave the window).
+rem F77E < $F77E-$F787 are code left as data, and nothing calls them: LD A,($1FB3) / AND $FD / LD ($1FB3),A / SCF / RET.
+rem F77E < The same bytes are the no_user_word stub of the WordFinder Browse in bank 63 ($E5DB); here they are unused.
 dl D922 is_word_char
 rem D922 < Z set if A is a letter or an apostrophe. A letter is returned in upper case (AND $DF); an apostrophe is returned unchanged.
 rem FE15 < Load user dictionary: each run of word characters (is_word_char, at most 64) is one word; any other byte ends it. Words of fewer than 3 characters are skipped.
