@@ -1657,7 +1657,7 @@ L_CDF7:
 L_CE05:
         oz      Os_xin
         jp      nc,L_CE60
-        call    take_line_record
+        call    load_line_record
         call    free_line_record
         ld      hl,(line_buffer)
         ld      a,(line_length)
@@ -1717,7 +1717,7 @@ L_CE6F:
         or      l
         jr      nz,L_CE6F
 L_CE80:
-        call    take_line_record
+        call    load_line_record
         call    free_line_record
         jr      L_CE9B
 L_CE88:
@@ -1917,9 +1917,9 @@ L_D007:
 
 far_call_table:
 ; Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63.
-; Index 1 ($D54F) and index 5 ($DB25) are not used by any caller in bank 62.
+; Index 1 (find_next_match, $D54F) and index 5 ($DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.
         defw    far_information
-        defw    L_D54F
+        defw    find_next_match
         defw    far_search_for_string
         defw    far_search_and_replace
         defw    far_load_text_at_cursor
@@ -2144,7 +2144,7 @@ L_D155:
         ld      a,(next_line_bank)
         ld      (line_rec_ptr),hl
         ld      (line_rec_bank),a
-        call    take_line_record
+        call    load_line_record
         call    free_line_record
         ret
 L_D174:
@@ -2161,16 +2161,20 @@ L_D187:
         defb    $01,$33,$2d,$52,$46,$01,$32,$4a
         defb    $4e,$00
 far_search_and_replace:
+; Asks 'Global or selective ? (G/S)': selective sets $1FB3 bit 7, global clears it. Then Find and Replace (each up to 63 characters, the last ones offered again;
+; up and down move between the two fields). Both strings are saved (search_str_ptr, replace_str_ptr). For each match (find_next_match), in selective mode the text is redrawn
+; and 'Replace ? (Y/N)' asked: N moves on one character, Escape stops. A replacement is refused (the search ends) if it would make the line 240 ($F0) characters or longer.
+; The replacement may also run over the end of a line, matching how find_next_match crosses lines. Afterwards QuickEdit rewraps the whole text ($DBD3 in bank 62).
 ; Far-call table entry 3.
 ; Called from the QuickEdit handler for Search and Replace (command $26).
-        ld      hl,($1FDD)
+        ld      hl,(search_str_ptr)
         ld      de,(ptr_buffer_a)
-        ld      a,($1FDF)
-        call    L_D7F2
-        ld      hl,($1FE0)
-        ld      a,($1FE2)
+        ld      a,(search_str_bank)
+        call    load_string_record
+        ld      hl,(replace_str_ptr)
+        ld      a,(replace_str_bank)
         ld      de,(ptr_buffer_c)
-        call    L_D7F2
+        call    load_string_record
 L_D1B7:
         ld      hl,L_D519
         call    open_dialog_mid
@@ -2299,26 +2303,26 @@ L_D29E:
         jr      z,L_D26C
         ld      hl,(cursor_line)
         push    hl
-        ld      a,($1FDF)
-        ld      hl,($1FDD)
-        call    L_D7DD
+        ld      a,(search_str_bank)
+        ld      hl,(search_str_ptr)
+        call    free_string_record
         ld      hl,$0000
-        ld      ($1FDD),hl
+        ld      (search_str_ptr),hl
         ld      hl,(ptr_buffer_a)
-        call    L_D7AA
-        ld      ($1FDD),hl
-        ld      ($1FDF),a
-        ld      a,($1FE2)
-        ld      hl,($1FE0)
-        call    L_D7DD
+        call    save_string_record
+        ld      (search_str_ptr),hl
+        ld      (search_str_bank),a
+        ld      a,(replace_str_bank)
+        ld      hl,(replace_str_ptr)
+        call    free_string_record
         ld      hl,$0000
-        ld      ($1FE0),hl
+        ld      (replace_str_ptr),hl
         ld      hl,(ptr_buffer_c)
-        call    L_D7AA
-        ld      ($1FE0),hl
-        ld      ($1FE2),a
+        call    save_string_record
+        ld      (replace_str_ptr),hl
+        ld      (replace_str_bank),a
 L_D2E0:
-        call    L_D54F
+        call    find_next_match
         jp      c,L_D3EC
         ld      hl,(ptr_buffer_a)
         ld      c,$00
@@ -2449,7 +2453,7 @@ L_D3BE:
         push    de
         call    store_cursor_line
         call    step_to_next_record
-        call    take_line_record
+        call    load_line_record
         call    free_line_record
         call    inc_cursor_line
         ld      hl,(line_buffer)
@@ -2557,12 +2561,13 @@ L_D466:
         ld      (line_length),a
         jp      L_D399
 far_next_match:
+; Next Match reloads the saved search string and searches again from one character after the cursor.
 ; Far-call table entry 9.
 ; Called from the QuickEdit handler for Next Match (command $2C).
-        ld      hl,($1FDD)
+        ld      hl,(search_str_ptr)
         ld      de,(ptr_buffer_a)
-        ld      a,($1FDF)
-        call    L_D7F2
+        ld      a,(search_str_bank)
+        call    load_string_record
         ld      a,(cursor_index)
         ld      b,a
         ld      a,(line_length)
@@ -2572,14 +2577,14 @@ far_next_match:
         inc     a
         ld      (cursor_index),a
 L_D495:
-        jp      L_D4D8
+        jp      start_search
 far_search_for_string:
 ; Far-call table entry 2.
 ; Called from the QuickEdit handler for Search for string (command $25).
-        ld      hl,($1FDD)
+        ld      hl,(search_str_ptr)
         ld      de,(ptr_buffer_a)
-        ld      a,($1FDF)
-        call    L_D7F2
+        ld      a,(search_str_bank)
+        call    load_string_record
 L_D4A5:
         ld      hl,L_D512
         call    open_dialog_mid
@@ -2604,21 +2609,22 @@ L_D4B9:
 L_D4D5:
         cp      $1B
         ret     z
-L_D4D8:
+start_search:
+; Saves buffer A as the search string (search_str_ptr/bank) and runs find_next_match; then places cursor_row (row 3, or the line number near the top). Used by Search and by Next Match.
         ld      hl,(ptr_buffer_a)
         ld      a,(hl)
         cp      $00
         ret     z
-        ld      a,($1FDF)
-        ld      hl,($1FDD)
-        call    L_D7DD
+        ld      a,(search_str_bank)
+        ld      hl,(search_str_ptr)
+        call    free_string_record
         ld      hl,$0000
-        ld      ($1FDD),hl
+        ld      (search_str_ptr),hl
         ld      hl,(ptr_buffer_a)
-        call    L_D7AA
-        ld      ($1FDD),hl
-        ld      ($1FDF),a
-        call    L_D54F
+        call    save_string_record
+        ld      (search_str_ptr),hl
+        ld      (search_str_bank),a
+        call    find_next_match
 L_D4FD:
         ld      hl,(cursor_line)
         ld      a,h
@@ -2649,7 +2655,11 @@ L_D53C:
         defb    $01,$32,$2b,$43,$01,$33,$40
         defb    $22,$23,$52,$65,$70,$6c,$61,$63
         defb    $65,$20,$3a,$00
-L_D54F:
+find_next_match:
+; Far-call table entry 1 (not used through the table). Searches from the cursor for the string in buffer A (zero-terminated).
+; The comparison is exact, so the search is case-sensitive. A match may run on past the end of a line: the comparison continues at the start of the next line.
+; Found: carry clear, cursor_line and cursor_index at the start of the match (top_line and $1FE4 are borrowed for the line and column where the attempt started).
+; Not found: carry set. The lines already searched are not walked back, so the cursor is left at the end of the text.
         ld      a,(line_length)
         ld      b,a
         ld      a,(cursor_index)
@@ -2688,7 +2698,7 @@ L_D578:
         call    store_cursor_line
         call    step_to_next_record
         push    af
-        call    take_line_record
+        call    load_line_record
         call    free_line_record
         pop     af
         jr      z,L_D5A9
@@ -2699,13 +2709,13 @@ L_D578:
         ld      c,a
         jr      L_D578
 L_D5A9:
-        call    L_D5DB
+        call    back_to_start_line
         ld      a,(cursor_index)
         inc     a
         ld      (cursor_index),a
-        jr      L_D54F
+        jr      find_next_match
 L_D5B5:
-        call    L_D5DB
+        call    back_to_start_line
         scf
         ccf
         ret
@@ -2716,16 +2726,17 @@ L_D5BB:
         jr      z,L_D5D9
         call    store_cursor_line
         call    step_to_next_record
-        call    take_line_record
+        call    load_line_record
         call    free_line_record
         call    inc_cursor_line
         ld      a,$00
         ld      (cursor_index),a
-        jp      L_D54F
+        jp      find_next_match
 L_D5D9:
         scf
         ret
-L_D5DB:
+back_to_start_line:
+; Walks back from cursor_line to the line in top_line (where the current match attempt started) and makes it the cursor line.
         ld      hl,(cursor_line)
         ld      bc,(top_line)
         scf
@@ -2744,7 +2755,7 @@ L_D5EB:
         or      l
         jr      nz,L_D5EB
         pop     hl
-        call    take_line_record
+        call    load_line_record
         call    free_line_record
         ret
 store_cursor_line:
@@ -2765,8 +2776,9 @@ L_D617:
         scf
         ccf
         ret
-take_line_record:
-; Copies the record at line_rec into the edit buffer, takes its links as prev_line and next_line, then frees it (falls into free_line_record).
+load_line_record:
+; Same as load_line_record in bank 62: copies the record at line_rec into the edit buffer and takes its links as prev_line and next_line.
+; It does not free the record: bank 63 has no take_line_record, and every caller follows it with free_line_record.
         call    copy_record_to_line_buffer
         ld      ix,(line_rec_ptr)
         ld      a,(ix+1)
@@ -2940,7 +2952,9 @@ L_D783:
 L_D789:
         defm    "Global or selective ? (G/S) "
         defb    $01,$32,$4a,$4e,$00
-L_D7AA:
+save_string_record:
+; Copies the zero-terminated string at HL into a new record from pool_main (byte 0 = record size). Out: HL = offset, A = bank (also in line_rec).
+; The OS_Mal result is not checked for an error.
         push    hl
         ld      c,$00
 L_D7AD:
@@ -2974,7 +2988,8 @@ L_D7CE:
         ld      hl,(line_rec_ptr)
         ld      a,(line_rec_bank)
         ret
-L_D7DD:
+free_string_record:
+; Frees a record whose byte 0 is its size (HL = offset, A = bank); does nothing if HL = 0. Same as free_sized_record in bank 62.
         ld      d,a
         ld      a,h
         or      l
@@ -2989,7 +3004,8 @@ L_D7DD:
         ld      ix,(pool_main)
         oz      Os_mfr
         ret
-L_D7F2:
+load_string_record:
+; Copies the string saved in the record HL (bank A) to DE, so the last Find or Replace string is offered again; an empty string if HL = 0.
         ld      b,a
         ld      a,h
         or      l
@@ -3247,7 +3263,7 @@ L_D9E5:
         or      l
         jr      nz,L_D9E5
 L_D9F6:
-        call    take_line_record
+        call    load_line_record
         call    free_line_record
         pop     af
         ret

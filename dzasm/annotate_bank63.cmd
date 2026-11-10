@@ -63,6 +63,10 @@ dc 1FD9 user_dict_name_bank
 dc 1FDA ignore_list_ptr
 dc 1FDC ignore_list_bank
 dc 1FE5 line_counter
+dc 1FDD search_str_ptr
+dc 1FDF search_str_bank
+dc 1FE0 replace_str_ptr
+dc 1FE2 replace_str_bank
 dc 1FE8 line_rec_ptr
 dc 1FEA line_rec_bank
 rem C576 < WordFinder reuses the line_rec_ptr word ($1FE8) here: in the crossword solver it holds a pointer into the pattern
@@ -75,8 +79,9 @@ dl E5E5 next_full_word
 rem E5E5 < Same routine as next_full_word in bank 62: next_word_form, with the two section letters written just before buffer C.
 rem D600 < $D600-$D74F: copies of the bank 62 line-record routines, used by the far-called commands (see notes section 12, 'How the text is stored').
 dl D600 store_cursor_line
-dl D61A take_line_record
-rem D61A < Copies the record at line_rec into the edit buffer, takes its links as prev_line and next_line, then frees it (falls into free_line_record).
+dl D61A load_line_record
+rem D61A < Same as load_line_record in bank 62: copies the record at line_rec into the edit buffer and takes its links as prev_line and next_line.
+rem D61A < It does not free the record: bank 63 has no take_line_record, and every caller follows it with free_line_record.
 dl D640 free_line_record
 dl D651 alloc_line_record
 dl D6E3 step_to_prev_record
@@ -136,9 +141,30 @@ rem C506 < Option 4: the pattern may use letters, an apostrophe, '#' (any one le
 rem C506 < If the pattern starts with letters only the matching sections are searched. Matching backtracks to the last '*' on a mismatch (line_rec_ptr, $1FEB, $1FBC, $1FBD).
 rem C506 < Unlike Find anagrams this search does not stop for a key press; only the 'Press SPACE' page prompt can end it early.
 rem DCFE < Option 3 uses the same test as Guess correct word (section_could_match, is_one_edit_away) over the whole ROM dictionary, without the user dictionary and without stopping for a key press.
+dl D54F find_next_match
+rem D54F < Far-call table entry 1 (not used through the table). Searches from the cursor for the string in buffer A (zero-terminated).
+rem D54F < The comparison is exact, so the search is case-sensitive. A match may run on past the end of a line: the comparison continues at the start of the next line.
+rem D54F < Found: carry clear, cursor_line and cursor_index at the start of the match (top_line and $1FE4 are borrowed for the line and column where the attempt started).
+rem D54F < Not found: carry set. The lines already searched are not walked back, so the cursor is left at the end of the text.
+dl D5DB back_to_start_line
+rem D5DB < Walks back from cursor_line to the line in top_line (where the current match attempt started) and makes it the cursor line.
+dl D7AA save_string_record
+rem D7AA < Copies the zero-terminated string at HL into a new record from pool_main (byte 0 = record size). Out: HL = offset, A = bank (also in line_rec).
+rem D7AA < The OS_Mal result is not checked for an error.
+dl D7DD free_string_record
+rem D7DD < Frees a record whose byte 0 is its size (HL = offset, A = bank); does nothing if HL = 0. Same as free_sized_record in bank 62.
+dl D7F2 load_string_record
+rem D7F2 < Copies the string saved in the record HL (bank A) to DE, so the last Find or Replace string is offered again; an empty string if HL = 0.
+dl D4D8 start_search
+rem D4D8 < Saves buffer A as the search string (search_str_ptr/bank) and runs find_next_match; then places cursor_row (row 3, or the line number near the top). Used by Search and by Next Match.
+rem D479 < Next Match reloads the saved search string and searches again from one character after the cursor.
+rem D19D < Asks 'Global or selective ? (G/S)': selective sets $1FB3 bit 7, global clears it. Then Find and Replace (each up to 63 characters, the last ones offered again;
+rem D19D < up and down move between the two fields). Both strings are saved (search_str_ptr, replace_str_ptr). For each match (find_next_match), in selective mode the text is redrawn
+rem D19D < and 'Replace ? (Y/N)' asked: N moves on one character, Escape stops. A replacement is refused (the search ends) if it would make the line 240 ($F0) characters or longer.
+rem D19D < The replacement may also run over the end of a line, matching how find_next_match crosses lines. Afterwards QuickEdit rewraps the whole text ($DBD3 in bank 62).
 dl D008 far_call_table
 rem D008 < Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63.
-rem D008 < Index 1 ($D54F) and index 5 ($DB25) are not used by any caller in bank 62.
+rem D008 < Index 1 (find_next_match, $D54F) and index 5 ($DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.
 dl CD87 far_information
 rem CD87 < Far-call table entry 0.
 rem CD87 < Called from the QuickEdit handler for Information (command $1A).

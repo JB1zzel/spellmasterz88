@@ -67,10 +67,10 @@ Both applications use the same layout. 'refs' counts instructions naming the add
 | $1FD9 | user_dict_name_bank | 1 | 5/1 | Bank of that record |
 | $1FDA | ignore_list_ptr | 2 | 2/0 | Offset of the ignored-words table (same structure as the user dictionary); only touched by swap_word_lists |
 | $1FDC | ignore_list_bank | 1 | 2/0 | Bank of the ignored-words table |
-| $1FDD |  |  | 0/9 | (not yet identified) |
-| $1FDF |  |  | 0/7 | (not yet identified) |
-| $1FE0 |  |  | 0/4 | (not yet identified) |
-| $1FE2 |  |  | 0/3 | (not yet identified) |
+| $1FDD | search_str_ptr | 2 | 0/9 | Offset of the record holding the last Find string (byte 0 = record size, then the string); 0 = none (notes section 17) |
+| $1FDF | search_str_bank | 1 | 0/7 | Bank of that record |
+| $1FE0 | replace_str_ptr | 2 | 0/4 | Offset of the record holding the last Replace string; 0 = none |
+| $1FE2 | replace_str_bank | 1 | 0/3 | Bank of that record |
 | $1FE3 |  |  | 5/0 | (not yet identified) |
 | $1FE4 |  |  | 26/5 | (not yet identified) |
 | $1FE5 | line_counter | 1 | 19/21 | Scratch line counter: lines moved down by word wrap, Format paragraph and Replace (a word in Replace); a row counter during the redraw in bank 63 |

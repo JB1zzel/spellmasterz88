@@ -311,7 +311,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D4A5 | L_D4A5 | 0 | Gn_sop |  | 8 |
 | $D4B9 | L_D4B9 | 0 | Gn_sip, Gn_sop |  | 14 |
 | $D4D5 | L_D4D5 | 0 |  |  | 2 |
-| $D4D8 | L_D4D8 | 0 |  |  | 14 |
+| $D4D8 | start_search | 0 |  |  | 14 |
 | $D4FD | L_D4FD | 0 |  |  | 7 |
 | $D50A | L_D50A | 0 |  |  | 1 |
 | $D50C | L_D50C | 0 |  |  | 4 |
@@ -319,18 +319,18 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D519 | L_D519 | 0 |  | Search and Replace | 2 |
 | $D52C | L_D52C | 0 |  |  | 3 |
 | $D53C | L_D53C | 0 |  |  | 3 |
-| $D54F | L_D54F | 2 |  |  | 7 |
+| $D54F | find_next_match | 2 |  |  | 7 |
 | $D55D | L_D55D | 0 |  |  | 12 |
 | $D578 | L_D578 | 0 |  |  | 27 |
 | $D5A9 | L_D5A9 | 0 |  |  | 5 |
 | $D5B5 | L_D5B5 | 0 |  |  | 4 |
 | $D5BB | L_D5BB | 0 |  |  | 12 |
 | $D5D9 | L_D5D9 | 0 |  |  | 2 |
-| $D5DB | L_D5DB | 2 |  |  | 8 |
+| $D5DB | back_to_start_line | 2 |  |  | 8 |
 | $D5EB | L_D5EB | 0 |  |  | 12 |
 | $D600 | store_cursor_line | 11 |  |  | 12 |
 | $D617 | L_D617 | 0 |  |  | 3 |
-| $D61A | take_line_record | 8 |  |  | 13 |
+| $D61A | load_line_record | 8 |  |  | 13 |
 | $D640 | free_line_record | 8 |  |  | 3 |
 | $D645 | L_D645 | 1 | Os_mfr |  | 6 |
 | $D651 | alloc_line_record | 2 | Os_mal, Os_mpb |  | 27 |
@@ -344,11 +344,11 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D766 | L_D766 | 0 |  |  | 4 |
 | $D783 | L_D783 | 0 |  |  | 2 |
 | $D789 | L_D789 | 0 |  | Global or selective ? (G/S)  | 2 |
-| $D7AA | L_D7AA | 3 |  |  | 2 |
+| $D7AA | save_string_record | 3 |  |  | 2 |
 | $D7AD | L_D7AD | 0 | Os_mal, Os_mpb |  | 22 |
 | $D7CE | L_D7CE | 0 |  |  | 9 |
-| $D7DD | L_D7DD | 3 | Os_mfr, Os_mpb |  | 16 |
-| $D7F2 | L_D7F2 | 4 |  |  | 7 |
+| $D7DD | free_string_record | 3 | Os_mfr, Os_mpb |  | 16 |
+| $D7F2 | load_string_record | 4 |  |  | 7 |
 | $D7FB | L_D7FB | 0 | Os_mpb |  | 4 |
 | $D800 | L_D800 | 0 |  |  | 7 |
 | $D809 | L_D809 | 0 |  |  | 9 |

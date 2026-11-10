@@ -51,6 +51,10 @@
         DEFC user_dict_name_bank = $1FD9  ; Bank of that record
         DEFC ignore_list_ptr = $1FDA  ; Offset of the table of ignored words (same structure as the user dictionary); freed when a check ends
         DEFC ignore_list_bank = $1FDC  ; Bank of that table
+        DEFC search_str_ptr = $1FDD  ; Offset of the record holding the last Find string (byte 0 = record size, then the zero-terminated string); 0 = none
+        DEFC search_str_bank = $1FDF  ; Bank of that record
+        DEFC replace_str_ptr = $1FE0  ; Offset of the record holding the last Replace string; 0 = none
+        DEFC replace_str_bank = $1FE2  ; Bank of that record
         DEFC line_counter = $1FE5  ; Scratch line counter: lines moved down by word wrap, Format paragraph and Replace (bank 62); a row counter while the text window is redrawn (bank 63)
         DEFC line_rec_ptr = $1FE8  ; Offset (segment 1) of the line record being worked on: just allocated, or reached by walking the links (WordFinder reuses this word for a pattern pointer)
         DEFC line_rec_bank = $1FEA  ; Bank of that record

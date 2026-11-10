@@ -61,7 +61,8 @@ Some QuickEdit commands are implemented in bank 63. `far_call_bank63` (bank 62, 
 | 8 | far_tab ($D01E) | Tab |
 | 9 | far_next_match ($D479) | Next Match |
 | 10 | far_print_text ($D100) | Print out text |
-| 1, 5 | $D54F, $DB25 | not used by bank 62 |
+| 1 | find_next_match ($D54F) | not called through the table; used directly by Search, Next Match and Search and Replace in bank 63 (section 17) |
+| 5 | $DB25 | not used by bank 62 |
 
 ## 5. Dictionary access and bank addressing
 
@@ -223,4 +224,16 @@ Each guess is added by `append_guess` ($E076), which is far call 6 (`far_append_
 - by Format paragraph, which repeats it for each following line until a line that is empty or starts with a space;
 - after Search and Replace, which rewraps every line of the text from the top;
 - after Copy marked block and Delete marked block.
+
+## 17. Search, Next Match and Search and Replace
+
+These run in bank 63 through the far-call table. The last Find and Replace strings are kept in small records (`search_str_ptr`/`search_str_bank` $1FDD/$1FDF, `replace_str_ptr`/`replace_str_bank` $1FE0/$1FE2) and offered again the next time (`load_string_record`, `save_string_record`, `free_string_record`). Each string can be up to 63 characters.
+
+**Searching** (`find_next_match`, $D54F, which is also far-call entry 1) starts at the cursor and compares characters exactly, so **the search is case-sensitive**, unlike the spelling check. A match may continue past the end of a line: when the line runs out the comparison carries on at the start of the next line. On a mismatch it returns to the line where the attempt started (`back_to_start_line`) and tries one character further on. When a match is found the cursor is put at its start. Read from the code and not yet tried: when nothing is found the lines already searched are not walked back, so the cursor is left at the end of the text.
+
+- **Search for string** ($D498) asks for the string and searches (`start_search`).
+- **Next Match** ($D479) searches again for the saved string from one character after the cursor.
+- **Search and Replace** ($D19D) first asks "Global or selective ? (G/S)" (selective sets `$1FB3` bit 7), then for the Find and Replace strings (up and down move between the two fields). For each match, in selective mode, the text is redrawn and "Replace ? (Y/N)" asked: Y replaces, N moves on one character, Escape stops. A replacement is refused, and the search ends, if it would make the line 240 characters or longer. Afterwards QuickEdit rewraps the whole text from the top (section 16).
+
+`save_string_record` does not check whether `OS_Mal` succeeded before writing into the new record.
 
