@@ -23,6 +23,8 @@ The application DORs are in bank 63:
 | QuickEdit, at $C001 | Q | $C000 | $3E (SPELL.62) |
 | WordFinder, at $C196 | W | $C1D1 | $3F (SPELL.63) |
 
+The About text in bank 63 reads "Written by James Lynn", "Copyright (C) 1988 Computer Concepts Ltd.", "Cartridge version 1.05" and "10th August 1989", which appears to be the date of this version.
+
 Both banks are assembled with ORG $C000 because each application's code bank is bound into segment 3. The front DOR is at $FFC0 (name "APPL") and the card header at $FFF8 (8 banks, "OZ" mark). In bank 63, offsets $003B-$0195 are real code between the two DORs.
 
 ## 2. QuickEdit

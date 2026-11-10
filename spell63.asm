@@ -923,10 +923,11 @@ L_C722:
 
 L_C737:
         defm    "Crossword"
-        defb    $00
+L_C740:
+        defm    $00
 L_C741:
-        defb    $41,$6e,$61,$67,$72,$61,$6d
-        defb    $00
+        defm    "Anagram", $00
+
 L_C749:
         defm    "Find close matches"
         defb    $00
@@ -2653,20 +2654,18 @@ L_D50C:
         ccf
         ret
 
-
 L_D512:
-        defb    $53,$65,$61,$72,$63,$68,$00
+        defm    "Search", $00
+
 L_D519:
         defm    "Search and Replace"
-        defb    $00
+L_D52B:
+        defm    $00
 L_D52C:
-        defb    $01,$32,$2b,$43,$01,$33,$40
-        defb    $22,$21,$46,$69,$6e,$64,$20,$3a
-        defb    $00
+        defm    $01, "2+C", $01, "3@", '"', "!Find :", $00
 L_D53C:
-        defb    $01,$32,$2b,$43,$01,$33,$40
-        defb    $22,$23,$52,$65,$70,$6c,$61,$63
-        defb    $65,$20,$3a,$00
+        defm    $01, "2+C", $01, "3@", '"', "#Replace :", $00
+
 find_next_match:
 ; Far-call table entry 1 (not used through the table). Searches from the cursor for the string in buffer A (zero-terminated).
 ; The comparison is exact, so the search is case-sensitive. A match may run on past the end of a line: the comparison continues at the start of the next line.
@@ -2954,13 +2953,10 @@ copy_record_to_line_buffer:
         defb    $66,$fe,$00,$c0,$78,$fe,$05,$c9
 
 L_D766:
-        defb    $01,$33,$40,$3e,$27,$01,$32,$2b
-        defb    $52,$52,$65,$70,$6c,$61,$63,$65
-        defb    $20,$3f,$20,$28,$59,$2f,$4e,$29
-        defb    $01,$32,$2d,$52,$00
+        defm    $01, "3@>'", $01, "2+RReplace ? (Y/N)"
+        defm    $01, "2-R", $00
 L_D783:
-        defb    $01,$32,$4a
-        defb    $43,$0a,$0a
+        defm    $01, "2JC", $0a, $0a
 L_D789:
         defm    "Global or selective ? (G/S) "
         defb    $01,$32,$4a,$4e,$00
@@ -4677,12 +4673,11 @@ L_E6D0:
         call    browse_next_word
         jr      L_E674
 
-
 L_E6D5:
-        defb    $42,$72,$6f,$77,$73,$65,$00
+        defm    "Browse", $00
 L_E6DC:
-        defb    $01
-        defb    $32,$2b,$53,$00
+        defm    $01, "2+S", $00
+
 toggle_reverse:
         ld      hl,L_E6E8
         oz      Gn_sop
@@ -5072,9 +5067,9 @@ L_EAD7:
         defb    $7f
 L_EB01:
         defm    "Cartridge version 1.05"
-        defb    $7f,$31,$30,$74,$68,$20,$41,$75
-        defb    $67,$75,$73,$74,$20,$31,$39,$38
-        defb    $39,$00
+L_EB17:
+        defm    $7f, "10th August 1989", $00
+
 QuickEdit_help_page2:
         defm    "Cursor movement commands"
         defb    $00

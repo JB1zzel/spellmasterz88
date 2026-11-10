@@ -31,8 +31,8 @@
 ($D086, $D088 defb), ($D089, $D0EC program)
 ($D0ED, $D0ED defb), ($D0EE, $D0F5 string)
 ($D0F6, $D0F6 defb), ($D0F7, $D136 program)
-($D137, $D14C defb), ($D14D, $D154 string)
-($D155, $D170 defb), ($D171, $D1CE addrtable)
+($D137, $D14C string), ($D14D, $D154 string)
+($D155, $D170 string), ($D171, $D1CE addrtable)
 ($D1CF, $D982 program), ($D983, $D987 defb)
 ($D988, $D99B program), ($D99C, $D9A8 defb)
 ($D9A9, $D9B0 string), ($D9B1, $D9B2 defb)
@@ -43,18 +43,18 @@
 ($DA32, $DA4F string), ($DA50, $DA54 defb)
 ($DA55, $DA63 string), ($DA64, $DA64 defb)
 ($DA65, $DAD5 program), ($DAD6, $DADD defb)
-($DADE, $DAF1 program), ($DAF2, $DB09 defb)
+($DADE, $DAF1 program), ($DAF2, $DB09 string)
 ($DB0A, $DB15 string), ($DB16, $DB16 defb)
 ($DB17, $DD63 program), ($DD64, $DDBC defb)
 ($DDBD, $E03D program), ($E03E, $E04D string)
 ($E04E, $E04E defb), ($E04F, $E07B program)
 ($E07C, $E083 string), ($E084, $E08F defb)
-($E090, $E7CA program), ($E7CB, $E7EC defb)
+($E090, $E7CA program), ($E7CB, $E7EC string)
 ($E7ED, $E841 program), ($E842, $EC25 defb)
 ($EC26, $EFC5 program), ($EFC6, $EFC9 defb)
 ($EFCA, $EFEB string), ($EFEC, $EFF4 defb)
 ($EFF5, $F032 program), ($F033, $F034 defb)
-($F035, $F04D string), ($F04E, $F070 defb)
+($F035, $F04D string), ($F04E, $F070 string)
 ($F071, $F07B string), ($F07C, $F07C defb)
 ($F07D, $F08C string), ($F08D, $F08D defb)
 ($F08E, $F098 string), ($F099, $F099 defb)
@@ -70,9 +70,9 @@
 ($F38B, $F398 defb), ($F399, $F5CB program)
 ($F5CC, $F5D5 defb), ($F5D6, $F77D program)
 ($F77E, $F787 defb), ($F788, $F87F program)
-($F880, $F88B defb), ($F88C, $FE61 program)
+($F880, $F88B string), ($F88C, $FE61 program)
 ($FE62, $FE63 defb), ($FE64, $FE74 string)
-($FE75, $FE96 defb), ($FE97, $FEAA string)
+($FE75, $FE96 string), ($FE97, $FEAA string)
 ($FEAB, $FEAB defb), ($FEAC, $FEBF string)
 ($FEC0, $FEC0 defb), ($FEC1, $FF8B program)
 ($FF8C, $FFEF defb), ($FFF0, $FFFF defs)
@@ -524,25 +524,26 @@ $CC94, $D076
 $D0ED, $D0EE
 $D137 str_select_window1, $D13C str_status_row7
 $D146 str_insert, $D14D str_overtype
-$D156 str_status_row6_check, $D166 str_off
-$D16A str_on, $D16D str_cursor_to_prefix
-$D171, $D983
-$D9A1, $D9A4
-$D9A8, $D9A9
-$D9B2, $D9B3
-$D9D5, $D9F4
-$DA13, $DA32
-$DA55, $DAD6
-$DAF2, $DAFF
-$DB0A, $DD64
-$DDA8, $DDAF inflection_class_table
-$E03E, $E041
-$E07C, $E085
-$E08A, $E7CB
-$E7D3, $E842
-$E84E first_letter_index, $EFC6
-$EFCA, $F033
-$F035, $F067
+$D155, $D156 str_status_row6_check
+$D166 str_off, $D16A str_on
+$D16D str_cursor_to_prefix, $D171
+$D983, $D9A1
+$D9A4, $D9A8
+$D9A9, $D9B2
+$D9B3, $D9D5
+$D9F4, $DA13
+$DA32, $DA55
+$DAD6, $DAF2
+$DAFF, $DB0A
+$DD64, $DDA8
+$DDAF inflection_class_table, $E03E
+$E041, $E07C
+$E085, $E08A
+$E7CB, $E7D3
+$E842, $E84E first_letter_index
+$EFC6, $EFCA
+$F033, $F035
+$F04E, $F067
 $F071, $F07D
 $F08E, $F09A
 $F0B6, $F0C3
@@ -553,12 +554,13 @@ $F30F, $F38C str_pipedream_header
 $F398, $F5CC
 $F880, $F887
 $FE62, $FE64
-$FE8D, $FE97
-$FEAC, $FF8C str_dialog_type_83
-$FF96 str_dialog_title_bar, $FFAB str_define_window3_prefix
-$FFB0 str_dialog_type_81, $FFB6
-$FFC0, $FFCA
-$FFD4 str_dialog_window_right, $FFE2 str_dialog_window_left
+$FE75, $FE8D
+$FE97, $FEAC
+$FF8C str_dialog_type_83, $FF96 str_dialog_title_bar
+$FFAB str_define_window3_prefix, $FFB0 str_dialog_type_81
+$FFB6, $FFC0
+$FFCA, $FFD4 str_dialog_window_right
+$FFE2 str_dialog_window_left
 }
 
 ; External Data References:

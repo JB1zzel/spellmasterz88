@@ -22,7 +22,7 @@
 ($C4E8, $C500 string), ($C501, $C505 defb)
 ($C506, $C708 program), ($C709, $C711 defb)
 ($C712, $C736 program), ($C737, $C73F string)
-($C740, $C748 defb), ($C749, $C75A string)
+($C740, $C748 string), ($C749, $C75A string)
 ($C75B, $C776 defb), ($C777, $C790 program)
 ($C791, $C798 defb), ($C799, $C9BB program)
 ($C9BC, $C9BC defb), ($C9BD, $C9CC string)
@@ -45,92 +45,92 @@
 ($CFE6, $D007 program), ($D008, $D01D addrtable)
 ($D01E, $D179 program), ($D17A, $D186 defb)
 ($D187, $D192 string), ($D193, $D19C defb)
-($D19D, $D511 program), ($D512, $D518 defb)
-($D519, $D52A string), ($D52B, $D54E defb)
-($D54F, $D755 program), ($D756, $D788 defb)
-($D789, $D7A4 string), ($D7A5, $D7A9 defb)
-($D7AA, $D808 program), ($D809, $D861 defb)
-($D862, $D874 program), ($D875, $D87F defb)
-($D880, $D9BF program), ($D9C0, $D9C3 defb)
-($D9C4, $DA04 program), ($DA05, $DA0E defb)
-($DA0F, $DA21 string), ($DA22, $DA22 defb)
-($DA23, $DA30 program), ($DA31, $DA40 defb)
-($DA41, $DA4B string), ($DA4C, $DA55 defb)
-($DA56, $DB0C program), ($DB0D, $DB16 defb)
-($DB17, $DB21 string), ($DB22, $DB24 defb)
-($DB25, $DE2A program), ($DE2B, $E202 defb)
-($E203, $E428 program), ($E429, $E432 defb)
-($E433, $E6D4 program), ($E6D5, $E6E0 defb)
-($E6E1, $E6E7 program), ($E6E8, $E6EA defb)
-($E6EB, $E719 defb), ($E71A, $E721 string)
-($E722, $E72C defb), ($E72D, $E739 string)
-($E73A, $E740 defb), ($E741, $E751 string)
-($E752, $E758 defb), ($E759, $E769 string)
-($E76A, $E770 defb), ($E771, $E783 string)
-($E784, $E78B defb), ($E78C, $E79C string)
-($E79D, $E7A4 defb), ($E7A5, $E7AE string)
-($E7AF, $E7B6 defb), ($E7B7, $E7C8 string)
-($E7C9, $E7CE defb), ($E7CF, $E7DC string)
-($E7DD, $E7E3 defb), ($E7E4, $E7EC string)
-($E7ED, $E7F2 defb), ($E7F3, $E7FD string)
-($E7FE, $E803 defb), ($E804, $E80E string)
-($E80F, $E814 defb), ($E815, $E820 string)
-($E821, $E826 defb), ($E827, $E82F string)
-($E830, $E835 defb), ($E836, $E840 string)
-($E841, $E846 defb), ($E847, $E851 string)
-($E852, $E857 defb), ($E858, $E865 string)
-($E866, $E86B defb), ($E86C, $E878 string)
-($E879, $E87E defb), ($E87F, $E889 string)
-($E88A, $E88F defb), ($E890, $E898 string)
-($E899, $E89E defb), ($E89F, $E8AB string)
-($E8AC, $E8B1 defb), ($E8B2, $E8BC string)
-($E8BD, $E8D7 defb), ($E8D8, $E8E6 string)
-($E8E7, $E8F9 defb), ($E8FA, $E909 string)
-($E90A, $E90F defb), ($E910, $E91A string)
-($E91B, $E920 defb), ($E921, $E929 string)
-($E92A, $E931 defb), ($E932, $E93B string)
-($E93C, $E943 defb), ($E944, $E94D string)
-($E94E, $E953 defb), ($E954, $E963 string)
-($E964, $E969 defb), ($E96A, $E974 string)
-($E975, $E97C defb), ($E97D, $E985 string)
-($E986, $E98C defb), ($E98D, $E995 string)
-($E996, $E99D defb), ($E99E, $E9AE string)
-($E9AF, $E9B6 defb), ($E9B7, $E9CA string)
-($E9CB, $E9D2 defb), ($E9D3, $E9E6 string)
-($E9E7, $E9EE defb), ($E9EF, $EA02 string)
-($EA03, $EA09 defb), ($EA0A, $EA14 string)
-($EA15, $EA1C defb), ($EA1D, $EA27 string)
-($EA28, $EA2E defb), ($EA2F, $EA3C string)
-($EA3D, $EA44 defb), ($EA45, $EA52 string)
-($EA53, $EA59 defb), ($EA5A, $EA6A string)
-($EA6B, $EA71 defb), ($EA72, $EA80 string)
-($EA81, $EA87 defb), ($EA88, $EA99 string)
-($EA9A, $EAA0 defb), ($EAA1, $EAB1 string)
-($EAB2, $EAB4 defb), ($EAB5, $EABF string)
-($EAC0, $EAC0 defb), ($EAC1, $EAD5 string)
-($EAD6, $EAD6 defb), ($EAD7, $EAFF string)
-($EB00, $EB00 defb), ($EB01, $EB16 string)
-($EB17, $EB28 defb), ($EB29, $EB40 string)
-($EB41, $EB41 defb), ($EB42, $EB5B string)
-($EB5C, $EB5C defb), ($EB5D, $EB72 string)
-($EB73, $EB73 defb), ($EB74, $EB8A string)
-($EB8B, $EB8B defb), ($EB8C, $EB9E string)
-($EB9F, $EB9F defb), ($EBA0, $EBB2 defb)
-($EBB3, $EBBD string), ($EBBE, $EBC3 defb)
-($EBC4, $EBCF string), ($EBD0, $EBD5 defb)
-($EBD6, $EBDE string), ($EBDF, $EBE4 defb)
-($EBE5, $EBEF string), ($EBF0, $EBF5 defb)
-($EBF6, $EC02 string), ($EC03, $EC08 defb)
-($EC09, $EC17 string), ($EC18, $EC1D defb)
-($EC1E, $EC34 string), ($EC35, $EC3A defb)
-($EC3B, $EC4D string), ($EC4E, $EC5C defb)
-($EC5D, $EC75 program), ($EC76, $EC81 defb)
-($EC82, $EC88 program), ($EC89, $EC8F defb)
-($EC90, $ECBA program), ($ECBB, $ED58 defb)
-($ED59, $FF7F defs), ($FF80, $FF8A program)
-($FF8B, $FF9D defb), ($FF9E, $FFBF defs)
-($FFC0, $FFD2 frontdor), ($FFD3, $FFF7 defb)
-($FFF8, $FFFF romhdr)
+($D19D, $D511 program), ($D512, $D518 string)
+($D519, $D52A string), ($D52B, $D54E string)
+($D54F, $D755 program), ($D756, $D765 defb)
+($D766, $D788 string), ($D789, $D7A4 string)
+($D7A5, $D7A9 defb), ($D7AA, $D808 program)
+($D809, $D861 defb), ($D862, $D874 program)
+($D875, $D87F defb), ($D880, $D9BF program)
+($D9C0, $D9C3 defb), ($D9C4, $DA04 program)
+($DA05, $DA0E defb), ($DA0F, $DA21 string)
+($DA22, $DA22 defb), ($DA23, $DA30 program)
+($DA31, $DA40 defb), ($DA41, $DA4B string)
+($DA4C, $DA55 defb), ($DA56, $DB0C program)
+($DB0D, $DB16 defb), ($DB17, $DB21 string)
+($DB22, $DB24 defb), ($DB25, $DE2A program)
+($DE2B, $E202 defb), ($E203, $E428 program)
+($E429, $E432 defb), ($E433, $E6D4 program)
+($E6D5, $E6E0 string), ($E6E1, $E6E7 program)
+($E6E8, $E6EA defb), ($E6EB, $E719 defb)
+($E71A, $E721 string), ($E722, $E72C defb)
+($E72D, $E739 string), ($E73A, $E740 defb)
+($E741, $E751 string), ($E752, $E758 defb)
+($E759, $E769 string), ($E76A, $E770 defb)
+($E771, $E783 string), ($E784, $E78B defb)
+($E78C, $E79C string), ($E79D, $E7A4 defb)
+($E7A5, $E7AE string), ($E7AF, $E7B6 defb)
+($E7B7, $E7C8 string), ($E7C9, $E7CE defb)
+($E7CF, $E7DC string), ($E7DD, $E7E3 defb)
+($E7E4, $E7EC string), ($E7ED, $E7F2 defb)
+($E7F3, $E7FD string), ($E7FE, $E803 defb)
+($E804, $E80E string), ($E80F, $E814 defb)
+($E815, $E820 string), ($E821, $E826 defb)
+($E827, $E82F string), ($E830, $E835 defb)
+($E836, $E840 string), ($E841, $E846 defb)
+($E847, $E851 string), ($E852, $E857 defb)
+($E858, $E865 string), ($E866, $E86B defb)
+($E86C, $E878 string), ($E879, $E87E defb)
+($E87F, $E889 string), ($E88A, $E88F defb)
+($E890, $E898 string), ($E899, $E89E defb)
+($E89F, $E8AB string), ($E8AC, $E8B1 defb)
+($E8B2, $E8BC string), ($E8BD, $E8D7 defb)
+($E8D8, $E8E6 string), ($E8E7, $E8F9 defb)
+($E8FA, $E909 string), ($E90A, $E90F defb)
+($E910, $E91A string), ($E91B, $E920 defb)
+($E921, $E929 string), ($E92A, $E931 defb)
+($E932, $E93B string), ($E93C, $E943 defb)
+($E944, $E94D string), ($E94E, $E953 defb)
+($E954, $E963 string), ($E964, $E969 defb)
+($E96A, $E974 string), ($E975, $E97C defb)
+($E97D, $E985 string), ($E986, $E98C defb)
+($E98D, $E995 string), ($E996, $E99D defb)
+($E99E, $E9AE string), ($E9AF, $E9B6 defb)
+($E9B7, $E9CA string), ($E9CB, $E9D2 defb)
+($E9D3, $E9E6 string), ($E9E7, $E9EE defb)
+($E9EF, $EA02 string), ($EA03, $EA09 defb)
+($EA0A, $EA14 string), ($EA15, $EA1C defb)
+($EA1D, $EA27 string), ($EA28, $EA2E defb)
+($EA2F, $EA3C string), ($EA3D, $EA44 defb)
+($EA45, $EA52 string), ($EA53, $EA59 defb)
+($EA5A, $EA6A string), ($EA6B, $EA71 defb)
+($EA72, $EA80 string), ($EA81, $EA87 defb)
+($EA88, $EA99 string), ($EA9A, $EAA0 defb)
+($EAA1, $EAB1 string), ($EAB2, $EAB4 defb)
+($EAB5, $EABF string), ($EAC0, $EAC0 defb)
+($EAC1, $EAD5 string), ($EAD6, $EAD6 defb)
+($EAD7, $EAFF string), ($EB00, $EB00 defb)
+($EB01, $EB16 string), ($EB17, $EB28 string)
+($EB29, $EB40 string), ($EB41, $EB41 defb)
+($EB42, $EB5B string), ($EB5C, $EB5C defb)
+($EB5D, $EB72 string), ($EB73, $EB73 defb)
+($EB74, $EB8A string), ($EB8B, $EB8B defb)
+($EB8C, $EB9E string), ($EB9F, $EB9F defb)
+($EBA0, $EBB2 defb), ($EBB3, $EBBD string)
+($EBBE, $EBC3 defb), ($EBC4, $EBCF string)
+($EBD0, $EBD5 defb), ($EBD6, $EBDE string)
+($EBDF, $EBE4 defb), ($EBE5, $EBEF string)
+($EBF0, $EBF5 defb), ($EBF6, $EC02 string)
+($EC03, $EC08 defb), ($EC09, $EC17 string)
+($EC18, $EC1D defb), ($EC1E, $EC34 string)
+($EC35, $EC3A defb), ($EC3B, $EC4D string)
+($EC4E, $EC5C defb), ($EC5D, $EC75 program)
+($EC76, $EC81 defb), ($EC82, $EC88 program)
+($EC89, $EC8F defb), ($EC90, $ECBA program)
+($ECBB, $ED58 defb), ($ED59, $FF7F defs)
+($FF80, $FF8A program), ($FF8B, $FF9D defb)
+($FF9E, $FFBF defs), ($FFC0, $FFD2 frontdor)
+($FFD3, $FFF7 defb), ($FFF8, $FFFF romhdr)
 }
 
 ; External Areas:
@@ -487,22 +487,23 @@ $C397, $C3B7
 $C3CA, $C485
 $C48C, $C4AC
 $C4E4, $C4E8
-$C737, $C741
-$C749, $C75C
-$C791, $C9BC str_end_of_text
-$C9BD, $C9EE str_reverse_off
-$C9F3 str_reverse_on, $C9F8 str_cursor_to_prefix
-$CACB str_toggle_over_n, $CC73 token_pointer_table
-$CD73, $CEEB
-$CF00, $CF15
-$CF2A, $CF3F
-$CF53, $CF59
-$CF5F, $CF64
-$CF6D, $CF72
-$CF7E, $CFDA
-$D008 far_call_table, $D17A
-$D187, $D512
-$D519, $D52C
+$C737, $C740
+$C741, $C749
+$C75C, $C791
+$C9BC str_end_of_text, $C9BD
+$C9EE str_reverse_off, $C9F3 str_reverse_on
+$C9F8 str_cursor_to_prefix, $CACB str_toggle_over_n
+$CC73 token_pointer_table, $CD73
+$CEEB, $CF00
+$CF15, $CF2A
+$CF3F, $CF53
+$CF59, $CF5F
+$CF64, $CF6D
+$CF72, $CF7E
+$CFDA, $D008 far_call_table
+$D17A, $D187
+$D512, $D519
+$D52B, $D52C
 $D53C, $D766
 $D783, $D789
 $D809, $D84D
@@ -536,17 +537,17 @@ $EA45, $EA5A
 $EA72, $EA88
 $EAA1, $EAC1
 $EAD7, $EB01
-$EBB3, $EBC4
-$EBD6, $EBE5
-$EBF6, $EC09
-$EC1E, $EC3B
-$ECBB, $ECC5
-$ECDA, $ECDF
-$ECEF, $ECF9
-$ED03, $ED0D
-$ED17, $ED3D
-$ED4B, $FD12
-$FEFE
+$EB17, $EBB3
+$EBC4, $EBD6
+$EBE5, $EBF6
+$EC09, $EC1E
+$EC3B, $ECBB
+$ECC5, $ECDA
+$ECDF, $ECEF
+$ECF9, $ED03
+$ED0D, $ED17
+$ED3D, $ED4B
+$FD12, $FEFE
 }
 
 ; External Data References:

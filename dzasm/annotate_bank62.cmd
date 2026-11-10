@@ -1,5 +1,12 @@
 ; Spell-Master annotation commands for DZasm (bank 62)
 di "spell_names.def"
+dm defm D137 D14C
+dm defm D155 D170
+dm defm DAF2 DB09
+dm defm E7CB E7EC
+dm defm F04E F070
+dm defm F880 F88B
+dm defm FE75 FE96
 rem C000 < Spell-Master for the Cambridge Z88 - bank 62 ($3E, SPELL.62). Mostly the QuickEdit application (a text editor with spell checking).
 rem C000 < Annotated disassembly made with DZasm; the names, comments and constants are in the DZasm project (spell62.clt). It assembles to bytes IDENTICAL to bank_files/spell62.bin (the original ROM bank with the bank-addressing fix: 7 bytes changed).
 rem C000 < Names and comments are inferred from what the code does, not original. See NOTES.md for the method, the evidence and what is still unknown.

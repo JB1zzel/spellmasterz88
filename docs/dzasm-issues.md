@@ -24,5 +24,6 @@ Running the same `rem` commands again adds the comments again (the project file 
 
 - A character constant for the byte `$7F` is written as a quote pair around the raw DEL character, which is invisible in an editor. Mpm 2.1.1 accepts it (the banks assemble to identical bytes), but `$7F` would be clearer.
 - The byte `$27` is written as `'''`. Mpm 2.1.1 accepts that too.
-- `dm defm` over text that contains a double quote produced a line Mpm rejected in 0.35 (bytes that need escaping inside the quotes); not rechecked in 0.36.
+- `dm defm` over text that contains a double quote produced a line Mpm rejected in 0.35. In 0.36 it works: the quote is written as the character constant `'"'` between the quoted parts, and Mpm 2.1.1 assembles it to the same bytes (checked on the Find, Replace and Replace ? strings in bank 63).
+- `dm defm` on an area that does not start at a label adds a label there (`L_xxxx`) even though nothing refers to it. Harmless, but it adds unused labels to the listing (six in this project: bank 62 $D155, $F04E, $FE75; bank 63 $C740, $D52B, $EB17).
 - The `Unknown instruction at <addr>` message can print thousands of times when a long list of `pp` commands runs into data; printing each address once would help.

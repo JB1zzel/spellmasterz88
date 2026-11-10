@@ -1,5 +1,11 @@
 ; Spell-Master annotation commands for DZasm (bank 63)
 di "spell_names.def"
+dm defm C740 C748
+dm defm D512 D518
+dm defm D52B D54E
+dm defm D766 D788
+dm defm E6D5 E6E0
+dm defm EB17 EB28
 dm defb C001 C03A
 dm defb C196 C1D0
 rem C001 < QuickEdit application DOR. Kept as raw bytes because DZasm V0.36 masks the topic, command and help pointers with $3FFF, but this card stores them as full $Cxxx addresses.

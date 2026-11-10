@@ -2371,32 +2371,26 @@ L_D12D:
         oz      Gn_sop
         ret
 
-
 str_select_window1:
-        defb    $01,$32,$48,$31,$00
+        defm    $01, "2H1", $00
 str_status_row7:
-; Cursor to column 0, row 7 of window 2, tiny type on. Followed by str_insert or str_overtype.
-        defb    $01,$33,$40
-        defb    $20,$27,$01,$32,$2b,$54,$00
+        defm    $01, "3@ '", $01, "2+T", $00
 str_insert:
-        defb    $49
-        defb    $6e,$73,$65,$72,$74,$00
+        defm    "Insert", $00
+
 str_overtype:
         defm    "Overtype"
-        defb    $00
+L_D155:
+        defm    $00
 str_status_row6_check:
-; Cursor to column 0, row 6 of window 2, tiny type on, then the text Check: (followed by str_off or str_on).
-        defb    $01,$33,$40,$20,$26,$01,$32
-        defb    $2b,$54,$43,$68,$65,$63,$6b,$3a
-        defb    $00
+        defm    $01, "3@ &", $01, "2+TCheck:", $00
 str_off:
-        defb    $4f,$66,$66,$00
+        defm    "Off", $00
 str_on:
-        defb    $4f,$6e,$00
-
+        defm    "On", $00
 str_cursor_to_prefix:
-; Cursor-to prefix: SOH, 3, @. The caller sends the column and row, each plus 32.
-        defb    $01,$33,$40,$00
+        defm    $01, "3@", $00
+
 L_D171:
 ; Command jump table: 47 words, indexed by dispatch code 0..46. See cmd_* handlers.
 ; The main loop does: HL = table + 2*code; JP (HL).
@@ -3667,13 +3661,10 @@ L_DAED:
         pop     hl
         jp      L_D542
 
-
 L_DAF2:
-        defb    $52,$65,$70,$6c,$61,$63,$69,$6e
-        defb    $67,$2e,$2e,$2e,$00
+        defm    "Replacing...", $00
 L_DAFF:
-        defb    $0c,$0a,$01
-        defb    $33,$2b,$43,$53,$20,$20,$3a,$00
+        defm    $0c, $0a, $01, "3+CS  :", $00
 
 L_DB0A:
         defm    "Replace with"
@@ -5426,15 +5417,11 @@ inc_cursor_line:
         ld      (cursor_line),hl
         ret
 
-
 L_E7CB:
-        defb    $57,$61,$72,$6e,$69,$6e,$67,$00
-
+        defm    "Warning", $00
 L_E7D3:
-        defb    $0a,$01,$32,$4a,$43,$41,$72,$65
-        defb    $20,$79,$6f,$75,$20,$73,$75,$72
-        defb    $65,$20,$3f,$20,$28,$59,$2f,$4e
-        defb    $29,$00
+        defm    $0a, $01, "2JCAre you sure ? (Y/N)", $00
+
 L_E7ED:
         push    af
         cp      'g'
@@ -6141,13 +6128,12 @@ L_F033:
         defb    $0a,$01
 L_F035:
         defm    "2JCOverwrite text? (Y/N) "
-        defb    $01,$32,$4a,$4e,$00,$01,$33,$40
-        defb    $23,$21,$45,$6e,$74,$65,$72,$20
-        defb    $66,$69,$6c,$65,$6e,$61,$6d,$65
-        defb    $00
+L_F04E:
+        defm    $01, "2JN", $00
+        defm    $01, "3@#!Enter filename", $00
 L_F067:
-        defb    $01,$32,$2b,$43,$01,$33,$40
-        defb    $22,$21,$00
+        defm    $01, "2+C", $01, "3@", '"', "!", $00
+
 L_F071:
         defm    "Change name"
         defb    $00
@@ -7193,12 +7179,11 @@ L_F87B:
         call    browse_next_word
         jr      L_F817
 
-
 L_F880:
-        defb    $42,$72,$6f,$77,$73,$65,$00
+        defm    "Browse", $00
 L_F887:
-        defb    $01
-        defb    $32,$2b,$53,$00
+        defm    $01, "2+S", $00
+
 word_list_add:
 ; Word lists. The user dictionary (user_dict_ptr/bank) and the ignored words (ignore_list_ptr/bank) have the same structure:
 ; a 78-byte ($4E) table of 26 three-byte heads (bank, offset low, offset high), one per letter A-Z, each the start of a linked list of word records in alphabetical order.
@@ -8043,13 +8028,12 @@ L_FE62:
         defb    $0a,$01
 L_FE64:
         defm    "2JCDelete current"
-        defb    $0a,$64,$69,$63,$74,$69,$6f,$6e
-        defb    $61,$72,$79,$3f,$20,$28,$59,$2f
-        defb    $4e,$29,$20,$01,$32,$4a,$4e,$00
-
+L_FE75:
+        defm    $0a, "dictionary? (Y/N) "
+        defm    $01, "2JN", $00
 L_FE8D:
-        defb    $01,$32,$2b,$43,$01,$33,$40,$22
-        defb    $21,$00
+        defm    $01, "2+C", $01, "3@", '"', "!", $00
+
 L_FE97:
         defm    "Save user dictionary"
         defb    $00
