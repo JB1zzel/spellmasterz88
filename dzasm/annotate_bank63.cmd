@@ -251,6 +251,64 @@ dl E5AA browse_reexpand
 dl E616 copy_stem_to_buffer_a
 dl EC82 clear_words_window
 rem EC82 < Redefines window 3 as a plain wide window, clearing the 'Words found' dialog when a search is stopped.
+dl C06E dict_section_end
+dl C2FC startup_fail_free_all
+rem C2FC < WordFinder start-up failed: closes the pools opened so far and leaves with OS_Bye.
+dl C302 startup_fail_free_second
+dl C308 startup_fail_free_main
+dl C30E startup_fail_exit
+dl C332 wf_os_error_return
+dl C334 wf_redraw_menu
+dl C339 str_wordfinder
+dl C344 str_wf_menu
+dl C3D8 quit_quickedit
+rem C3D8 < Same as quit_quickedit in bank 62: RC_Quit during a far-called command closes the pools and leaves with OS_Bye.
+dl C485 str_press_space
+dl C737 str_crossword
+dl C741 str_anagram
+dl C749 str_find_close_matches
+dl C75C str_word_prompt
+dl C969 next_text_row
+dl C9B2 pad_row
+dl CADB compare_marker_line
+dl CEEB str_information_labels
+dl CF53 str_info_lines_pos
+dl CF59 str_info_words_pos
+dl CF5F str_k
+dl CF64 str_untitled
+dl CF6D str_none
+dl CF72 str_information
+dl CF7E str_info_column
+dl D0DE compare_line_with_cursor
+dl D17A str_printing
+dl D4FD set_found_row
+dl D512 str_search
+dl D519 str_search_and_replace
+dl D52C str_find_prompt
+dl D53C str_replace_prompt
+dl D766 str_replace_yn
+dl D783 str_global_or_selective
+dl D809 inflection_endings
+dl D84D inflection_class_offsets
+dl D854 inflection_class_table
+rem D854 < Copy of inflection_class_table in bank 62.
+dl D87A str_cursor_home
+dl DA31 str_loading
+dl DE2B first_letter_index
+rem DE2B < Copy of first_letter_index in bank 62 (26 words).
+dl E3FE browse_take_word
+dl E413 browse_end
+dl E459 browse_next_ending
+dl E6D5 str_browse
+dl E6DC str_set_vscroll
+dl ECEF geom_dialog_right
+dl ECF9 geom_dialog_centre
+dl ED03 geom_dialog_mid
+dl ED0D geom_dialog_wide
+dl ED17 geom_dialog_wf
+dl ED3D str_words_window
+dl ED4B str_wf_menu_window
+dl C4AC str_words_found
 dl D008 far_call_table
 rem D008 < Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63.
 rem D008 < Index 1 (find_next_match, $D54F) and index 5 (far_call_5_unused, $DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.

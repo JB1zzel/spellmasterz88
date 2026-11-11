@@ -14,7 +14,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $C048 | L_C048 | 0 |  |  | 6 |
 | $C051 | L_C051 | 0 |  |  | 15 |
 | $C06B | L_C06B | 0 |  |  | 3 |
-| $C06E | L_C06E | 0 |  |  | 2 |
+| $C06E | dict_section_end | 0 |  |  | 2 |
 | $C070 | skip_to_next_letter_group | 1 |  |  | 1 |
 | $C073 | L_C073 | 0 |  |  | 8 |
 | $C081 | L_C081 | 0 |  |  | 4 |
@@ -49,23 +49,23 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $C2EA | L_C2EA | 0 |  |  | 2 |
 | $C2F0 | L_C2F0 | 0 |  |  | 2 |
 | $C2F6 | L_C2F6 | 0 |  |  | 2 |
-| $C2FC | L_C2FC | 0 | Os_mcl |  | 3 |
-| $C302 | L_C302 | 0 | Os_mcl |  | 3 |
-| $C308 | L_C308 | 0 | Os_mcl |  | 3 |
-| $C30E | L_C30E | 0 | Os_bye |  | 3 |
+| $C2FC | startup_fail_free_all | 0 | Os_mcl |  | 3 |
+| $C302 | startup_fail_free_second | 0 | Os_mcl |  | 3 |
+| $C308 | startup_fail_free_main | 0 | Os_mcl |  | 3 |
+| $C30E | startup_fail_exit | 0 | Os_bye |  | 3 |
 | $C312 | wf_os_error | 2 |  |  | 5 |
 | $C31B | wf_quit | 0 | Os_bye, Os_mcl |  | 13 |
-| $C332 | L_C332 | 0 |  |  | 2 |
-| $C334 | L_C334 | 0 |  |  | 3 |
-| $C339 | L_C339 | 0 |  | WordFinder | 2 |
-| $C344 | L_C344 | 0 |  |  | 1 |
+| $C332 | wf_os_error_return | 0 |  |  | 2 |
+| $C334 | wf_redraw_menu | 0 |  |  | 3 |
+| $C339 | str_wordfinder | 0 |  | WordFinder | 2 |
+| $C344 | str_wf_menu | 0 |  |  | 1 |
 | $C346 | L_C346 | 0 |  | 2JCBrowse through dictionary | 2 |
 | $C363 | L_C363 | 0 |  | Find anagrams             | 2 |
 | $C37D | L_C37D | 0 |  | Find close matches        | 2 |
 | $C397 | L_C397 | 0 |  | Solve crossword           | 2 |
 | $C3B7 | L_C3B7 | 0 |  | Which category : | 2 |
 | $C3CA | L_C3CA | 0 |  | Bad category! | 2 |
-| $C3D8 | L_C3D8 | 0 | Os_bye, Os_mcl |  | 12 |
+| $C3D8 | quit_quickedit | 0 | Os_bye, Os_mcl |  | 12 |
 | $C3EE | show_found_word | 3 | Os_out |  | 17 |
 | $C410 | L_C410 | 0 | Os_out |  | 16 |
 | $C42A | L_C42A | 0 | Os_out |  | 7 |
@@ -74,9 +74,9 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $C469 | L_C469 | 0 |  |  | 2 |
 | $C46E | check_quit | 4 |  |  | 5 |
 | $C476 | open_words_found | 4 |  |  | 6 |
-| $C485 | L_C485 | 0 |  |  | 1 |
+| $C485 | str_press_space | 0 |  |  | 1 |
 | $C48C | L_C48C | 0 |  | RPress SPACE to continue  | 2 |
-| $C4AC | L_C4AC | 0 |  | Words found | 2 |
+| $C4AC | str_words_found | 0 |  | Words found | 2 |
 | $C4B8 | input_wf_word | 3 | Gn_sip |  | 11 |
 | $C4D0 | L_C4D0 | 0 | Gn_nln |  | 8 |
 | $C4DB | bad_character | 0 | Gn_sop |  | 4 |
@@ -112,10 +112,10 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $C712 | sort_letters | 2 |  |  | 6 |
 | $C719 | L_C719 | 0 |  |  | 8 |
 | $C722 | L_C722 | 0 |  |  | 19 |
-| $C737 | L_C737 | 0 |  | Crossword | 2 |
-| $C741 | L_C741 | 0 |  |  | 2 |
-| $C749 | L_C749 | 0 |  | Find close matches | 2 |
-| $C75C | L_C75C | 0 |  |  | 4 |
+| $C737 | str_crossword | 0 |  | Crossword | 2 |
+| $C741 | str_anagram | 0 |  |  | 2 |
+| $C749 | str_find_close_matches | 0 |  | Find close matches | 2 |
+| $C75C | str_word_prompt | 0 |  |  | 4 |
 | $C777 | mark_menu_line | 4 | Gn_sop, Os_out |  | 18 |
 | $C791 | L_C791 | 0 |  |  | 1 |
 | $C799 | far_redraw_text_window | 1 |  |  | 11 |
@@ -143,10 +143,10 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $C948 | put_text_char | 2 | Os_out |  | 12 |
 | $C959 | L_C959 | 0 | Os_out |  | 11 |
 | $C968 | L_C968 | 0 |  |  | 1 |
-| $C969 | L_C969 | 0 |  |  | 2 |
+| $C969 | next_text_row | 0 |  |  | 2 |
 | $C96D | draw_end_of_text_marker | 0 | Gn_sop, Os_out |  | 19 |
 | $C992 | clear_remaining_rows | 0 | Gn_sop, Os_out |  | 16 |
-| $C9B2 | L_C9B2 | 0 |  |  | 2 |
+| $C9B2 | pad_row | 0 |  |  | 2 |
 | $C9B5 | L_C9B5 | 0 | Os_out |  | 5 |
 | $C9BC | str_end_of_text | 0 |  |  | 1 |
 | $C9BD | L_C9BD | 0 |  | 2+R End of text  | 3 |
@@ -169,7 +169,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $CACB | str_toggle_over_n | 0 |  |  | 1 |
 | $CACF | is_start_marker_line | 1 |  |  | 4 |
 | $CAD6 | is_end_marker_line | 2 |  |  | 3 |
-| $CADB | L_CADB | 0 |  |  | 6 |
+| $CADB | compare_marker_line | 0 |  |  | 6 |
 | $CAE5 | L_CAE5 | 0 |  |  | 3 |
 | $CAE8 | place_cursor | 1 | Gn_sop |  | 9 |
 | $CAF9 | L_CAF9 | 0 | Os_out |  | 8 |
@@ -208,19 +208,19 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $CED7 | is_word_char_nz | 1 |  |  | 7 |
 | $CEE5 | L_CEE5 | 0 |  |  | 2 |
 | $CEE8 | L_CEE8 | 0 |  |  | 2 |
-| $CEEB | L_CEEB | 0 |  | Currently editing : | 2 |
+| $CEEB | str_information_labels | 0 |  | Currently editing : | 2 |
 | $CF00 | L_CF00 | 0 |  | Number of lines   : | 2 |
 | $CF15 | L_CF15 | 0 |  | Memory free       : | 2 |
 | $CF2A | L_CF2A | 0 |  | Word count        : | 2 |
 | $CF3F | L_CF3F | 0 |  | User dictionary   : | 2 |
-| $CF53 | L_CF53 | 0 |  |  | 1 |
-| $CF59 | L_CF59 | 0 |  |  | 2 |
-| $CF5F | L_CF5F | 0 |  |  | 2 |
-| $CF64 | L_CF64 | 0 |  | Untitled | 2 |
-| $CF6D | L_CF6D | 0 |  |  | 1 |
+| $CF53 | str_info_lines_pos | 0 |  |  | 1 |
+| $CF59 | str_info_words_pos | 0 |  |  | 2 |
+| $CF5F | str_k | 0 |  |  | 2 |
+| $CF64 | str_untitled | 0 |  | Untitled | 2 |
+| $CF6D | str_none | 0 |  |  | 1 |
 | $CF70 | L_CF70 | 0 |  |  | 2 |
-| $CF72 | L_CF72 | 0 |  | Information | 2 |
-| $CF7E | L_CF7E | 0 |  |  | 9 |
+| $CF72 | str_information | 0 |  | Information | 2 |
+| $CF7E | str_info_column | 0 |  |  | 9 |
 | $CF8B | print_hex_byte | 1 |  |  | 1 |
 | $CF8C | L_CF8C | 0 |  |  | 7 |
 | $CF9A | print_hex_digit | 1 |  |  | 4 |
@@ -247,7 +247,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D0BE | L_D0BE | 0 |  |  | 11 |
 | $D0CF | is_block_start_line | 1 |  |  | 4 |
 | $D0D5 | test_block_start_line | 1 |  |  | 4 |
-| $D0DE | L_D0DE | 0 |  |  | 10 |
+| $D0DE | compare_line_with_cursor | 0 |  |  | 10 |
 | $D0ED | L_D0ED | 0 |  |  | 2 |
 | $D0EF | is_block_end_line | 1 |  |  | 4 |
 | $D0F5 | test_block_end_line | 1 |  |  | 5 |
@@ -258,7 +258,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D144 | L_D144 | 0 | Os_prt |  | 10 |
 | $D155 | end_printout | 0 | Os_esc, Os_prt |  | 16 |
 | $D174 | print_error | 0 | Os_out |  | 4 |
-| $D17A | L_D17A | 0 |  |  | 2 |
+| $D17A | str_printing | 0 |  |  | 2 |
 | $D187 | L_D187 | 0 |  | 2JCPrinting  | 3 |
 | $D19D | far_search_and_replace | 0 |  |  | 8 |
 | $D1B7 | L_D1B7 | 0 | Gn_sop |  | 5 |
@@ -312,13 +312,13 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D4B9 | L_D4B9 | 0 | Gn_sip, Gn_sop |  | 14 |
 | $D4D5 | L_D4D5 | 0 |  |  | 2 |
 | $D4D8 | start_search | 0 |  |  | 14 |
-| $D4FD | L_D4FD | 0 |  |  | 7 |
+| $D4FD | set_found_row | 0 |  |  | 7 |
 | $D50A | L_D50A | 0 |  |  | 1 |
 | $D50C | L_D50C | 0 |  |  | 4 |
-| $D512 | L_D512 | 0 |  |  | 1 |
-| $D519 | L_D519 | 0 |  | Search and Replace | 2 |
-| $D52C | L_D52C | 0 |  |  | 3 |
-| $D53C | L_D53C | 0 |  |  | 3 |
+| $D512 | str_search | 0 |  |  | 1 |
+| $D519 | str_search_and_replace | 0 |  | Search and Replace | 2 |
+| $D52C | str_find_prompt | 0 |  |  | 3 |
+| $D53C | str_replace_prompt | 0 |  |  | 3 |
 | $D54F | find_next_match | 2 |  |  | 7 |
 | $D55D | L_D55D | 0 |  |  | 12 |
 | $D578 | L_D578 | 0 |  |  | 27 |
@@ -341,8 +341,8 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D728 | inc_cursor_line | 6 |  |  | 4 |
 | $D730 | dec_cursor_line | 3 |  |  | 4 |
 | $D738 | copy_record_to_line_buffer | 1 | Os_mpb |  | 18 |
-| $D766 | L_D766 | 0 |  |  | 4 |
-| $D783 | L_D783 | 0 |  |  | 2 |
+| $D766 | str_replace_yn | 0 |  |  | 4 |
+| $D783 | str_global_or_selective | 0 |  |  | 2 |
 | $D789 | L_D789 | 0 |  | Global or selective ? (G/S)  | 2 |
 | $D7AA | save_string_record | 3 |  |  | 2 |
 | $D7AD | L_D7AD | 0 | Os_mal, Os_mpb |  | 22 |
@@ -351,11 +351,11 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D7F2 | load_string_record | 4 |  |  | 7 |
 | $D7FB | L_D7FB | 0 | Os_mpb |  | 4 |
 | $D800 | L_D800 | 0 |  |  | 7 |
-| $D809 | L_D809 | 0 |  |  | 9 |
-| $D84D | L_D84D | 0 |  |  | 2 |
-| $D854 | L_D854 | 0 |  |  | 3 |
+| $D809 | inflection_endings | 0 |  |  | 9 |
+| $D84D | inflection_class_offsets | 0 |  |  | 2 |
+| $D854 | inflection_class_table | 0 |  |  | 3 |
 | $D862 | section_could_match | 1 |  |  | 14 |
-| $D87A | L_D87A | 0 |  |  | 2 |
+| $D87A | str_cursor_home | 0 |  |  | 2 |
 | $D880 | far_append_guess | 0 | Os_mal, Os_mpb |  | 36 |
 | $D8C1 | L_D8C1 | 0 |  |  | 14 |
 | $D8D5 | L_D8D5 | 0 | Os_mpb |  | 23 |
@@ -378,7 +378,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $DA05 | L_DA05 | 0 |  |  | 2 |
 | $DA0F | L_DA0F | 0 |  | Load text at cursor | 2 |
 | $DA23 | input_merge_filename | 1 | Gn_sip |  | 7 |
-| $DA31 | L_DA31 | 0 |  |  | 2 |
+| $DA31 | str_loading | 0 |  |  | 2 |
 | $DA41 | L_DA41 | 0 |  | 2JCLoading  | 3 |
 | $DA56 | split_at_cursor | 1 |  |  | 8 |
 | $DA68 | L_DA68 | 0 |  |  | 15 |
@@ -439,7 +439,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $DE09 | L_DE09 | 0 |  |  | 8 |
 | $DE19 | L_DE19 | 0 |  |  | 7 |
 | $DE24 | L_DE24 | 0 |  |  | 4 |
-| $DE2B | L_DE2B | 0 |  |  | 123 |
+| $DE2B | first_letter_index | 0 |  |  | 123 |
 | $E203 | wf_option_1_browse_dictionary | 1 | Gn_sop, Os_mal, Os_mpb |  | 25 |
 | $E237 | L_E237 | 0 |  |  | 1 |
 | $E23A | L_E23A | 0 |  |  | 1 |
@@ -476,14 +476,14 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $E3D6 | L_E3D6 | 0 | Os_out |  | 9 |
 | $E3E3 | browse_os_error | 2 | Gn_sop |  | 11 |
 | $E3FC | L_E3FC | 0 |  |  | 2 |
-| $E3FE | L_E3FE | 0 |  |  | 9 |
+| $E3FE | browse_take_word | 0 |  |  | 9 |
 | $E40C | L_E40C | 0 |  |  | 6 |
-| $E413 | L_E413 | 0 | Gn_sop, Os_mfr |  | 10 |
+| $E413 | browse_end | 0 | Gn_sop, Os_mfr |  | 10 |
 | $E429 | L_E429 | 0 |  |  | 2 |
 | $E433 | print_current_word | 4 |  |  | 5 |
 | $E43C | L_E43C | 0 | Os_out |  | 9 |
 | $E447 | browse_next_word | 4 |  |  | 8 |
-| $E459 | L_E459 | 0 |  |  | 7 |
+| $E459 | browse_next_ending | 0 |  |  | 7 |
 | $E468 | L_E468 | 0 |  |  | 5 |
 | $E476 | L_E476 | 0 |  |  | 9 |
 | $E48B | L_E48B | 0 |  |  | 3 |
@@ -527,8 +527,8 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $E6AC | L_E6AC | 0 |  |  | 2 |
 | $E6AF | L_E6AF | 0 |  |  | 15 |
 | $E6D0 | L_E6D0 | 0 |  |  | 2 |
-| $E6D5 | L_E6D5 | 0 |  |  | 1 |
-| $E6DC | L_E6DC | 0 |  |  | 2 |
+| $E6D5 | str_browse | 0 |  |  | 1 |
+| $E6DC | str_set_vscroll | 0 |  |  | 2 |
 | $E6E1 | toggle_reverse | 2 | Gn_sop |  | 4 |
 | $E6E8 | L_E6E8 | 0 |  |  | 1 |
 | $E6EB | QuickEdit_topics | 0 |  |  | 1 |
@@ -747,13 +747,13 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $ECC5 | L_ECC5 | 0 |  |  | 3 |
 | $ECDA | L_ECDA | 0 |  |  | 2 |
 | $ECDF | L_ECDF | 0 |  |  | 3 |
-| $ECEF | L_ECEF | 0 |  |  | 2 |
-| $ECF9 | L_ECF9 | 0 |  |  | 2 |
-| $ED03 | L_ED03 | 0 |  |  | 2 |
-| $ED0D | L_ED0D | 0 |  |  | 2 |
-| $ED17 | L_ED17 | 0 |  |  | 6 |
-| $ED3D | L_ED3D | 0 |  |  | 2 |
-| $ED4B | L_ED4B | 0 | Os_mgb, Os_mpb |  | 14 |
+| $ECEF | geom_dialog_right | 0 |  |  | 2 |
+| $ECF9 | geom_dialog_centre | 0 |  |  | 2 |
+| $ED03 | geom_dialog_mid | 0 |  |  | 2 |
+| $ED0D | geom_dialog_wide | 0 |  |  | 2 |
+| $ED17 | geom_dialog_wf | 0 |  |  | 6 |
+| $ED3D | str_words_window | 0 |  |  | 2 |
+| $ED4B | str_wf_menu_window | 0 | Os_mgb, Os_mpb |  | 14 |
 | $FFC0 | frontdor | 0 |  | APPL | 9 |
 | $FFD3 | frontdor_end | 0 |  |  | 5 |
 | $FFF8 | romhdr | 0 |  | OZ | 7 |

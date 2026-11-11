@@ -322,6 +322,115 @@ rem FADE < Browse: as browse_user_next, going backwards.
 dl FB53 compare_word_with_stem
 rem FB53 < Compares the current dictionary word (buffer C - 2, dict_stem_length) with buffer A (dict_target_length): Z = equal, NZ at the first difference.
 rem D0CA < $D0CA-$D0D5 follow OS_Bye and nothing jumps to them, so they are never run (tools/reach.py). They look like the tail of a backwards scan.
+dl C038 dict_section_end
+dl C083 lookup_word_lists
+dl C0C0 compare_with_endings
+dl C298 startup_fail_free_all
+rem C298 < Start-up failed: closes the pools opened so far (entered at the right step) and leaves with OS_Bye.
+dl C29E startup_fail_free_second
+dl C2A4 startup_fail_free_main
+dl C2AA startup_fail_exit
+dl C342 expand_next_byte
+dl C371 expand_word_end
+dl C383 expand_set_class
+dl C5A4 enter_editor
+dl C5AF redraw_and_main_loop
+rem C5AF < Redraws the screen and enters the main loop. The usual end of an editing command.
+dl C614 handle_character
+rem C614 < An ordinary key: Enter ($0D) goes to the new-line code at $C756; any other character is inserted (or overtyped) at the cursor.
+dl C6B3 after_text_change
+rem C6B3 < After a character is added or removed: if the line is now longer than wrap_column the paragraph is rewrapped, otherwise just the line is redrawn.
+dl CA00 rubout_join_lines
+dl CA13 full_redraw_and_main_loop
+rem CA13 < Sets edit_flags bit 3 (redraw the whole text) and goes to redraw_and_main_loop.
+dl CBFC move_to_next_line
+dl CC36 place_or_scroll
+dl CC6C move_to_prev_line
+dl D0D6 no_room_exit
+rem D0D6 < Shows 'No Room!' and returns to the editor. The common exit when memory runs out (38 jumps).
+dl D171 command_table
+rem D171 < 47 words: the handler for each dispatch code 0-46 (see docs/commands.md).
+dl D401 check_next_word
+dl D467 end_of_check
+dl D542 redisplay_check
+dl D557 correction_menu_loop
+dl D8CE next_word_into_de
+dl D983 str_reverse_off_2
+dl D9A1 str_toggle_reverse
+dl D9A4 str_cursor_to_prefix_2
+dl D9A8 str_checking
+dl D9B2 str_correction_options
+dl DA55 str_correction_menu
+dl DAF2 str_replacing
+dl DAFF str_replace_prompt
+dl DB0A str_replace_with
+dl DC02 after_far_command
+dl DCA0 typing_hook_done
+dl DCB1 typing_mark_pending
+dl DD44 scan_back_to_word_start
+dl DD64 inflection_endings
+dl DDA8 inflection_class_offsets
+rem DDA8 < Seven byte offsets, one per inflection class $10-$16, into the ending strings at inflection_endings ($DD64). Used by next_word_form; inflection_class_table holds the same lists as word pointers.
+dl DDE4 guess_next_section
+dl DE12 guess_no_room
+dl DE2B guess_step_section
+dl DEAE show_guess_list
+dl E035 no_guesses_found
+dl E041 str_guesses_found
+dl E07C str_guessing
+dl E085 str_set_vscroll
+dl E08A str_cursor_home
+dl E1BA compare_line_with_cursor
+dl E233 block_command_end
+dl E236 beep_and_main_loop
+dl E23D beep_no_room
+rem E23D < Beeps, shows 'No Room!' and returns NZ.
+dl E5A3 block_no_room
+dl E602 confirm_delete_block
+dl E62C delete_block_lines
+dl E7CB str_warning
+dl E7D3 str_are_you_sure
+dl ED6C close_file_no_room
+dl EF89 file_write_error
+rem EF89 < A write failed: closes the file, makes the line after the saved text the cursor line again, and shows 'File NOT saved!'.
+dl EF9F show_not_saved
+dl EFA4 show_file_not_found
+dl F033 str_overwrite_text
+dl F067 str_filename_prompt
+dl F071 str_change_name
+dl F07D str_save_entire_text
+dl F08E str_export_text
+dl F09A str_load_new_text
+dl F0B6 str_loading
+dl F0D8 str_saving
+dl F153 str_save_marked_section
+dl F2E1 str_file_exists
+dl F30B str_file_not_saved
+dl F398 str_pipedream_header_end
+dl F5A1 browse_take_word
+dl F5B6 browse_end
+dl F5CC str_window1_vscroll
+dl F5FC browse_next_ending
+dl F880 str_browse
+dl F887 str_set_vscroll_2
+dl FA1A user_word_found
+dl FA77 browse_user_prev_scan
+dl FAC5 user_word_none
+dl FB84 word_list_follow_link
+dl FC41 word_list_no_room
+dl FD8F close_file_no_room_2
+dl FE8D str_filename_prompt_2
+dl FE97 str_save_user_dictionary
+dl FFB6 geom_dialog_left
+dl FFC0 geom_dialog_right
+dl FFCA geom_dialog_centre
+dl C619 insert_character
+dl C756 new_line
+rem C756 < Enter: splits the line at the cursor (split_at_cursor) and moves to the start of the new line. It does not call the check-as-you-type hooks (notes section 11).
+dl D60C correction_option_3
+rem D60C < Correction menu option 3: guess_correct_word, then replace the word if one was chosen (edit_flags bit 6 clear).
+dl EFA7 show_file_error
+dl FEAC str_load_user_dictionary
 dl D922 is_word_char
 rem D922 < Z set if A is a letter or an apostrophe. A letter is returned in upper case (AND $DF); an apostrophe is returned unchanged.
 rem FE15 < Load user dictionary: each run of word characters (is_word_char, at most 64) is one word; any other byte ends it. Words of fewer than 3 characters are skipped.

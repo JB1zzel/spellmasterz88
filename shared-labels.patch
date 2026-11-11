@@ -1,0 +1,4977 @@
+diff -ruN spellmasterz88-main/docs/notes.md spellmasterz88-main/docs/notes.md
+--- spellmasterz88-main/docs/notes.md	2026-11-10 23:59:49.177909645 +0000
++++ spellmasterz88-main/docs/notes.md	2026-11-11 00:10:26.578418157 +0000
+@@ -273,7 +273,7 @@
+ 
+ ## 19. What is still unknown
+ 
+-- Every routine that is called has a name (`docs/routine_index_bank*.md`); the `L_xxxx` labels left are jump targets inside named routines, plus the few routines noted as unreachable in section 16.
++- Every routine that is called has a name, and so has every label that another routine jumps to or uses (shared exits such as `no_room_exit`, `redraw_and_main_loop`, and the strings). The `L_xxxx` labels left are branch targets inside a named routine (`docs/routine_index_bank*.md`).
+ - Names of scratch locations and borrowed variables describe their main use only (`docs/workspace.md`).
+ - `tools/reach.py` shows that no reachable path runs into data, and the data that had been decoded as code has been converted. It cannot prove that a `defb` area is not code reached in some way it does not model (for example a jump through a table it does not know).
+ - Behaviour has not been traced on a running machine. Worth testing in OZvm: the last word before Enter is not checked as you type (section 11); a failed search leaves the cursor at the end of the text (section 13); a file with CR LF line ends shows ^J at the start of each line (section 14).
+diff -ruN spellmasterz88-main/docs/routine_index_bank62.md spellmasterz88-main/docs/routine_index_bank62.md
+--- spellmasterz88-main/docs/routine_index_bank62.md	2026-11-10 23:59:49.177889515 +0000
++++ spellmasterz88-main/docs/routine_index_bank62.md	2026-11-11 00:10:26.577215808 +0000
+@@ -9,16 +9,16 @@
+ | $C012 | L_C012 | 0 |  |  | 6 |
+ | $C01B | L_C01B | 0 |  |  | 15 |
+ | $C035 | L_C035 | 0 |  |  | 3 |
+-| $C038 | L_C038 | 0 |  |  | 2 |
++| $C038 | dict_section_end | 0 |  |  | 2 |
+ | $C03A | skip_to_next_letter_group | 1 |  |  | 1 |
+ | $C03D | L_C03D | 0 |  |  | 8 |
+ | $C04B | L_C04B | 0 |  |  | 4 |
+ | $C051 | dictionary_lookup | 4 |  |  | 11 |
+ | $C067 | L_C067 | 0 |  |  | 13 |
+-| $C083 | L_C083 | 0 |  |  | 8 |
++| $C083 | lookup_word_lists | 0 |  |  | 8 |
+ | $C093 | compare_expanded_word | 0 |  |  | 12 |
+ | $C0AD | L_C0AD | 0 |  |  | 7 |
+-| $C0C0 | L_C0C0 | 0 |  |  | 16 |
++| $C0C0 | compare_with_endings | 0 |  |  | 16 |
+ | $C0E1 | L_C0E1 | 0 |  |  | 5 |
+ | $C0EB | L_C0EB | 0 |  |  | 6 |
+ | $C0F8 | L_C0F8 | 0 |  |  | 13 |
+@@ -37,10 +37,10 @@
+ | $C1B6 | bind_dictionary_bank | 0 | Os_mgb, Os_mpb |  | 25 |
+ | $C1E2 | qe_start | 0 | Gn_sop, Os_erh, Os_mal, Os_mop, Os_mpb |  | 70 |
+ | $C286 | far_call_bank63 | 9 | Os_mgb, Os_mpb |  | 12 |
+-| $C298 | L_C298 | 0 | Os_mcl |  | 3 |
+-| $C29E | L_C29E | 0 | Os_mcl |  | 3 |
+-| $C2A4 | L_C2A4 | 0 | Os_mcl |  | 3 |
+-| $C2AA | L_C2AA | 0 | Os_bye |  | 3 |
++| $C298 | startup_fail_free_all | 0 | Os_mcl |  | 3 |
++| $C29E | startup_fail_free_second | 0 | Os_mcl |  | 3 |
++| $C2A4 | startup_fail_free_main | 0 | Os_mcl |  | 3 |
++| $C2AA | startup_fail_exit | 0 | Os_bye |  | 3 |
+ | $C2AE | next_word_form | 2 |  |  | 27 |
+ | $C2E9 | L_C2E9 | 0 |  |  | 8 |
+ | $C2FA | L_C2FA | 0 |  |  | 10 |
+@@ -50,13 +50,13 @@
+ | $C328 | str_define_window2 | 0 |  |  | 3 |
+ | $C336 | expand_word | 4 |  |  | 5 |
+ | $C341 | L_C341 | 0 |  |  | 1 |
+-| $C342 | L_C342 | 0 |  |  | 7 |
++| $C342 | expand_next_byte | 0 |  |  | 7 |
+ | $C34F | L_C34F | 0 |  |  | 4 |
+ | $C355 | append_token | 0 |  |  | 12 |
+ | $C365 | L_C365 | 0 |  |  | 8 |
+-| $C371 | L_C371 | 0 |  |  | 2 |
++| $C371 | expand_word_end | 0 |  |  | 2 |
+ | $C376 | L_C376 | 0 |  |  | 7 |
+-| $C383 | L_C383 | 0 |  |  | 4 |
++| $C383 | expand_set_class | 0 |  |  | 4 |
+ | $C38E | L_C38E | 0 |  |  | 1 |
+ | $C391 | L_C391 | 0 |  |  | 2 |
+ | $C394 | L_C394 | 0 |  |  | 2 |
+@@ -107,8 +107,8 @@
+ | $C49D | L_C49D | 0 |  |  | 1 |
+ | $C4A1 | L_C4A1 | 0 |  |  | 1 |
+ | $C4A4 | token_pointer_table | 0 |  |  | 33 |
+-| $C5A4 | L_C5A4 | 0 | Os_mpb |  | 6 |
+-| $C5AF | L_C5AF | 0 |  |  | 1 |
++| $C5A4 | enter_editor | 0 | Os_mpb |  | 6 |
++| $C5AF | redraw_and_main_loop | 0 |  |  | 1 |
+ | $C5B2 | qe_main_loop | 0 | Os_tin |  | 14 |
+ | $C5D1 | L_C5D1 | 0 | Os_in |  | 3 |
+ | $C5D5 | L_C5D5 | 0 |  |  | 3 |
+@@ -116,8 +116,8 @@
+ | $C5F5 | L_C5F5 | 0 |  |  | 3 |
+ | $C5FB | L_C5FB | 0 |  |  | 13 |
+ | $C610 | cmd_insert_real_tab | 0 |  |  | 2 |
+-| $C614 | L_C614 | 0 |  |  | 2 |
+-| $C619 | L_C619 | 0 |  |  | 10 |
++| $C614 | handle_character | 0 |  |  | 2 |
++| $C619 | insert_character | 0 |  |  | 10 |
+ | $C62F | L_C62F | 0 |  |  | 17 |
+ | $C653 | L_C653 | 0 |  |  | 2 |
+ | $C659 | L_C659 | 0 |  |  | 9 |
+@@ -126,13 +126,13 @@
+ | $C694 | L_C694 | 0 |  |  | 10 |
+ | $C6A9 | L_C6A9 | 0 |  |  | 3 |
+ | $C6B0 | L_C6B0 | 0 |  |  | 1 |
+-| $C6B3 | L_C6B3 | 0 |  |  | 10 |
++| $C6B3 | after_text_change | 0 |  |  | 10 |
+ | $C6C8 | L_C6C8 | 0 |  |  | 20 |
+ | $C6F5 | L_C6F5 | 0 | Os_mpb |  | 26 |
+ | $C726 | L_C726 | 0 | Os_mpb |  | 12 |
+ | $C744 | L_C744 | 0 |  |  | 2 |
+ | $C74A | L_C74A | 0 |  |  | 4 |
+-| $C756 | L_C756 | 0 | Os_pur |  | 14 |
++| $C756 | new_line | 0 | Os_pur |  | 14 |
+ | $C774 | L_C774 | 0 |  |  | 14 |
+ | $C798 | L_C798 | 0 |  |  | 2 |
+ | $C79E | cmd_previous_word | 0 |  |  | 10 |
+@@ -167,8 +167,8 @@
+ | $C9A2 | L_C9A2 | 0 |  |  | 5 |
+ | $C9AD | L_C9AD | 0 |  |  | 17 |
+ | $C9D8 | L_C9D8 | 0 |  |  | 19 |
+-| $CA00 | L_CA00 | 0 |  |  | 7 |
+-| $CA13 | L_CA13 | 0 |  |  | 4 |
++| $CA00 | rubout_join_lines | 0 |  |  | 7 |
++| $CA13 | full_redraw_and_main_loop | 0 |  |  | 4 |
+ | $CA1E | cmd_join_lines | 0 | Os_mpb |  | 17 |
+ | $CA3C | L_CA3C | 0 | Os_out |  | 4 |
+ | $CA43 | L_CA43 | 0 |  |  | 2 |
+@@ -195,15 +195,15 @@
+ | $CBD0 | cmd_cursor_down | 0 |  |  | 5 |
+ | $CBDA | cmd_cursor_up | 0 |  |  | 5 |
+ | $CBE5 | cmd_cursor_right | 0 |  |  | 11 |
+-| $CBFC | L_CBFC | 0 | Gn_sop |  | 15 |
++| $CBFC | move_to_next_line | 0 | Gn_sop |  | 15 |
+ | $CC24 | L_CC24 | 0 |  |  | 1 |
+ | $CC2B | L_CC2B | 0 |  |  | 3 |
+ | $CC32 | L_CC32 | 0 |  |  | 2 |
+-| $CC36 | L_CC36 | 0 |  |  | 5 |
++| $CC36 | place_or_scroll | 0 |  |  | 5 |
+ | $CC41 | L_CC41 | 0 |  |  | 2 |
+ | $CC47 | cmd_cursor_left | 0 |  |  | 7 |
+ | $CC56 | L_CC56 | 0 | Os_mpb |  | 12 |
+-| $CC6C | L_CC6C | 0 | Gn_sop |  | 15 |
++| $CC6C | move_to_prev_line | 0 | Gn_sop |  | 15 |
+ | $CC94 | L_CC94 | 0 |  |  | 1 |
+ | $CC9B | L_CC9B | 0 |  |  | 3 |
+ | $CCA2 | store_cursor_line | 40 |  |  | 12 |
+@@ -257,7 +257,7 @@
+ | $D0B4 | quit_quickedit | 0 | Os_bye, Os_mcl |  | 12 |
+ | $D0CA | L_D0CA | 0 |  |  | 8 |
+ | $D0D5 | L_D0D5 | 0 |  |  | 1 |
+-| $D0D6 | L_D0D6 | 0 |  |  | 2 |
++| $D0D6 | no_room_exit | 0 |  |  | 2 |
+ | $D0DC | show_no_room_error | 4 | Gn_sop |  | 9 |
+ | $D0ED | L_D0ED | 0 |  |  | 1 |
+ | $D0EE | L_D0EE | 0 |  | No Room! | 2 |
+@@ -272,7 +272,7 @@
+ | $D166 | str_off | 0 |  |  | 1 |
+ | $D16A | str_on | 0 |  |  | 1 |
+ | $D16D | str_cursor_to_prefix | 0 |  |  | 1 |
+-| $D171 | L_D171 | 0 |  |  | 47 |
++| $D171 | command_table | 0 |  |  | 47 |
+ | $D1CF | cmd_print_out_text | 0 |  |  | 3 |
+ | $D1D7 | markers_line_removed | 3 |  |  | 12 |
+ | $D1EE | L_D1EE | 0 |  |  | 2 |
+@@ -311,13 +311,13 @@
+ | $D3D5 | cmd_check_all_text | 0 |  |  | 3 |
+ | $D3DE | L_D3DE | 0 | Gn_sop |  | 7 |
+ | $D3EF | L_D3EF | 0 |  |  | 6 |
+-| $D401 | L_D401 | 0 | Os_mpb |  | 28 |
++| $D401 | check_next_word | 0 | Os_mpb |  | 28 |
+ | $D443 | L_D443 | 0 | Gn_sop |  | 3 |
+ | $D449 | L_D449 | 0 |  |  | 2 |
+ | $D44E | L_D44E | 0 |  |  | 2 |
+ | $D454 | L_D454 | 0 |  |  | 4 |
+ | $D45E | L_D45E | 0 |  |  | 3 |
+-| $D467 | L_D467 | 0 | Os_mfr |  | 17 |
++| $D467 | end_of_check | 0 | Os_mfr |  | 17 |
+ | $D490 | L_D490 | 0 |  |  | 2 |
+ | $D496 | show_check_context | 2 | Os_mpb, Os_out |  | 21 |
+ | $D4BD | L_D4BD | 0 |  |  | 8 |
+@@ -327,8 +327,8 @@
+ | $D4F7 | L_D4F7 | 0 |  |  | 4 |
+ | $D4FF | L_D4FF | 0 | Gn_sop |  | 4 |
+ | $D506 | open_correction_menu | 3 | Gn_nln, Gn_sop, Os_mpb, Os_out |  | 30 |
+-| $D542 | L_D542 | 0 | Gn_nln, Gn_sop, Os_out |  | 12 |
+-| $D557 | L_D557 | 0 | Gn_sop |  | 12 |
++| $D542 | redisplay_check | 0 | Gn_nln, Gn_sop, Os_out |  | 12 |
++| $D557 | correction_menu_loop | 0 | Gn_sop |  | 12 |
+ | $D575 | L_D575 | 0 | Os_in |  | 17 |
+ | $D597 | L_D597 | 0 |  |  | 10 |
+ | $D5AD | L_D5AD | 0 |  |  | 5 |
+@@ -338,7 +338,7 @@
+ | $D5E0 | L_D5E0 | 0 |  |  | 9 |
+ | $D5F7 | L_D5F7 | 0 |  |  | 6 |
+ | $D608 | L_D608 | 0 |  |  | 2 |
+-| $D60C | L_D60C | 0 |  |  | 7 |
++| $D60C | correction_option_3 | 0 |  |  | 7 |
+ | $D61E | L_D61E | 0 | Gn_sop |  | 11 |
+ | $D636 | L_D636 | 0 |  |  | 5 |
+ | $D643 | L_D643 | 0 |  |  | 1 |
+@@ -383,7 +383,7 @@
+ | $D8BC | L_D8BC | 0 |  |  | 5 |
+ | $D8C4 | next_word_to_buffer_b | 1 |  |  | 2 |
+ | $D8CA | next_word_from_text | 3 |  |  | 1 |
+-| $D8CE | L_D8CE | 0 |  |  | 5 |
++| $D8CE | next_word_into_de | 0 |  |  | 5 |
+ | $D8D7 | L_D8D7 | 0 |  |  | 5 |
+ | $D8E1 | L_D8E1 | 0 |  |  | 4 |
+ | $D8E6 | L_D8E6 | 0 |  |  | 1 |
+@@ -397,20 +397,20 @@
+ | $D92F | L_D92F | 0 |  |  | 2 |
+ | $D931 | cmd_check_this_word_or_escape | 0 | Os_mpb |  | 28 |
+ | $D978 | L_D978 | 0 | Os_mpb |  | 6 |
+-| $D983 | L_D983 | 0 |  |  | 1 |
++| $D983 | str_reverse_off_2 | 0 |  |  | 1 |
+ | $D988 | toggle_reverse | 8 | Gn_sop |  | 6 |
+ | $D991 | cmd_insert_over | 0 |  |  | 5 |
+-| $D9A1 | L_D9A1 | 0 |  |  | 1 |
+-| $D9A4 | L_D9A4 | 0 |  |  | 1 |
+-| $D9A8 | L_D9A8 | 0 |  |  | 1 |
++| $D9A1 | str_toggle_reverse | 0 |  |  | 1 |
++| $D9A4 | str_cursor_to_prefix_2 | 0 |  |  | 1 |
++| $D9A8 | str_checking | 0 |  |  | 1 |
+ | $D9A9 | L_D9A9 | 0 |  | Checking | 2 |
+-| $D9B2 | L_D9B2 | 0 |  |  | 1 |
++| $D9B2 | str_correction_options | 0 |  |  | 1 |
+ | $D9D3 | L_D9B3 | 0 |  | 2JC1: Ignore word              | 2 |
+ | $D9D5 | L_D9D5 | 0 |  | 2: Add word to user dictionary | 2 |
+ | $D9F4 | L_D9F4 | 0 |  | 3: Guess correct word          | 2 |
+ | $DA13 | L_DA13 | 0 |  | 4: Change word                 | 2 |
+ | $DA32 | L_DA32 | 0 |  | 5: Browse through dictionary   | 2 |
+-| $DA55 | L_DA55 | 0 |  | Correction menu | 2 |
++| $DA55 | str_correction_menu | 0 |  | Correction menu | 2 |
+ | $DA65 | save_typed_word | 1 | Os_mal, Os_mpb |  | 19 |
+ | $DA88 | L_DA88 | 0 |  |  | 8 |
+ | $DA91 | restore_typed_word | 1 | Os_mpb |  | 12 |
+@@ -420,9 +420,9 @@
+ | $DADE | quit_on_rc_quit | 2 |  |  | 5 |
+ | $DAE7 | L_DAE7 | 0 |  |  | 4 |
+ | $DAED | L_DAED | 0 |  |  | 3 |
+-| $DAF2 | L_DAF2 | 0 |  |  | 2 |
+-| $DAFF | L_DAFF | 0 |  |  | 2 |
+-| $DB0A | L_DB0A | 0 |  | Replace with | 2 |
++| $DAF2 | str_replacing | 0 |  |  | 2 |
++| $DAFF | str_replace_prompt | 0 |  |  | 2 |
++| $DB0A | str_replace_with | 0 |  | Replace with | 2 |
+ | $DB17 | cmd_split_line | 0 |  |  | 9 |
+ | $DB2E | split_at_cursor | 3 |  |  | 19 |
+ | $DB52 | L_DB52 | 0 |  |  | 19 |
+@@ -434,7 +434,7 @@
+ | $DBEE | L_DBEE | 0 |  |  | 3 |
+ | $DBF6 | cmd_next_match | 0 |  |  | 3 |
+ | $DBFD | cmd_search_for_string | 0 |  |  | 2 |
+-| $DC02 | L_DC02 | 0 |  |  | 6 |
++| $DC02 | after_far_command | 0 |  |  | 6 |
+ | $DC12 | cmd_merge_text_at_cursor | 0 |  |  | 8 |
+ | $DC26 | L_DC26 | 0 |  |  | 11 |
+ | $DC41 | L_DC41 | 0 |  |  | 8 |
+@@ -443,9 +443,9 @@
+ | $DC61 | cmd_tab | 0 |  |  | 7 |
+ | $DC74 | typing_check_command | 1 |  |  | 21 |
+ | $DC9D | L_DC9D | 0 |  |  | 1 |
+-| $DCA0 | L_DCA0 | 0 |  |  | 2 |
++| $DCA0 | typing_hook_done | 0 |  |  | 2 |
+ | $DCA2 | typing_check_char | 1 |  |  | 8 |
+-| $DCB1 | L_DCB1 | 0 |  |  | 4 |
++| $DCB1 | typing_mark_pending | 0 |  |  | 4 |
+ | $DCB8 | L_DCB8 | 0 |  |  | 3 |
+ | $DCBD | typing_check_word | 2 |  |  | 8 |
+ | $DCD1 | L_DCD1 | 0 |  |  | 5 |
+@@ -457,25 +457,25 @@
+ | $DD19 | L_DD19 | 0 | Os_mpb |  | 6 |
+ | $DD22 | find_word_start_at_cursor | 1 |  |  | 9 |
+ | $DD33 | find_word_start | 3 |  |  | 10 |
+-| $DD44 | L_DD44 | 0 |  |  | 8 |
++| $DD44 | scan_back_to_word_start | 0 |  |  | 8 |
+ | $DD51 | L_DD51 | 0 |  |  | 6 |
+ | $DD59 | cmd_check_as_you_type | 0 |  |  | 4 |
+-| $DD64 | L_DD64 | 0 |  |  | 9 |
+-| $DDA8 | L_DDA8 | 0 |  |  | 2 |
++| $DD64 | inflection_endings | 0 |  |  | 9 |
++| $DDA8 | inflection_class_offsets | 0 |  |  | 2 |
+ | $DDAF | inflection_class_table | 0 |  |  | 3 |
+ | $DDBD | guess_correct_word | 1 | Os_mpb |  | 15 |
+-| $DDE4 | L_DDE4 | 0 |  |  | 1 |
++| $DDE4 | guess_next_section | 0 |  |  | 1 |
+ | $DDE7 | L_DDE7 | 0 |  |  | 12 |
+ | $DE02 | L_DE02 | 0 |  |  | 6 |
+-| $DE12 | L_DE12 | 0 |  |  | 1 |
++| $DE12 | guess_no_room | 0 |  |  | 1 |
+ | $DE15 | guess_cancelled | 1 | Os_mpb |  | 11 |
+-| $DE2B | L_DE2B | 0 |  |  | 4 |
++| $DE2B | guess_step_section | 0 |  |  | 4 |
+ | $DE34 | L_DE34 | 0 | Os_xin |  | 21 |
+ | $DE61 | L_DE61 | 0 | Os_mpb |  | 18 |
+ | $DE81 | L_DE81 | 0 |  |  | 9 |
+ | $DE91 | L_DE91 | 0 | Os_mpb |  | 7 |
+ | $DE9E | L_DE9E | 0 | Os_mpb |  | 9 |
+-| $DEAE | L_DEAE | 0 | Gn_sop |  | 11 |
++| $DEAE | show_guess_list | 0 | Gn_sop |  | 11 |
+ | $DECC | L_DECC | 0 | Os_mpb |  | 9 |
+ | $DEDC | L_DEDC | 0 | Gn_nln, Os_out |  | 27 |
+ | $DF09 | L_DF09 | 0 | Gn_sop |  | 5 |
+@@ -491,17 +491,17 @@
+ | $DFDC | L_DFDC | 0 |  |  | 9 |
+ | $DFEF | L_DFEF | 0 |  |  | 2 |
+ | $DFF5 | free_guess_list | 2 | Os_mfr, Os_mpb |  | 34 |
+-| $E035 | L_E035 | 0 |  |  | 3 |
++| $E035 | no_guesses_found | 0 |  |  | 3 |
+ | $E03E | L_E03E | 0 |  | No  | 1 |
+-| $E041 | L_E041 | 0 |  | Guesses found | 2 |
++| $E041 | str_guesses_found | 0 |  | Guesses found | 2 |
+ | $E04F | guess_os_error | 2 |  |  | 8 |
+ | $E05D | L_E05D | 0 |  |  | 2 |
+ | $E061 | L_E061 | 0 |  |  | 2 |
+ | $E063 | section_could_match | 1 |  |  | 13 |
+ | $E076 | append_guess | 2 |  |  | 3 |
+-| $E07C | L_E07C | 0 |  | Guessing | 2 |
+-| $E085 | L_E085 | 0 |  |  | 1 |
+-| $E08A | L_E08A | 0 |  |  | 2 |
++| $E07C | str_guessing | 0 |  | Guessing | 2 |
++| $E085 | str_set_vscroll | 0 |  |  | 1 |
++| $E08A | str_cursor_home | 0 |  |  | 2 |
+ | $E090 | is_one_edit_away | 2 |  |  | 17 |
+ | $E0B3 | L_E0B3 | 0 |  |  | 5 |
+ | $E0BA | L_E0BA | 0 |  |  | 3 |
+@@ -525,7 +525,7 @@
+ | $E18E | L_E18E | 0 |  |  | 11 |
+ | $E1AB | is_block_start_line | 7 |  |  | 4 |
+ | $E1B1 | test_block_start_line | 1 |  |  | 4 |
+-| $E1BA | L_E1BA | 0 |  |  | 10 |
++| $E1BA | compare_line_with_cursor | 0 |  |  | 10 |
+ | $E1C9 | L_E1C9 | 0 |  |  | 2 |
+ | $E1CB | is_block_end_line | 7 |  |  | 4 |
+ | $E1D1 | test_block_end_line | 1 |  |  | 5 |
+@@ -536,9 +536,9 @@
+ | $E215 | L_E215 | 0 |  |  | 8 |
+ | $E225 | cmd_move_marked_block | 0 |  |  | 3 |
+ | $E22D | cmd_copy_marked_block | 0 |  |  | 2 |
+-| $E233 | L_E233 | 0 |  |  | 1 |
+-| $E236 | L_E236 | 0 | Os_out |  | 4 |
+-| $E23D | L_E23D | 0 | Os_out |  | 7 |
++| $E233 | block_command_end | 0 |  |  | 1 |
++| $E236 | beep_and_main_loop | 0 | Os_out |  | 4 |
++| $E23D | beep_no_room | 0 | Os_out |  | 7 |
+ | $E249 | check_block_marked | 2 |  |  | 3 |
+ | $E250 | L_E250 | 0 |  |  | 4 |
+ | $E256 | L_E256 | 0 |  |  | 11 |
+@@ -579,15 +579,15 @@
+ | $E53C | L_E53C | 0 |  |  | 3 |
+ | $E541 | join_next_line | 2 | Os_mpb |  | 37 |
+ | $E583 | L_E583 | 0 |  |  | 15 |
+-| $E5A3 | L_E5A3 | 0 |  |  | 2 |
++| $E5A3 | block_no_room | 0 |  |  | 2 |
+ | $E5A7 | is_at_cursor | 3 |  |  | 11 |
+ | $E5B4 | copy_record_to_line_buffer | 4 | Os_mpb |  | 16 |
+ | $E5D2 | check_free_memory | 16 | Os_nq |  | 9 |
+ | $E5E2 | cmd_delete_marked_block | 0 |  |  | 15 |
+-| $E602 | L_E602 | 0 | Gn_sop |  | 5 |
++| $E602 | confirm_delete_block | 0 | Gn_sop |  | 5 |
+ | $E60E | L_E60E | 0 | Os_in |  | 13 |
+ | $E629 | L_E629 | 0 |  |  | 1 |
+-| $E62C | L_E62C | 0 |  |  | 9 |
++| $E62C | delete_block_lines | 0 |  |  | 9 |
+ | $E642 | L_E642 | 0 |  |  | 9 |
+ | $E655 | L_E655 | 0 |  |  | 2 |
+ | $E65A | L_E65A | 0 |  |  | 8 |
+@@ -604,8 +604,8 @@
+ | $E7A0 | L_E7A0 | 0 |  |  | 12 |
+ | $E7BB | dec_cursor_line | 14 |  |  | 4 |
+ | $E7C3 | inc_cursor_line | 21 |  |  | 4 |
+-| $E7CB | L_E7CB | 0 |  |  | 1 |
+-| $E7D3 | L_E7D3 | 0 |  |  | 4 |
++| $E7CB | str_warning | 0 |  |  | 1 |
++| $E7D3 | str_are_you_sure | 0 |  |  | 4 |
+ | $E7ED | delete_block_os_error | 1 |  |  | 7 |
+ | $E7F8 | L_E7F8 | 0 |  |  | 3 |
+ | $E7FD | L_E7FD | 0 |  |  | 3 |
+@@ -637,7 +637,7 @@
+ | $ED28 | L_ED28 | 0 | Os_pb |  | 15 |
+ | $ED43 | L_ED43 | 0 | Os_pb |  | 5 |
+ | $ED4E | L_ED4E | 0 | Gn_cl |  | 11 |
+-| $ED6C | L_ED6C | 0 | Gn_cl |  | 4 |
++| $ED6C | close_file_no_room | 0 | Gn_cl |  | 4 |
+ | $ED76 | step_to_prev_record | 17 | Os_mpb |  | 25 |
+ | $ED9C | step_to_next_record | 16 | Os_mpb |  | 26 |
+ | $EDC5 | cmd_load_text | 0 |  |  | 13 |
+@@ -658,10 +658,10 @@
+ | $EF58 | L_EF58 | 0 |  |  | 9 |
+ | $EF69 | L_EF69 | 0 |  |  | 7 |
+ | $EF7E | L_EF7E | 0 |  |  | 5 |
+-| $EF89 | L_EF89 | 0 | Gn_cl |  | 8 |
+-| $EF9F | L_EF9F | 0 |  |  | 2 |
+-| $EFA4 | L_EFA4 | 0 |  |  | 1 |
+-| $EFA7 | L_EFA7 | 0 | Gn_sop, Os_out |  | 8 |
++| $EF89 | file_write_error | 0 | Gn_cl |  | 8 |
++| $EF9F | show_not_saved | 0 |  |  | 2 |
++| $EFA4 | show_file_not_found | 0 |  |  | 1 |
++| $EFA7 | show_file_error | 0 | Gn_sop, Os_out |  | 8 |
+ | $EFB3 | L_EFB3 | 0 | Os_in |  | 6 |
+ | $EFBE | L_EFBE | 0 |  |  | 3 |
+ | $EFC6 | L_EFC6 | 0 |  |  | 1 |
+@@ -670,17 +670,17 @@
+ | $F00C | L_F00C | 0 |  |  | 6 |
+ | $F01C | return_to_editor | 0 |  |  | 6 |
+ | $F02C | redefine_window1 | 19 | Gn_sop |  | 4 |
+-| $F033 | L_F033 | 0 |  |  | 1 |
++| $F033 | str_overwrite_text | 0 |  |  | 1 |
+ | $F035 | L_F035 | 0 |  | 2JCOverwrite text? (Y/N)  | 5 |
+-| $F067 | L_F067 | 0 |  |  | 2 |
+-| $F071 | L_F071 | 0 |  | Change name | 2 |
+-| $F07D | L_F07D | 0 |  | Save entire text | 2 |
+-| $F08E | L_F08E | 0 |  | Export text | 2 |
+-| $F09A | L_F09A | 0 |  | Load new text | 2 |
++| $F067 | str_filename_prompt | 0 |  |  | 2 |
++| $F071 | str_change_name | 0 |  | Change name | 2 |
++| $F07D | str_save_entire_text | 0 |  | Save entire text | 2 |
++| $F08E | str_export_text | 0 |  | Export text | 2 |
++| $F09A | str_load_new_text | 0 |  | Load new text | 2 |
+ | $F0A8 | input_to_buffer_a | 5 | Gn_sip |  | 7 |
+-| $F0B6 | L_F0B6 | 0 |  |  | 2 |
++| $F0B6 | str_loading | 0 |  |  | 2 |
+ | $F0C3 | L_F0C3 | 0 |  | 2JCLoading  | 3 |
+-| $F0D8 | L_F0D8 | 0 |  |  | 2 |
++| $F0D8 | str_saving | 0 |  |  | 2 |
+ | $F0E5 | L_F0E5 | 0 |  | 2JCSaving  | 3 |
+ | $F0F9 | free_sized_record | 5 | Os_mfr, Os_mpb |  | 16 |
+ | $F10E | store_filename_record | 5 | Os_mal |  | 12 |
+@@ -690,7 +690,7 @@
+ | $F13E | L_F13E | 0 |  |  | 5 |
+ | $F145 | L_F145 | 0 |  |  | 7 |
+ | $F14F | L_F14F | 0 | Dc_nam |  | 3 |
+-| $F153 | L_F153 | 0 |  | Save marked section | 2 |
++| $F153 | str_save_marked_section | 0 |  | Save marked section | 2 |
+ | $F167 | cmd_save_marked_block | 0 |  |  | 3 |
+ | $F16F | L_F16F | 0 |  |  | 3 |
+ | $F177 | L_F177 | 0 | Gn_sop |  | 9 |
+@@ -712,16 +712,16 @@
+ | $F2C7 | L_F2C7 | 0 |  |  | 2 |
+ | $F2C9 | save_os_error | 1 | Gn_sop |  | 10 |
+ | $F2DF | L_F2DF | 0 |  |  | 2 |
+-| $F2E1 | L_F2E1 | 0 |  |  | 1 |
++| $F2E1 | str_file_exists | 0 |  |  | 1 |
+ | $F305 | L_F2E5 | 0 |  | 2JCFile exists - Replace ? (Y/ | 2 |
+-| $F30B | L_F30B | 0 |  |  | 2 |
++| $F30B | str_file_not_saved | 0 |  |  | 2 |
+ | $F32F | L_F30F | 0 |  | 2JCFile NOT saved! - Press any | 2 |
+ | $F337 | cmd_change_name | 0 |  |  | 3 |
+ | $F33F | L_F33F | 0 | Gn_sip, Gn_sop |  | 14 |
+ | $F35D | L_F35D | 0 |  |  | 6 |
+ | $F36A | L_F36A | 0 |  |  | 12 |
+ | $F38C | str_pipedream_header | 0 |  |  | 2 |
+-| $F398 | L_F398 | 0 |  |  | 1 |
++| $F398 | str_pipedream_header_end | 0 |  |  | 1 |
+ | $F399 | browse_dictionary | 1 | Os_mal, Os_mpb |  | 19 |
+ | $F3C4 | L_F3C4 | 0 |  |  | 5 |
+ | $F3CA | L_F3CA | 0 | Gn_sop |  | 7 |
+@@ -760,14 +760,14 @@
+ | $F579 | L_F579 | 0 | Os_out |  | 9 |
+ | $F586 | browse_os_error | 2 | Gn_sop |  | 11 |
+ | $F59F | L_F59F | 0 |  |  | 2 |
+-| $F5A1 | L_F5A1 | 0 |  |  | 9 |
++| $F5A1 | browse_take_word | 0 |  |  | 9 |
+ | $F5AF | L_F5AF | 0 |  |  | 6 |
+-| $F5B6 | L_F5B6 | 0 | Gn_sop, Os_mfr |  | 10 |
+-| $F5CC | L_F5CC | 0 |  |  | 2 |
++| $F5B6 | browse_end | 0 | Gn_sop, Os_mfr |  | 10 |
++| $F5CC | str_window1_vscroll | 0 |  |  | 2 |
+ | $F5D6 | print_current_word | 4 |  |  | 5 |
+ | $F5DF | L_F5DF | 0 | Os_out |  | 9 |
+ | $F5EA | browse_next_word | 4 |  |  | 8 |
+-| $F5FC | L_F5FC | 0 |  |  | 7 |
++| $F5FC | browse_next_ending | 0 |  |  | 7 |
+ | $F60B | L_F60B | 0 |  |  | 5 |
+ | $F619 | L_F619 | 0 |  |  | 9 |
+ | $F62E | L_F62E | 0 |  |  | 3 |
+@@ -810,8 +810,8 @@
+ | $F857 | L_F857 | 0 |  |  | 2 |
+ | $F85A | L_F85A | 0 |  |  | 15 |
+ | $F87B | L_F87B | 0 |  |  | 2 |
+-| $F880 | L_F880 | 0 |  |  | 1 |
+-| $F887 | L_F887 | 0 |  |  | 2 |
++| $F880 | str_browse | 0 |  |  | 1 |
++| $F887 | str_set_vscroll_2 | 0 |  |  | 2 |
+ | $F88C | word_list_add | 3 | Os_mal, Os_mpb |  | 19 |
+ | $F8B4 | L_F8B4 | 0 |  |  | 3 |
+ | $F8B8 | L_F8B8 | 0 | Os_mpb |  | 14 |
+@@ -828,15 +828,15 @@
+ | $F9FE | L_F9FE | 0 |  |  | 10 |
+ | $FA16 | L_FA16 | 0 |  |  | 2 |
+ | $FA18 | L_FA18 | 0 |  |  | 1 |
+-| $FA1A | L_FA1A | 0 |  |  | 23 |
++| $FA1A | user_word_found | 0 |  |  | 23 |
+ | $FA45 | L_FA45 | 0 |  |  | 3 |
+ | $FA4B | L_FA4B | 0 |  |  | 2 |
+ | $FA50 | L_FA50 | 0 |  |  | 17 |
+-| $FA77 | L_FA77 | 0 |  |  | 4 |
++| $FA77 | browse_user_prev_scan | 0 |  |  | 4 |
+ | $FA82 | L_FA82 | 0 |  |  | 13 |
+ | $FAA6 | L_FAA6 | 0 |  |  | 6 |
+ | $FAB2 | L_FAB2 | 0 |  |  | 8 |
+-| $FAC5 | L_FAC5 | 0 |  |  | 2 |
++| $FAC5 | user_word_none | 0 |  |  | 2 |
+ | $FAC7 | L_FAC7 | 0 | Os_mpb |  | 10 |
+ | $FADE | browse_user_prev | 1 |  |  | 9 |
+ | $FAEF | L_FAEF | 0 |  |  | 7 |
+@@ -850,7 +850,7 @@
+ | $FB76 | L_FB76 | 0 |  |  | 4 |
+ | $FB7B | word_list_next | 6 |  |  | 3 |
+ | $FB81 | word_list_first_from | 7 |  |  | 1 |
+-| $FB84 | L_FB84 | 0 |  |  | 8 |
++| $FB84 | word_list_follow_link | 0 |  |  | 8 |
+ | $FB8D | L_FB8D | 0 | Os_mpb |  | 10 |
+ | $FB9D | L_FB9D | 0 |  |  | 2 |
+ | $FBA1 | L_FBA1 | 0 |  |  | 15 |
+@@ -862,7 +862,7 @@
+ | $FC04 | L_FC04 | 0 | Os_mpb |  | 25 |
+ | $FC2E | L_FC2E | 0 |  |  | 10 |
+ | $FC3B | L_FC3B | 0 |  |  | 3 |
+-| $FC41 | L_FC41 | 0 |  |  | 1 |
++| $FC41 | word_list_no_room | 0 |  |  | 1 |
+ | $FC44 | word_list_compare | 8 |  |  | 10 |
+ | $FC51 | L_FC51 | 0 |  |  | 11 |
+ | $FC60 | L_FC60 | 0 |  |  | 11 |
+@@ -877,7 +877,7 @@
+ | $FD2E | L_FD2E | 0 | Os_mpb, Os_pb |  | 27 |
+ | $FD5E | L_FD5E | 0 | Os_pb |  | 15 |
+ | $FD7D | L_FD7D | 0 | Gn_cl |  | 8 |
+-| $FD8F | L_FD8F | 0 | Gn_cl |  | 4 |
++| $FD8F | close_file_no_room_2 | 0 | Gn_cl |  | 4 |
+ | $FD99 | cmd_load_user_dictionary | 0 | Gn_sop, Os_in |  | 14 |
+ | $FDB5 | L_FDB5 | 0 | Os_out |  | 4 |
+ | $FDBB | L_FDBB | 0 | Gn_sop |  | 10 |
+@@ -889,9 +889,9 @@
+ | $FE55 | L_FE55 | 0 | Gn_cl |  | 5 |
+ | $FE62 | L_FE62 | 0 |  |  | 1 |
+ | $FE64 | L_FE64 | 0 |  | 2JCDelete current | 4 |
+-| $FE8D | L_FE8D | 0 |  |  | 2 |
+-| $FE97 | L_FE97 | 0 |  | Save user dictionary | 2 |
+-| $FEAC | L_FEAC | 0 |  | Load user dictionary | 2 |
++| $FE8D | str_filename_prompt_2 | 0 |  |  | 2 |
++| $FE97 | str_save_user_dictionary | 0 |  | Save user dictionary | 2 |
++| $FEAC | str_load_user_dictionary | 0 |  | Load user dictionary | 2 |
+ | $FEC1 | word_list_clear | 2 |  |  | 5 |
+ | $FEC9 | L_FEC9 | 0 | Os_mpb |  | 22 |
+ | $FEEE | L_FEEE | 0 | Os_mfr, Os_mpb |  | 29 |
+@@ -906,8 +906,8 @@
+ | $FF96 | str_dialog_title_bar | 0 |  |  | 3 |
+ | $FFAB | str_define_window3_prefix | 0 |  |  | 2 |
+ | $FFB0 | str_dialog_type_81 | 0 |  |  | 2 |
+-| $FFB6 | L_FFB6 | 0 |  |  | 2 |
+-| $FFC0 | L_FFC0 | 0 |  |  | 2 |
+-| $FFCA | L_FFCA | 0 |  |  | 2 |
++| $FFB6 | geom_dialog_left | 0 |  |  | 2 |
++| $FFC0 | geom_dialog_right | 0 |  |  | 2 |
++| $FFCA | geom_dialog_centre | 0 |  |  | 2 |
+ | $FFD4 | str_dialog_window_right | 0 |  |  | 2 |
+ | $FFE2 | str_dialog_window_left | 0 |  |  | 4 |
+diff -ruN spellmasterz88-main/docs/routine_index_bank63.md spellmasterz88-main/docs/routine_index_bank63.md
+--- spellmasterz88-main/docs/routine_index_bank63.md	2026-11-10 23:59:49.177808663 +0000
++++ spellmasterz88-main/docs/routine_index_bank63.md	2026-11-11 00:10:26.578013099 +0000
+@@ -14,7 +14,7 @@
+ | $C048 | L_C048 | 0 |  |  | 6 |
+ | $C051 | L_C051 | 0 |  |  | 15 |
+ | $C06B | L_C06B | 0 |  |  | 3 |
+-| $C06E | L_C06E | 0 |  |  | 2 |
++| $C06E | dict_section_end | 0 |  |  | 2 |
+ | $C070 | skip_to_next_letter_group | 1 |  |  | 1 |
+ | $C073 | L_C073 | 0 |  |  | 8 |
+ | $C081 | L_C081 | 0 |  |  | 4 |
+@@ -49,23 +49,23 @@
+ | $C2EA | L_C2EA | 0 |  |  | 2 |
+ | $C2F0 | L_C2F0 | 0 |  |  | 2 |
+ | $C2F6 | L_C2F6 | 0 |  |  | 2 |
+-| $C2FC | L_C2FC | 0 | Os_mcl |  | 3 |
+-| $C302 | L_C302 | 0 | Os_mcl |  | 3 |
+-| $C308 | L_C308 | 0 | Os_mcl |  | 3 |
+-| $C30E | L_C30E | 0 | Os_bye |  | 3 |
++| $C2FC | startup_fail_free_all | 0 | Os_mcl |  | 3 |
++| $C302 | startup_fail_free_second | 0 | Os_mcl |  | 3 |
++| $C308 | startup_fail_free_main | 0 | Os_mcl |  | 3 |
++| $C30E | startup_fail_exit | 0 | Os_bye |  | 3 |
+ | $C312 | wf_os_error | 2 |  |  | 5 |
+ | $C31B | wf_quit | 0 | Os_bye, Os_mcl |  | 13 |
+-| $C332 | L_C332 | 0 |  |  | 2 |
+-| $C334 | L_C334 | 0 |  |  | 3 |
+-| $C339 | L_C339 | 0 |  | WordFinder | 2 |
+-| $C344 | L_C344 | 0 |  |  | 1 |
++| $C332 | wf_os_error_return | 0 |  |  | 2 |
++| $C334 | wf_redraw_menu | 0 |  |  | 3 |
++| $C339 | str_wordfinder | 0 |  | WordFinder | 2 |
++| $C344 | str_wf_menu | 0 |  |  | 1 |
+ | $C346 | L_C346 | 0 |  | 2JCBrowse through dictionary | 2 |
+ | $C363 | L_C363 | 0 |  | Find anagrams             | 2 |
+ | $C37D | L_C37D | 0 |  | Find close matches        | 2 |
+ | $C397 | L_C397 | 0 |  | Solve crossword           | 2 |
+ | $C3B7 | L_C3B7 | 0 |  | Which category : | 2 |
+ | $C3CA | L_C3CA | 0 |  | Bad category! | 2 |
+-| $C3D8 | L_C3D8 | 0 | Os_bye, Os_mcl |  | 12 |
++| $C3D8 | quit_quickedit | 0 | Os_bye, Os_mcl |  | 12 |
+ | $C3EE | show_found_word | 3 | Os_out |  | 17 |
+ | $C410 | L_C410 | 0 | Os_out |  | 16 |
+ | $C42A | L_C42A | 0 | Os_out |  | 7 |
+@@ -74,9 +74,9 @@
+ | $C469 | L_C469 | 0 |  |  | 2 |
+ | $C46E | check_quit | 4 |  |  | 5 |
+ | $C476 | open_words_found | 4 |  |  | 6 |
+-| $C485 | L_C485 | 0 |  |  | 1 |
++| $C485 | str_press_space | 0 |  |  | 1 |
+ | $C48C | L_C48C | 0 |  | RPress SPACE to continue  | 2 |
+-| $C4AC | L_C4AC | 0 |  | Words found | 2 |
++| $C4AC | str_words_found | 0 |  | Words found | 2 |
+ | $C4B8 | input_wf_word | 3 | Gn_sip |  | 11 |
+ | $C4D0 | L_C4D0 | 0 | Gn_nln |  | 8 |
+ | $C4DB | bad_character | 0 | Gn_sop |  | 4 |
+@@ -112,10 +112,10 @@
+ | $C712 | sort_letters | 2 |  |  | 6 |
+ | $C719 | L_C719 | 0 |  |  | 8 |
+ | $C722 | L_C722 | 0 |  |  | 19 |
+-| $C737 | L_C737 | 0 |  | Crossword | 2 |
+-| $C741 | L_C741 | 0 |  |  | 2 |
+-| $C749 | L_C749 | 0 |  | Find close matches | 2 |
+-| $C75C | L_C75C | 0 |  |  | 4 |
++| $C737 | str_crossword | 0 |  | Crossword | 2 |
++| $C741 | str_anagram | 0 |  |  | 2 |
++| $C749 | str_find_close_matches | 0 |  | Find close matches | 2 |
++| $C75C | str_word_prompt | 0 |  |  | 4 |
+ | $C777 | mark_menu_line | 4 | Gn_sop, Os_out |  | 18 |
+ | $C791 | L_C791 | 0 |  |  | 1 |
+ | $C799 | far_redraw_text_window | 1 |  |  | 11 |
+@@ -143,10 +143,10 @@
+ | $C948 | put_text_char | 2 | Os_out |  | 12 |
+ | $C959 | L_C959 | 0 | Os_out |  | 11 |
+ | $C968 | L_C968 | 0 |  |  | 1 |
+-| $C969 | L_C969 | 0 |  |  | 2 |
++| $C969 | next_text_row | 0 |  |  | 2 |
+ | $C96D | draw_end_of_text_marker | 0 | Gn_sop, Os_out |  | 19 |
+ | $C992 | clear_remaining_rows | 0 | Gn_sop, Os_out |  | 16 |
+-| $C9B2 | L_C9B2 | 0 |  |  | 2 |
++| $C9B2 | pad_row | 0 |  |  | 2 |
+ | $C9B5 | L_C9B5 | 0 | Os_out |  | 5 |
+ | $C9BC | str_end_of_text | 0 |  |  | 1 |
+ | $C9BD | L_C9BD | 0 |  | 2+R End of text  | 3 |
+@@ -169,7 +169,7 @@
+ | $CACB | str_toggle_over_n | 0 |  |  | 1 |
+ | $CACF | is_start_marker_line | 1 |  |  | 4 |
+ | $CAD6 | is_end_marker_line | 2 |  |  | 3 |
+-| $CADB | L_CADB | 0 |  |  | 6 |
++| $CADB | compare_marker_line | 0 |  |  | 6 |
+ | $CAE5 | L_CAE5 | 0 |  |  | 3 |
+ | $CAE8 | place_cursor | 1 | Gn_sop |  | 9 |
+ | $CAF9 | L_CAF9 | 0 | Os_out |  | 8 |
+@@ -208,19 +208,19 @@
+ | $CED7 | is_word_char_nz | 1 |  |  | 7 |
+ | $CEE5 | L_CEE5 | 0 |  |  | 2 |
+ | $CEE8 | L_CEE8 | 0 |  |  | 2 |
+-| $CEEB | L_CEEB | 0 |  | Currently editing : | 2 |
++| $CEEB | str_information_labels | 0 |  | Currently editing : | 2 |
+ | $CF00 | L_CF00 | 0 |  | Number of lines   : | 2 |
+ | $CF15 | L_CF15 | 0 |  | Memory free       : | 2 |
+ | $CF2A | L_CF2A | 0 |  | Word count        : | 2 |
+ | $CF3F | L_CF3F | 0 |  | User dictionary   : | 2 |
+-| $CF53 | L_CF53 | 0 |  |  | 1 |
+-| $CF59 | L_CF59 | 0 |  |  | 2 |
+-| $CF5F | L_CF5F | 0 |  |  | 2 |
+-| $CF64 | L_CF64 | 0 |  | Untitled | 2 |
+-| $CF6D | L_CF6D | 0 |  |  | 1 |
++| $CF53 | str_info_lines_pos | 0 |  |  | 1 |
++| $CF59 | str_info_words_pos | 0 |  |  | 2 |
++| $CF5F | str_k | 0 |  |  | 2 |
++| $CF64 | str_untitled | 0 |  | Untitled | 2 |
++| $CF6D | str_none | 0 |  |  | 1 |
+ | $CF70 | L_CF70 | 0 |  |  | 2 |
+-| $CF72 | L_CF72 | 0 |  | Information | 2 |
+-| $CF7E | L_CF7E | 0 |  |  | 9 |
++| $CF72 | str_information | 0 |  | Information | 2 |
++| $CF7E | str_info_column | 0 |  |  | 9 |
+ | $CF8B | print_hex_byte | 1 |  |  | 1 |
+ | $CF8C | L_CF8C | 0 |  |  | 7 |
+ | $CF9A | print_hex_digit | 1 |  |  | 4 |
+@@ -247,7 +247,7 @@
+ | $D0BE | L_D0BE | 0 |  |  | 11 |
+ | $D0CF | is_block_start_line | 1 |  |  | 4 |
+ | $D0D5 | test_block_start_line | 1 |  |  | 4 |
+-| $D0DE | L_D0DE | 0 |  |  | 10 |
++| $D0DE | compare_line_with_cursor | 0 |  |  | 10 |
+ | $D0ED | L_D0ED | 0 |  |  | 2 |
+ | $D0EF | is_block_end_line | 1 |  |  | 4 |
+ | $D0F5 | test_block_end_line | 1 |  |  | 5 |
+@@ -258,7 +258,7 @@
+ | $D144 | L_D144 | 0 | Os_prt |  | 10 |
+ | $D155 | end_printout | 0 | Os_esc, Os_prt |  | 16 |
+ | $D174 | print_error | 0 | Os_out |  | 4 |
+-| $D17A | L_D17A | 0 |  |  | 2 |
++| $D17A | str_printing | 0 |  |  | 2 |
+ | $D187 | L_D187 | 0 |  | 2JCPrinting  | 3 |
+ | $D19D | far_search_and_replace | 0 |  |  | 8 |
+ | $D1B7 | L_D1B7 | 0 | Gn_sop |  | 5 |
+@@ -312,13 +312,13 @@
+ | $D4B9 | L_D4B9 | 0 | Gn_sip, Gn_sop |  | 14 |
+ | $D4D5 | L_D4D5 | 0 |  |  | 2 |
+ | $D4D8 | start_search | 0 |  |  | 14 |
+-| $D4FD | L_D4FD | 0 |  |  | 7 |
++| $D4FD | set_found_row | 0 |  |  | 7 |
+ | $D50A | L_D50A | 0 |  |  | 1 |
+ | $D50C | L_D50C | 0 |  |  | 4 |
+-| $D512 | L_D512 | 0 |  |  | 1 |
+-| $D519 | L_D519 | 0 |  | Search and Replace | 2 |
+-| $D52C | L_D52C | 0 |  |  | 3 |
+-| $D53C | L_D53C | 0 |  |  | 3 |
++| $D512 | str_search | 0 |  |  | 1 |
++| $D519 | str_search_and_replace | 0 |  | Search and Replace | 2 |
++| $D52C | str_find_prompt | 0 |  |  | 3 |
++| $D53C | str_replace_prompt | 0 |  |  | 3 |
+ | $D54F | find_next_match | 2 |  |  | 7 |
+ | $D55D | L_D55D | 0 |  |  | 12 |
+ | $D578 | L_D578 | 0 |  |  | 27 |
+@@ -341,8 +341,8 @@
+ | $D728 | inc_cursor_line | 6 |  |  | 4 |
+ | $D730 | dec_cursor_line | 3 |  |  | 4 |
+ | $D738 | copy_record_to_line_buffer | 1 | Os_mpb |  | 18 |
+-| $D766 | L_D766 | 0 |  |  | 4 |
+-| $D783 | L_D783 | 0 |  |  | 2 |
++| $D766 | str_replace_yn | 0 |  |  | 4 |
++| $D783 | str_global_or_selective | 0 |  |  | 2 |
+ | $D789 | L_D789 | 0 |  | Global or selective ? (G/S)  | 2 |
+ | $D7AA | save_string_record | 3 |  |  | 2 |
+ | $D7AD | L_D7AD | 0 | Os_mal, Os_mpb |  | 22 |
+@@ -351,11 +351,11 @@
+ | $D7F2 | load_string_record | 4 |  |  | 7 |
+ | $D7FB | L_D7FB | 0 | Os_mpb |  | 4 |
+ | $D800 | L_D800 | 0 |  |  | 7 |
+-| $D809 | L_D809 | 0 |  |  | 9 |
+-| $D84D | L_D84D | 0 |  |  | 2 |
+-| $D854 | L_D854 | 0 |  |  | 3 |
++| $D809 | inflection_endings | 0 |  |  | 9 |
++| $D84D | inflection_class_offsets | 0 |  |  | 2 |
++| $D854 | inflection_class_table | 0 |  |  | 3 |
+ | $D862 | section_could_match | 1 |  |  | 14 |
+-| $D87A | L_D87A | 0 |  |  | 2 |
++| $D87A | str_cursor_home | 0 |  |  | 2 |
+ | $D880 | far_append_guess | 0 | Os_mal, Os_mpb |  | 36 |
+ | $D8C1 | L_D8C1 | 0 |  |  | 14 |
+ | $D8D5 | L_D8D5 | 0 | Os_mpb |  | 23 |
+@@ -378,7 +378,7 @@
+ | $DA05 | L_DA05 | 0 |  |  | 2 |
+ | $DA0F | L_DA0F | 0 |  | Load text at cursor | 2 |
+ | $DA23 | input_merge_filename | 1 | Gn_sip |  | 7 |
+-| $DA31 | L_DA31 | 0 |  |  | 2 |
++| $DA31 | str_loading | 0 |  |  | 2 |
+ | $DA41 | L_DA41 | 0 |  | 2JCLoading  | 3 |
+ | $DA56 | split_at_cursor | 1 |  |  | 8 |
+ | $DA68 | L_DA68 | 0 |  |  | 15 |
+@@ -439,7 +439,7 @@
+ | $DE09 | L_DE09 | 0 |  |  | 8 |
+ | $DE19 | L_DE19 | 0 |  |  | 7 |
+ | $DE24 | L_DE24 | 0 |  |  | 4 |
+-| $DE2B | L_DE2B | 0 |  |  | 123 |
++| $DE2B | first_letter_index | 0 |  |  | 123 |
+ | $E203 | wf_option_1_browse_dictionary | 1 | Gn_sop, Os_mal, Os_mpb |  | 25 |
+ | $E237 | L_E237 | 0 |  |  | 1 |
+ | $E23A | L_E23A | 0 |  |  | 1 |
+@@ -476,14 +476,14 @@
+ | $E3D6 | L_E3D6 | 0 | Os_out |  | 9 |
+ | $E3E3 | browse_os_error | 2 | Gn_sop |  | 11 |
+ | $E3FC | L_E3FC | 0 |  |  | 2 |
+-| $E3FE | L_E3FE | 0 |  |  | 9 |
++| $E3FE | browse_take_word | 0 |  |  | 9 |
+ | $E40C | L_E40C | 0 |  |  | 6 |
+-| $E413 | L_E413 | 0 | Gn_sop, Os_mfr |  | 10 |
++| $E413 | browse_end | 0 | Gn_sop, Os_mfr |  | 10 |
+ | $E429 | L_E429 | 0 |  |  | 2 |
+ | $E433 | print_current_word | 4 |  |  | 5 |
+ | $E43C | L_E43C | 0 | Os_out |  | 9 |
+ | $E447 | browse_next_word | 4 |  |  | 8 |
+-| $E459 | L_E459 | 0 |  |  | 7 |
++| $E459 | browse_next_ending | 0 |  |  | 7 |
+ | $E468 | L_E468 | 0 |  |  | 5 |
+ | $E476 | L_E476 | 0 |  |  | 9 |
+ | $E48B | L_E48B | 0 |  |  | 3 |
+@@ -527,8 +527,8 @@
+ | $E6AC | L_E6AC | 0 |  |  | 2 |
+ | $E6AF | L_E6AF | 0 |  |  | 15 |
+ | $E6D0 | L_E6D0 | 0 |  |  | 2 |
+-| $E6D5 | L_E6D5 | 0 |  |  | 1 |
+-| $E6DC | L_E6DC | 0 |  |  | 2 |
++| $E6D5 | str_browse | 0 |  |  | 1 |
++| $E6DC | str_set_vscroll | 0 |  |  | 2 |
+ | $E6E1 | toggle_reverse | 2 | Gn_sop |  | 4 |
+ | $E6E8 | L_E6E8 | 0 |  |  | 1 |
+ | $E6EB | QuickEdit_topics | 0 |  |  | 1 |
+@@ -747,13 +747,13 @@
+ | $ECC5 | L_ECC5 | 0 |  |  | 3 |
+ | $ECDA | L_ECDA | 0 |  |  | 2 |
+ | $ECDF | L_ECDF | 0 |  |  | 3 |
+-| $ECEF | L_ECEF | 0 |  |  | 2 |
+-| $ECF9 | L_ECF9 | 0 |  |  | 2 |
+-| $ED03 | L_ED03 | 0 |  |  | 2 |
+-| $ED0D | L_ED0D | 0 |  |  | 2 |
+-| $ED17 | L_ED17 | 0 |  |  | 6 |
+-| $ED3D | L_ED3D | 0 |  |  | 2 |
+-| $ED4B | L_ED4B | 0 | Os_mgb, Os_mpb |  | 14 |
++| $ECEF | geom_dialog_right | 0 |  |  | 2 |
++| $ECF9 | geom_dialog_centre | 0 |  |  | 2 |
++| $ED03 | geom_dialog_mid | 0 |  |  | 2 |
++| $ED0D | geom_dialog_wide | 0 |  |  | 2 |
++| $ED17 | geom_dialog_wf | 0 |  |  | 6 |
++| $ED3D | str_words_window | 0 |  |  | 2 |
++| $ED4B | str_wf_menu_window | 0 | Os_mgb, Os_mpb |  | 14 |
+ | $FFC0 | frontdor | 0 |  | APPL | 9 |
+ | $FFD3 | frontdor_end | 0 |  |  | 5 |
+ | $FFF8 | romhdr | 0 |  | OZ | 7 |
+diff -ruN spellmasterz88-main/dzasm/annotate_bank62.cmd spellmasterz88-main/dzasm/annotate_bank62.cmd
+--- spellmasterz88-main/dzasm/annotate_bank62.cmd	2026-11-10 23:59:49.178180294 +0000
++++ spellmasterz88-main/dzasm/annotate_bank62.cmd	2026-11-11 00:10:17.341937969 +0000
+@@ -322,6 +322,115 @@
+ dl FB53 compare_word_with_stem
+ rem FB53 < Compares the current dictionary word (buffer C - 2, dict_stem_length) with buffer A (dict_target_length): Z = equal, NZ at the first difference.
+ rem D0CA < $D0CA-$D0D5 follow OS_Bye and nothing jumps to them, so they are never run (tools/reach.py). They look like the tail of a backwards scan.
++dl C038 dict_section_end
++dl C083 lookup_word_lists
++dl C0C0 compare_with_endings
++dl C298 startup_fail_free_all
++rem C298 < Start-up failed: closes the pools opened so far (entered at the right step) and leaves with OS_Bye.
++dl C29E startup_fail_free_second
++dl C2A4 startup_fail_free_main
++dl C2AA startup_fail_exit
++dl C342 expand_next_byte
++dl C371 expand_word_end
++dl C383 expand_set_class
++dl C5A4 enter_editor
++dl C5AF redraw_and_main_loop
++rem C5AF < Redraws the screen and enters the main loop. The usual end of an editing command.
++dl C614 handle_character
++rem C614 < An ordinary key: Enter ($0D) goes to the new-line code at $C756; any other character is inserted (or overtyped) at the cursor.
++dl C6B3 after_text_change
++rem C6B3 < After a character is added or removed: if the line is now longer than wrap_column the paragraph is rewrapped, otherwise just the line is redrawn.
++dl CA00 rubout_join_lines
++dl CA13 full_redraw_and_main_loop
++rem CA13 < Sets edit_flags bit 3 (redraw the whole text) and goes to redraw_and_main_loop.
++dl CBFC move_to_next_line
++dl CC36 place_or_scroll
++dl CC6C move_to_prev_line
++dl D0D6 no_room_exit
++rem D0D6 < Shows 'No Room!' and returns to the editor. The common exit when memory runs out (38 jumps).
++dl D171 command_table
++rem D171 < 47 words: the handler for each dispatch code 0-46 (see docs/commands.md).
++dl D401 check_next_word
++dl D467 end_of_check
++dl D542 redisplay_check
++dl D557 correction_menu_loop
++dl D8CE next_word_into_de
++dl D983 str_reverse_off_2
++dl D9A1 str_toggle_reverse
++dl D9A4 str_cursor_to_prefix_2
++dl D9A8 str_checking
++dl D9B2 str_correction_options
++dl DA55 str_correction_menu
++dl DAF2 str_replacing
++dl DAFF str_replace_prompt
++dl DB0A str_replace_with
++dl DC02 after_far_command
++dl DCA0 typing_hook_done
++dl DCB1 typing_mark_pending
++dl DD44 scan_back_to_word_start
++dl DD64 inflection_endings
++dl DDA8 inflection_class_offsets
++rem DDA8 < Seven byte offsets, one per inflection class $10-$16, into the ending strings at inflection_endings ($DD64). Used by next_word_form; inflection_class_table holds the same lists as word pointers.
++dl DDE4 guess_next_section
++dl DE12 guess_no_room
++dl DE2B guess_step_section
++dl DEAE show_guess_list
++dl E035 no_guesses_found
++dl E041 str_guesses_found
++dl E07C str_guessing
++dl E085 str_set_vscroll
++dl E08A str_cursor_home
++dl E1BA compare_line_with_cursor
++dl E233 block_command_end
++dl E236 beep_and_main_loop
++dl E23D beep_no_room
++rem E23D < Beeps, shows 'No Room!' and returns NZ.
++dl E5A3 block_no_room
++dl E602 confirm_delete_block
++dl E62C delete_block_lines
++dl E7CB str_warning
++dl E7D3 str_are_you_sure
++dl ED6C close_file_no_room
++dl EF89 file_write_error
++rem EF89 < A write failed: closes the file, makes the line after the saved text the cursor line again, and shows 'File NOT saved!'.
++dl EF9F show_not_saved
++dl EFA4 show_file_not_found
++dl F033 str_overwrite_text
++dl F067 str_filename_prompt
++dl F071 str_change_name
++dl F07D str_save_entire_text
++dl F08E str_export_text
++dl F09A str_load_new_text
++dl F0B6 str_loading
++dl F0D8 str_saving
++dl F153 str_save_marked_section
++dl F2E1 str_file_exists
++dl F30B str_file_not_saved
++dl F398 str_pipedream_header_end
++dl F5A1 browse_take_word
++dl F5B6 browse_end
++dl F5CC str_window1_vscroll
++dl F5FC browse_next_ending
++dl F880 str_browse
++dl F887 str_set_vscroll_2
++dl FA1A user_word_found
++dl FA77 browse_user_prev_scan
++dl FAC5 user_word_none
++dl FB84 word_list_follow_link
++dl FC41 word_list_no_room
++dl FD8F close_file_no_room_2
++dl FE8D str_filename_prompt_2
++dl FE97 str_save_user_dictionary
++dl FFB6 geom_dialog_left
++dl FFC0 geom_dialog_right
++dl FFCA geom_dialog_centre
++dl C619 insert_character
++dl C756 new_line
++rem C756 < Enter: splits the line at the cursor (split_at_cursor) and moves to the start of the new line. It does not call the check-as-you-type hooks (notes section 11).
++dl D60C correction_option_3
++rem D60C < Correction menu option 3: guess_correct_word, then replace the word if one was chosen (edit_flags bit 6 clear).
++dl EFA7 show_file_error
++dl FEAC str_load_user_dictionary
+ dl D922 is_word_char
+ rem D922 < Z set if A is a letter or an apostrophe. A letter is returned in upper case (AND $DF); an apostrophe is returned unchanged.
+ rem FE15 < Load user dictionary: each run of word characters (is_word_char, at most 64) is one word; any other byte ends it. Words of fewer than 3 characters are skipped.
+diff -ruN spellmasterz88-main/dzasm/annotate_bank63.cmd spellmasterz88-main/dzasm/annotate_bank63.cmd
+--- spellmasterz88-main/dzasm/annotate_bank63.cmd	2026-11-10 23:59:49.177944675 +0000
++++ spellmasterz88-main/dzasm/annotate_bank63.cmd	2026-11-11 00:10:17.342260476 +0000
+@@ -251,6 +251,64 @@
+ dl E616 copy_stem_to_buffer_a
+ dl EC82 clear_words_window
+ rem EC82 < Redefines window 3 as a plain wide window, clearing the 'Words found' dialog when a search is stopped.
++dl C06E dict_section_end
++dl C2FC startup_fail_free_all
++rem C2FC < WordFinder start-up failed: closes the pools opened so far and leaves with OS_Bye.
++dl C302 startup_fail_free_second
++dl C308 startup_fail_free_main
++dl C30E startup_fail_exit
++dl C332 wf_os_error_return
++dl C334 wf_redraw_menu
++dl C339 str_wordfinder
++dl C344 str_wf_menu
++dl C3D8 quit_quickedit
++rem C3D8 < Same as quit_quickedit in bank 62: RC_Quit during a far-called command closes the pools and leaves with OS_Bye.
++dl C485 str_press_space
++dl C737 str_crossword
++dl C741 str_anagram
++dl C749 str_find_close_matches
++dl C75C str_word_prompt
++dl C969 next_text_row
++dl C9B2 pad_row
++dl CADB compare_marker_line
++dl CEEB str_information_labels
++dl CF53 str_info_lines_pos
++dl CF59 str_info_words_pos
++dl CF5F str_k
++dl CF64 str_untitled
++dl CF6D str_none
++dl CF72 str_information
++dl CF7E str_info_column
++dl D0DE compare_line_with_cursor
++dl D17A str_printing
++dl D4FD set_found_row
++dl D512 str_search
++dl D519 str_search_and_replace
++dl D52C str_find_prompt
++dl D53C str_replace_prompt
++dl D766 str_replace_yn
++dl D783 str_global_or_selective
++dl D809 inflection_endings
++dl D84D inflection_class_offsets
++dl D854 inflection_class_table
++rem D854 < Copy of inflection_class_table in bank 62.
++dl D87A str_cursor_home
++dl DA31 str_loading
++dl DE2B first_letter_index
++rem DE2B < Copy of first_letter_index in bank 62 (26 words).
++dl E3FE browse_take_word
++dl E413 browse_end
++dl E459 browse_next_ending
++dl E6D5 str_browse
++dl E6DC str_set_vscroll
++dl ECEF geom_dialog_right
++dl ECF9 geom_dialog_centre
++dl ED03 geom_dialog_mid
++dl ED0D geom_dialog_wide
++dl ED17 geom_dialog_wf
++dl ED3D str_words_window
++dl ED4B str_wf_menu_window
++dl C4AC str_words_found
+ dl D008 far_call_table
+ rem D008 < Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63.
+ rem D008 < Index 1 (find_next_match, $D54F) and index 5 (far_call_5_unused, $DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.
+diff -ruN spellmasterz88-main/dzasm/spell62.clt spellmasterz88-main/dzasm/spell62.clt
+--- spellmasterz88-main/dzasm/spell62.clt	2026-11-10 23:59:49.178128218 +0000
++++ spellmasterz88-main/dzasm/spell62.clt	2026-11-11 00:10:26.801888630 +0000
+@@ -87,12 +87,12 @@
+ {
+ $C000, $C005 read_dictionary_record
+ $C012, $C01B
+-$C035, $C038
++$C035, $C038 dict_section_end
+ $C03A skip_to_next_letter_group, $C03D
+ $C04B, $C051 dictionary_lookup
+-$C067, $C083
++$C067, $C083 lookup_word_lists
+ $C093 compare_expanded_word, $C0AD
+-$C0C0, $C0E1
++$C0C0 compare_with_endings, $C0E1
+ $C0EB, $C0F8
+ $C10B, $C110
+ $C11F, $C144
+@@ -103,16 +103,16 @@
+ $C1A2, $C1B4
+ $C1B6 bind_dictionary_bank, $C1E2 qe_start
+ $C22A, $C245
+-$C286 far_call_bank63, $C298
+-$C29E, $C2A4
+-$C2AA, $C2AE next_word_form
++$C286 far_call_bank63, $C298 startup_fail_free_all
++$C29E startup_fail_free_second, $C2A4 startup_fail_free_main
++$C2AA startup_fail_exit, $C2AE next_word_form
+ $C2E9, $C2FA
+ $C30A, $C312
+ $C336 expand_word, $C341
+-$C342, $C34F
++$C342 expand_next_byte, $C34F
+ $C355 append_token, $C365
+-$C371, $C376
+-$C383, $C38E
++$C371 expand_word_end, $C376
++$C383 expand_set_class, $C38E
+ $C391, $C394
+ $C397, $C39A
+ $C39D, $C3A0
+@@ -137,19 +137,19 @@
+ $C469, $C491
+ $C495, $C499
+ $C49D, $C4A1
+-$C5A4, $C5AF
++$C5A4 enter_editor, $C5AF redraw_and_main_loop
+ $C5B2 qe_main_loop, $C5D1
+ $C5D5, $C5DB
+ $C5F5, $C5FB
+-$C610 cmd_insert_real_tab, $C614
+-$C619, $C62F
++$C610 cmd_insert_real_tab, $C614 handle_character
++$C619 insert_character, $C62F
+ $C653, $C659
+ $C668, $C670
+ $C694, $C6A9
+-$C6B0, $C6B3
++$C6B0, $C6B3 after_text_change
+ $C6C8, $C6F5
+ $C726, $C744
+-$C74A, $C756
++$C74A, $C756 new_line
+ $C774, $C798
+ $C79E cmd_previous_word, $C7B2
+ $C7E1, $C7E8
+@@ -168,7 +168,7 @@
+ $C985, $C988
+ $C996, $C9A2
+ $C9AD, $C9D8
+-$CA00, $CA13
++$CA00 rubout_join_lines, $CA13 full_redraw_and_main_loop
+ $CA1E cmd_join_lines, $CA3C
+ $CA43, $CA49 join_markers
+ $CA73, $CA91
+@@ -182,10 +182,10 @@
+ $CBAF cmd_screen_down, $CBBF
+ $CBCA, $CBD0 cmd_cursor_down
+ $CBDA cmd_cursor_up, $CBE5 cmd_cursor_right
+-$CBFC, $CC2B
+-$CC32, $CC36
++$CBFC move_to_next_line, $CC2B
++$CC32, $CC36 place_or_scroll
+ $CC41, $CC47 cmd_cursor_left
+-$CC56, $CC6C
++$CC56, $CC6C move_to_prev_line
+ $CC9B, $CCA2 store_cursor_line
+ $CCB9, $CCBC load_line_record
+ $CCE2 take_line_record, $CCE5 free_line_record
+@@ -213,7 +213,7 @@
+ $D089 handle_os_error, $D09F
+ $D0B4 quit_quickedit, $D0C3
+ $D0CA, $D0D5
+-$D0D6, $D0DC show_no_room_error
++$D0D6 no_room_exit, $D0DC show_no_room_error
+ $D0F7 draw_status_line, $D117
+ $D12D, $D1CF cmd_print_out_text
+ $D1D7 markers_line_removed, $D1EE
+@@ -234,22 +234,22 @@
+ $D398, $D3B5
+ $D3BE, $D3D2
+ $D3D5 cmd_check_all_text, $D3DE
+-$D3EF, $D401
++$D3EF, $D401 check_next_word
+ $D443, $D445
+ $D448, $D449
+ $D44E, $D454
+-$D45E, $D467
++$D45E, $D467 end_of_check
+ $D490, $D496 show_check_context
+ $D4BD, $D4CB
+ $D4E2, $D4EA
+ $D4F7, $D4FF
+-$D506 open_correction_menu, $D542
+-$D557, $D575
++$D506 open_correction_menu, $D542 redisplay_check
++$D557 correction_menu_loop, $D575
+ $D597, $D5AD
+ $D5B8, $D5CA
+ $D5D2, $D5E0
+ $D5F7, $D608
+-$D60C, $D61E
++$D60C correction_option_3, $D61E
+ $D636, $D643
+ $D645, $D64A change_word
+ $D67B, $D682
+@@ -271,7 +271,7 @@
+ $D85E, $D87D
+ $D8AC, $D8B2
+ $D8BC, $D8C4 next_word_to_buffer_b
+-$D8CA next_word_from_text, $D8CE
++$D8CA next_word_from_text, $D8CE next_word_into_de
+ $D8D7, $D8E1
+ $D8E6, $D8E9
+ $D8F9, $D8FB
+@@ -289,26 +289,26 @@
+ $DB9F cmd_search_and_replace, $DBC2
+ $DBD3, $DBEE
+ $DBF6 cmd_next_match, $DBFD cmd_search_for_string
+-$DC02, $DC12 cmd_merge_text_at_cursor
++$DC02 after_far_command, $DC12 cmd_merge_text_at_cursor
+ $DC26, $DC41
+ $DC52, $DC5C
+ $DC61 cmd_tab, $DC74 typing_check_command
+-$DC9D, $DCA0
+-$DCA2 typing_check_char, $DCB1
++$DC9D, $DCA0 typing_hook_done
++$DCA2 typing_check_char, $DCB1 typing_mark_pending
+ $DCB8, $DCBD typing_check_word
+ $DCD1, $DCDB
+ $DCE4, $DCF5
+ $DD04, $DD09
+ $DD19, $DD22 find_word_start_at_cursor
+-$DD33 find_word_start, $DD44
++$DD33 find_word_start, $DD44 scan_back_to_word_start
+ $DD51, $DD59 cmd_check_as_you_type
+-$DDBD guess_correct_word, $DDE4
++$DDBD guess_correct_word, $DDE4 guess_next_section
+ $DDE7, $DE02
+-$DE12, $DE15 guess_cancelled
+-$DE2B, $DE34
++$DE12 guess_no_room, $DE15 guess_cancelled
++$DE2B guess_step_section, $DE34
+ $DE61, $DE81
+ $DE91, $DE9E
+-$DEAE, $DECC
++$DEAE show_guess_list, $DECC
+ $DEDC, $DF09
+ $DF15, $DF3B
+ $DF49, $DF72
+@@ -316,7 +316,7 @@
+ $DFA0, $DFB7
+ $DFC0, $DFDC
+ $DFEF, $DFF5 free_guess_list
+-$E035, $E04F guess_os_error
++$E035 no_guesses_found, $E04F guess_os_error
+ $E05D, $E061
+ $E063 section_could_match, $E076 append_guess
+ $E090 is_one_edit_away, $E0B3
+@@ -330,14 +330,14 @@
+ $E13D, $E147
+ $E169 cmd_remove_markers, $E171 order_block_markers
+ $E18E, $E1AB is_block_start_line
+-$E1B1 test_block_start_line, $E1BA
++$E1B1 test_block_start_line, $E1BA compare_line_with_cursor
+ $E1C9, $E1CB is_block_end_line
+ $E1D1 test_block_end_line, $E1DC remove_start_marker
+ $E1F1 shift_marker_flags, $E1FA drop_markers_at_cursor
+ $E200, $E215
+ $E225 cmd_move_marked_block, $E22D cmd_copy_marked_block
+-$E233, $E236
+-$E23D, $E249 check_block_marked
++$E233 block_command_end, $E236 beep_and_main_loop
++$E23D beep_no_room, $E249 check_block_marked
+ $E250, $E256
+ $E272, $E280
+ $E28E, $E2A1
+@@ -358,11 +358,11 @@
+ $E520, $E524
+ $E53A, $E53C
+ $E541 join_next_line, $E583
+-$E5A3, $E5A7 is_at_cursor
++$E5A3 block_no_room, $E5A7 is_at_cursor
+ $E5B4 copy_record_to_line_buffer, $E5D2 check_free_memory
+-$E5E2 cmd_delete_marked_block, $E602
++$E5E2 cmd_delete_marked_block, $E602 confirm_delete_block
+ $E60E, $E629
+-$E62C, $E642
++$E62C delete_block_lines, $E642
+ $E655, $E65A
+ $E66B, $E685
+ $E6B7, $E6E0
+@@ -385,7 +385,7 @@
+ $ECED, $ED03
+ $ED13, $ED28
+ $ED43, $ED4E
+-$ED6C, $ED76 step_to_prev_record
++$ED6C close_file_no_room, $ED76 step_to_prev_record
+ $ED9C step_to_next_record, $EDC5 cmd_load_text
+ $EDE0, $EDE6
+ $EDF7 load_text_file, $EE02
+@@ -395,9 +395,9 @@
+ $EF35, $EF45
+ $EF48, $EF50
+ $EF58, $EF69
+-$EF7E, $EF89
+-$EF9F, $EFA4
+-$EFA7, $EFB3
++$EF7E, $EF89 file_write_error
++$EF9F show_not_saved, $EFA4 show_file_not_found
++$EFA7 show_file_error, $EFB3
+ $EFBE, $EFF5 finish_load
+ $F00C, $F01C return_to_editor
+ $F02C redefine_window1, $F0A8 input_to_buffer_a
+@@ -436,10 +436,10 @@
+ $F53D prev_section_letters, $F546
+ $F562 draw_browse_page, $F568
+ $F579, $F586 browse_os_error
+-$F59F, $F5A1
+-$F5AF, $F5B6
++$F59F, $F5A1 browse_take_word
++$F5AF, $F5B6 browse_end
+ $F5D6 print_current_word, $F5DF
+-$F5EA browse_next_word, $F5FC
++$F5EA browse_next_word, $F5FC browse_next_ending
+ $F60B, $F619
+ $F62E, $F635
+ $F63E, $F656
+@@ -469,31 +469,31 @@
+ $F9C7, $F9DF browse_user_next
+ $F9F0, $F9FE
+ $FA16, $FA18
+-$FA1A, $FA45
++$FA1A user_word_found, $FA45
+ $FA4B, $FA50
+-$FA77, $FA82
++$FA77 browse_user_prev_scan, $FA82
+ $FAA6, $FAB2
+-$FAC5, $FAC7
++$FAC5 user_word_none, $FAC7
+ $FADE browse_user_prev, $FAEF
+ $FB02, $FB26
+ $FB2D, $FB2F
+ $FB53 compare_word_with_stem, $FB64
+ $FB73, $FB76
+ $FB7B word_list_next, $FB81 word_list_first_from
+-$FB84, $FB8D
++$FB84 word_list_follow_link, $FB8D
+ $FB9D, $FBA1
+ $FBB8, $FBC6 word_list_select_letter
+ $FBE3 word_list_lookup, $FBEA
+ $FBEC, $FC04
+ $FC2E, $FC3B
+-$FC41, $FC44 word_list_compare
++$FC41 word_list_no_room, $FC44 word_list_compare
+ $FC51, $FC60
+ $FC6D, $FC71 swap_word_lists
+ $FC8E cmd_save_user_dictionary, $FCA7
+ $FCBE, $FCC0
+ $FCD6, $FD16
+ $FD2E, $FD5E
+-$FD7D, $FD8F
++$FD7D, $FD8F close_file_no_room_2
+ $FD99 cmd_load_user_dictionary, $FDB5
+ $FDBB, $FDD1
+ $FE15, $FE1D
+@@ -526,40 +526,40 @@
+ $D146 str_insert, $D14D str_overtype
+ $D155, $D156 str_status_row6_check
+ $D166 str_off, $D16A str_on
+-$D16D str_cursor_to_prefix, $D171
+-$D983, $D9A1
+-$D9A4, $D9A8
+-$D9A9, $D9B2
++$D16D str_cursor_to_prefix, $D171 command_table
++$D983 str_reverse_off_2, $D9A1 str_toggle_reverse
++$D9A4 str_cursor_to_prefix_2, $D9A8 str_checking
++$D9A9, $D9B2 str_correction_options
+ $D9B3, $D9D5
+ $D9F4, $DA13
+-$DA32, $DA55
+-$DAD6, $DAF2
+-$DAFF, $DB0A
+-$DD64, $DDA8
++$DA32, $DA55 str_correction_menu
++$DAD6, $DAF2 str_replacing
++$DAFF str_replace_prompt, $DB0A str_replace_with
++$DD64 inflection_endings, $DDA8 inflection_class_offsets
+ $DDAF inflection_class_table, $E03E
+-$E041, $E07C
+-$E085, $E08A
+-$E7CB, $E7D3
++$E041 str_guesses_found, $E07C str_guessing
++$E085 str_set_vscroll, $E08A str_cursor_home
++$E7CB str_warning, $E7D3 str_are_you_sure
+ $E842, $E84E first_letter_index
+ $EFC6, $EFCA
+-$F033, $F035
+-$F04E, $F067
+-$F071, $F07D
+-$F08E, $F09A
+-$F0B6, $F0C3
+-$F0D8, $F0E5
+-$F153, $F2E1
+-$F2E5, $F30B
++$F033 str_overwrite_text, $F035
++$F04E, $F067 str_filename_prompt
++$F071 str_change_name, $F07D str_save_entire_text
++$F08E str_export_text, $F09A str_load_new_text
++$F0B6 str_loading, $F0C3
++$F0D8 str_saving, $F0E5
++$F153 str_save_marked_section, $F2E1 str_file_exists
++$F2E5, $F30B str_file_not_saved
+ $F30F, $F38C str_pipedream_header
+-$F398, $F5CC
+-$F880, $F887
++$F398 str_pipedream_header_end, $F5CC str_window1_vscroll
++$F880 str_browse, $F887 str_set_vscroll_2
+ $FE62, $FE64
+-$FE75, $FE8D
+-$FE97, $FEAC
++$FE75, $FE8D str_filename_prompt_2
++$FE97 str_save_user_dictionary, $FEAC str_load_user_dictionary
+ $FF8C str_dialog_type_83, $FF96 str_dialog_title_bar
+ $FFAB str_define_window3_prefix, $FFB0 str_dialog_type_81
+-$FFB6, $FFC0
+-$FFCA, $FFD4 str_dialog_window_right
++$FFB6 geom_dialog_left, $FFC0 geom_dialog_right
++$FFCA geom_dialog_centre, $FFD4 str_dialog_window_right
+ $FFE2 str_dialog_window_left
+ }
+ 
+@@ -675,6 +675,7 @@
+ 		 "IN: A = index into the far-call table in bank 63 (far_call_table, 11 entries)."
+ 		 "Binds bank 63 into segment 1 and jumps to the stub at $7F80 (file offset $3F80 of SPELL.63)."
+ 		 "BANK-ADDRESSING SITE 2 (patched): INC A after OS_Mgb gives the bank after the running one, bank 63. The ORIGINAL ROM had AND $C0 / OR $3F.")
++	($C298,< "Start-up failed: closes the pools opened so far (entered at the right step) and leaves with OS_Bye.")
+ 	($C2AE,< "Puts the next accepted word form in buffer C: the next ending of the current stem's inflection class if there is one, otherwise the next record of the section, expanded."
+ 		 "Carry set at the end of the section (from read_dictionary_record).")
+ 	($C315,< "Window 1, the text window: x=0 y=0, 74 columns by 8 rows, type $81 (bars). Selected and cleared, vertical scroll and cursor on.")
+@@ -693,13 +694,18 @@
+ 	($C4A4,< "128 words: token number -> address of its string. Token 0 (TION) has four letters, tokens 1 to 35 three letters, 36 to 121 two letters;"
+ 		 "122 to 127 are not used.")
+ 	($C4F0,< "Pointers for the later tokens (the 2-letter tokens, $C3F7 onward); the last six words (tokens 122 to 127) are unused.")
++	($C5AF,< "Redraws the screen and enters the main loop. The usual end of an editing command.")
+ 	($C5B2,< "QuickEdit main loop (entry 0 of the command table: 'no command', just reads the next key).")
+ 	($C610,< "Command handler: 'Insert real tab' - dispatch code $2D")
++	($C614,< "An ordinary key: Enter ($0D) goes to the new-line code at $C756; any other character is inserted (or overtyped) at the cursor.")
++	($C6B3,< "After a character is added or removed: if the line is now longer than wrap_column the paragraph is rewrapped, otherwise just the line is redrawn.")
++	($C756,< "Enter: splits the line at the cursor (split_at_cursor) and moves to the start of the new line. It does not call the check-as-you-type hooks (notes section 11).")
+ 	($C79E,< "Command handler: 'Previous word' - dispatch code $17")
+ 	($C81D,< "Command handler: 'Next word' - dispatch code $16")
+ 	($C896,< "Command handler: 'Delete line' - dispatch code $15")
+ 	($C920,< "Command handler: 'Delete character' - dispatch code $14")
+ 	($C93F,< "Command handler: 'Rubout' - dispatch code $0B")
++	($CA13,< "Sets edit_flags bit 3 (redraw the whole text) and goes to redraw_and_main_loop.")
+ 	($CA1E,< "Command handler: 'Join lines' - dispatch code $0D")
+ 	($CA49,< "Before the next line is joined onto the cursor line: a block marker on the next line moves up to this line, its column increased by line_length.")
+ 	($CAE0,< "Command handler: 'Swap case' - dispatch code $0C")
+@@ -735,6 +741,7 @@
+ 		 "Other codes are passed back to the caller.")
+ 	($D0B4,< "RC_Quit: closes the three memory pools and leaves QuickEdit with OS_Bye.")
+ 	($D0CA,< "$D0CA-$D0D5 follow OS_Bye and nothing jumps to them, so they are never run (tools/reach.py). They look like the tail of a backwards scan.")
++	($D0D6,< "Shows 'No Room!' and returns to the editor. The common exit when memory runs out (38 jumps).")
+ 	($D0DC,< "Displays 'No Room!' (QuickEdit reports this when it cannot get more memory for the text).")
+ 	($D0F7,< "Draw the status line in window 2 (the 19-column panel at the right of the screen)."
+ 		 "Redefines and clears window 2, prints the cursor line number, then in tiny type: row 7 = Insert or Overtype (edit_flags bit 0),"
+@@ -742,7 +749,8 @@
+ 	($D13C,< "Cursor to column 0, row 7 of window 2, tiny type on. Followed by str_insert or str_overtype.")
+ 	($D156,< "Cursor to column 0, row 6 of window 2, tiny type on, then the text Check: (followed by str_off or str_on).")
+ 	($D16D,< "Cursor-to prefix: SOH, 3, @. The caller sends the column and row, each plus 32.")
+-	($D171,< "Command jump table: 47 words, indexed by dispatch code 0..46. See cmd_* handlers."
++	($D171,< "47 words: the handler for each dispatch code 0-46 (see docs/commands.md)."
++		 "Command jump table: 47 words, indexed by dispatch code 0..46. See cmd_* handlers."
+ 		 "The main loop does: HL = table + 2*code; JP (HL).")
+ 	($D1CF,< "Command handler: 'Print out text' - dispatch code $2E")
+ 	($D1D7,< "A line has been removed above or at a marker: block_start_line and block_end_line after the cursor line go down by one.")
+@@ -761,6 +769,7 @@
+ 	($D506,< "Shows the checking window and the 'Correction menu' dialog with its five options (str at $D9B2).")
+ 	($D5CA,< "Correction menu option 2 'Add word to user dictionary': word_list_add. Option 1 'Ignore word' (below) adds it to the ignored words instead.")
+ 	($D5E0,< "Correction menu option 5 'Browse through dictionary': save_typed_word, browse_dictionary, restore_typed_word.")
++	($D60C,< "Correction menu option 3: guess_correct_word, then replace the word if one was chosen (edit_flags bit 6 clear).")
+ 	($D643,< "Correction menu option 4 'Change word'.")
+ 	($D64A,< "Opens 'Replace with', puts the word as it stands in the text into buffer C (leaving out a final 'S or apostrophe, which stays in the text)"
+ 		 "and edits it with GN_Sip (40 bytes, 20 columns). Enter: letters are made upper case (is_word_char) and replace_word_everywhere runs. Escape: back to the menu.")
+@@ -805,6 +814,7 @@
+ 		 "Returns at once (Z) if cursor_index is 0, leaving HL unchanged.")
+ 	($DD33,< "From cursor_index, moves back to the start of the word at or before the cursor. Out: HL -> that character in line_buffer, C = its index. Z if at the start of the line.")
+ 	($DD59,< "Command handler: 'Check as you type' - dispatch code $19")
++	($DDA8,< "Seven byte offsets, one per inflection class $10-$16, into the ending strings at inflection_endings ($DD64). Used by next_word_form; inflection_class_table holds the same lists as word pointers.")
+ 	($DDAF,< "7 words: inflection class $10 to $16 -> list of endings. The list holds endings each starting with a letter that has bit 7 set, ending with $80."
+ 		 "$10 = ED ING S;  $11 = S;  $12 = ED ES ING;  $13 = E ED ES ING (the stem has lost its final E);  $14 = IES Y;  $15 = E Y;"
+ 		 "$16 = ISE ISED ISES ISING IZE IZED IZES IZING.")
+@@ -835,6 +845,7 @@
+ 	($E1FA,< "Removes any block marker that is exactly at the cursor (used when the character there is deleted).")
+ 	($E225,< "Command handler: 'Move marked block' - dispatch code $21")
+ 	($E22D,< "Command handler: 'Copy marked block' - dispatch code $1F")
++	($E23D,< "Beeps, shows 'No Room!' and returns NZ.")
+ 	($E249,< "Carry set (and Z) if no block is marked (end marker not set); otherwise continues with the block command.")
+ 	($E4DC,< "As markers_line_inserted, used by the block commands.")
+ 	($E501,< "As join_markers, used by join_next_line.")
+@@ -866,6 +877,7 @@
+ 		 "A line longer than 239 characters is cut into pieces of 239. The lines are not rewrapped. Reading stops at end of file (RC_Eof) or Escape (RC_Esc);"
+ 		 "other read errors make it read again ($EF7E).")
+ 	($EE61,< "Frees every line record before the cursor line (the prev_line chain) and after it (the next_line chain).")
++	($EF89,< "A write failed: closes the file, makes the line after the saved text the cursor line again, and shows 'File NOT saved!'.")
+ 	($EFF5,< "Closes the file, stores the last line and makes the first line the cursor line.")
+ 	($F01C,< "Redefines window 1, asks for a full redraw and goes back to the main loop.")
+ 	($F02C,< "Prints str_define_window1: redefines and selects the text window, which closes any dialog drawn over it.")
+diff -ruN spellmasterz88-main/dzasm/spell63.clt spellmasterz88-main/dzasm/spell63.clt
+--- spellmasterz88-main/dzasm/spell63.clt	2026-11-10 23:59:49.178154156 +0000
++++ spellmasterz88-main/dzasm/spell63.clt	2026-11-11 00:10:26.921726292 +0000
+@@ -156,7 +156,7 @@
+ $6329 QuickEdit_help_page47, $C000 QuickEdit_entry
+ $C001 applDor_QuickEdit, $C03B read_dictionary_record
+ $C048, $C051
+-$C06B, $C06E
++$C06B, $C06E dict_section_end
+ $C070 skip_to_next_letter_group, $C073
+ $C081, $C087 find_dictionary_section
+ $C0A8, $C0AA
+@@ -173,11 +173,11 @@
+ $C2C7 wf_menu_key, $C2D0
+ $C2E4, $C2EA
+ $C2F0, $C2F6
+-$C2FC, $C302
+-$C308, $C30E
++$C2FC startup_fail_free_all, $C302 startup_fail_free_second
++$C308 startup_fail_free_main, $C30E startup_fail_exit
+ $C312 wf_os_error, $C31B wf_quit
+-$C332, $C334
+-$C3D8, $C3E6
++$C332 wf_os_error_return, $C334 wf_redraw_menu
++$C3D8 quit_quickedit, $C3E6
+ $C3EE show_found_word, $C3F6
+ $C401, $C410
+ $C421, $C42A
+@@ -214,8 +214,8 @@
+ $C90E, $C91F
+ $C93D redraw_done, $C948 put_text_char
+ $C959, $C968
+-$C969, $C96D draw_end_of_text_marker
+-$C992 clear_remaining_rows, $C9B2
++$C969 next_text_row, $C96D draw_end_of_text_marker
++$C992 clear_remaining_rows, $C9B2 pad_row
+ $C9B5, $C9D9 reverse_on
+ $C9E5 reverse_off, $C9F1
+ $C9FC order_block_markers, $CA19
+@@ -224,7 +224,7 @@
+ $CA8A, $CA93
+ $CAA5, $CAC0
+ $CACF is_start_marker_line, $CAD6 is_end_marker_line
+-$CADB, $CAE5
++$CADB compare_marker_line, $CAE5
+ $CAE8 place_cursor, $CAF9
+ $CB05 expand_word, $CB11
+ $CB24, $CB34
+@@ -256,7 +256,7 @@
+ $D09C, $D0B3
+ $D0B5, $D0BE
+ $D0CF is_block_start_line, $D0D5 test_block_start_line
+-$D0DE, $D0ED
++$D0DE compare_line_with_cursor, $D0ED
+ $D0EF is_block_end_line, $D0F5 test_block_end_line
+ $D100 far_print_text, $D11F
+ $D121, $D126
+@@ -288,7 +288,7 @@
+ $D495, $D498 far_search_for_string
+ $D4A5, $D4B9
+ $D4D5, $D4D8 start_search
+-$D4FD, $D50A
++$D4FD set_found_row, $D50A
+ $D50C, $D54F find_next_match
+ $D55D, $D578
+ $D5A9, $D5B5
+@@ -361,10 +361,10 @@
+ $E3A3, $E3BF draw_browse_page
+ $E3C5, $E3D6
+ $E3E3 browse_os_error, $E3FC
+-$E3FE, $E40C
+-$E413, $E433 print_current_word
++$E3FE browse_take_word, $E40C
++$E413 browse_end, $E433 print_current_word
+ $E43C, $E447 browse_next_word
+-$E459, $E468
++$E459 browse_next_ending, $E468
+ $E476, $E48B
+ $E492, $E49B
+ $E4B3, $E4C0
+@@ -482,39 +482,39 @@
+ 
+ ; Local Data References:
+ {
+-$C191 str_cursor_to_prefix_b, $C339
+-$C344, $C346
++$C191 str_cursor_to_prefix_b, $C339 str_wordfinder
++$C344 str_wf_menu, $C346
+ $C363, $C37D
+ $C397, $C3B7
+-$C3CA, $C485
+-$C48C, $C4AC
++$C3CA, $C485 str_press_space
++$C48C, $C4AC str_words_found
+ $C4E4, $C4E8
+-$C737, $C740
+-$C741, $C749
+-$C75C, $C791
++$C737 str_crossword, $C740
++$C741 str_anagram, $C749 str_find_close_matches
++$C75C str_word_prompt, $C791
+ $C9BC str_end_of_text, $C9BD
+ $C9EE str_reverse_off, $C9F3 str_reverse_on
+ $C9F8 str_cursor_to_prefix, $CACB str_toggle_over_n
+ $CC73 token_pointer_table, $CD73
+-$CEEB, $CF00
++$CEEB str_information_labels, $CF00
+ $CF15, $CF2A
+-$CF3F, $CF53
+-$CF59, $CF5F
+-$CF64, $CF6D
+-$CF72, $CF7E
++$CF3F, $CF53 str_info_lines_pos
++$CF59 str_info_words_pos, $CF5F str_k
++$CF64 str_untitled, $CF6D str_none
++$CF72 str_information, $CF7E str_info_column
+ $CFDA, $D008 far_call_table
+-$D17A, $D187
+-$D512, $D519
+-$D52B, $D52C
+-$D53C, $D766
+-$D783, $D789
+-$D809, $D84D
+-$D854, $D87A
++$D17A str_printing, $D187
++$D512 str_search, $D519 str_search_and_replace
++$D52B, $D52C str_find_prompt
++$D53C str_replace_prompt, $D766 str_replace_yn
++$D783 str_global_or_selective, $D789
++$D809 inflection_endings, $D84D inflection_class_offsets
++$D854 inflection_class_table, $D87A str_cursor_home
+ $DA05, $DA0F
+-$DA31, $DA41
++$DA31 str_loading, $DA41
+ $DB0D, $DB17
+-$DE2B, $E429
+-$E6D5, $E6DC
++$DE2B first_letter_index, $E429
++$E6D5 str_browse, $E6DC str_set_vscroll
+ $E6E8, $E71A
+ $E72D, $E741
+ $E759, $E771
+@@ -545,10 +545,10 @@
+ $EC09, $EC1E
+ $EC3B, $ECBB
+ $ECC5, $ECDA
+-$ECDF, $ECEF
+-$ECF9, $ED03
+-$ED0D, $ED17
+-$ED3D, $ED4B
++$ECDF, $ECEF geom_dialog_right
++$ECF9 geom_dialog_centre, $ED03 geom_dialog_mid
++$ED0D geom_dialog_wide, $ED17 geom_dialog_wf
++$ED3D str_words_window, $ED4B str_wf_menu_window
+ $FD12, $FEFE
+ }
+ 
+@@ -653,8 +653,10 @@
+ 	($C267,< "WordFinder menu loop: reads keys. Keys 1 to 4 choose an option, Cursor up/down moves wf_menu_sel,"
+ 		 "Enter runs the selected option, Escape frees the pools and exits (OS_Bye).")
+ 	($C2C7,< "Handles a key typed in the WordFinder menu.")
++	($C2FC,< "WordFinder start-up failed: closes the pools opened so far and leaves with OS_Bye.")
+ 	($C312,< "OS_In error in the WordFinder menu: RC_Draw redraws the menu, RC_Quit leaves (falls into wf_quit).")
+ 	($C31B,< "RC_Quit: closes the three memory pools and leaves WordFinder with OS_Bye.")
++	($C3D8,< "Same as quit_quickedit in bank 62: RC_Quit during a far-called command closes the pools and leaves with OS_Bye.")
+ 	($C3EE,< "Prints the found word (the two section letters, then buffer C) in 16-column slots, four to a 64-column row, using cursor_index and cursor_row (borrowed) as column and row."
+ 		 "After six rows: 'Press SPACE to continue'. Any key clears the window and goes on; an extended Escape stops the search (carry set).")
+ 	($C46E,< "After an OS_In error: if it is RC_Quit ('g', $67) leaves WordFinder (wf_quit); otherwise returns.")
+@@ -755,6 +757,7 @@
+ 		 "The OS_Mal result is not checked for an error.")
+ 	($D7DD,< "Frees a record whose byte 0 is its size (HL = offset, A = bank); does nothing if HL = 0. Same as free_sized_record in bank 62.")
+ 	($D7F2,< "Copies the string saved in the record HL (bank A) to DE, so the last Find or Replace string is offered again; an empty string if HL = 0.")
++	($D854,< "Copy of inflection_class_table in bank 62.")
+ 	($D862,< "Same routine as section_could_match in bank 62 (identical bytes).")
+ 	($D880,< "Far-call table entry 6."
+ 		 "Called from append_guess (bank 62 $E076) by Guess correct word, once for each dictionary or user word that is one edit away from the typed word."
+@@ -777,6 +780,7 @@
+ 	($DCFE,< "Option 3 uses the same test as Guess correct word (section_could_match, is_one_edit_away) over the whole ROM dictionary, without the user dictionary and without stopping for a key press."
+ 		 "Menu option 3: Find close matches (window title 'Find close matches').")
+ 	($DD8A,< "Same routine as is_one_edit_away in bank 62 (identical apart from the jump addresses): Z if the word is one letter different, missing, extra or swapped.")
++	($DE2B,< "Copy of first_letter_index in bank 62 (26 words).")
+ 	($E203,< "Option 1 is the bank 62 Browse (browse_dictionary) almost instruction for instruction: same keys, same routines (names as in bank 62),"
+ 		 "except that it starts at 'AA' instead of the typed word and calls no_user_word where QuickEdit looks in the user dictionary."
+ 		 "Menu option 1: Browse through dictionary.")
+diff -ruN spellmasterz88-main/spell62.asm spellmasterz88-main/spell62.asm
+--- spellmasterz88-main/spell62.asm	2026-11-10 23:59:49.178359191 +0000
++++ spellmasterz88-main/spell62.asm	2026-11-11 00:10:26.802425733 +0000
+@@ -54,7 +54,7 @@
+         ld      a,(hl)
+         ld      (bc),a
+         cp      $0F
+-        jr      z,L_C038
++        jr      z,dict_section_end
+ L_C012:
+         inc     hl
+         inc     bc
+@@ -82,7 +82,7 @@
+         scf
+         ccf
+         ret
+-L_C038:
++dict_section_end:
+         scf
+         ret
+ skip_to_next_letter_group:
+@@ -95,7 +95,7 @@
+         cp      $00
+         jr      z,L_C04B
+         cp      $0F
+-        jr      z,L_C038
++        jr      z,dict_section_end
+         inc     hl
+         jr      L_C03D
+ L_C04B:
+@@ -117,10 +117,10 @@
+         ld      a,(hl)
+         ld      (dict_letter2),a
+         call    find_dictionary_section
+-        jr      c,L_C083
++        jr      c,lookup_word_lists
+ L_C067:
+         call    read_dictionary_record
+-        jr      c,L_C083
++        jr      c,lookup_word_lists
+         call    expand_word
+         ld      hl,(ptr_buffer_a)
+         ld      de,(ptr_buffer_c)
+@@ -128,11 +128,11 @@
+         inc     hl
+         ld      a,(de)
+         cp      (hl)
+-        jr      z,L_C0C0
+-        jr      nc,L_C083
++        jr      z,compare_with_endings
++        jr      nc,lookup_word_lists
+         call    skip_to_next_letter_group
+         jr      nc,L_C067
+-L_C083:
++lookup_word_lists:
+ ; Not in the ROM dictionary: try the user dictionary, then (swapping the lists) the ignored words.
+         call    word_list_lookup
+         ret     nc
+@@ -160,13 +160,13 @@
+         jr      L_C0EB
+ L_C0AD:
+         call    read_dictionary_record
+-        jr      c,L_C083
++        jr      c,lookup_word_lists
+         ld      ix,(ptr_buffer_b)
+         ld      a,(ix+0)
+         cp      $00
+-        jr      z,L_C083
++        jr      z,lookup_word_lists
+         call    expand_word
+-L_C0C0:
++compare_with_endings:
+         ld      a,(dict_word_flags)
+         bit     7,a
+         jr      z,L_C0E1
+@@ -212,7 +212,7 @@
+         ret
+ L_C10B:
+         jr      nc,L_C0AD
+-        jp      L_C083
++        jp      lookup_word_lists
+ L_C110:
+         ld      de,(dict_ending_ptr)
+         ld      a,(dict_stem_length)
+@@ -351,17 +351,17 @@
+         ld      a,'`'
+         ld      bc,$0000
+         oz      Os_mop
+-        jp      c,L_C2AA
++        jp      c,startup_fail_exit
+         ld      (pool_main),ix
+         ld      a,$80
+         ld      bc,$0000
+         oz      Os_mop
+-        jp      c,L_C2A4
++        jp      c,startup_fail_free_main
+         ld      (pool_second),ix
+         ld      bc,$00F8
+         ld      a,$00
+         oz      Os_mal
+-        jp      c,L_C29E
++        jp      c,startup_fail_free_second
+         ld      a,b
+         ld      (line_buffer_bank),a
+         ld      (line_buffer),hl
+@@ -390,12 +390,12 @@
+         ld      a,$00
+         ld      bc,$0000
+         oz      Os_mop
+-        jr      c,L_C29E
++        jr      c,startup_fail_free_second
+         ld      (pool_buffers),ix
+         ld      bc,$00C2
+         ld      a,$00
+         oz      Os_mal
+-        jr      c,L_C298
++        jr      c,startup_fail_free_all
+         ld      (buffers_binding),bc
+         ld      (ptr_buffer_a),hl
+         ld      bc,$0040
+@@ -408,7 +408,7 @@
+         oz      Os_mpb
+         ld      hl,str_define_window1
+         oz      Gn_sop
+-        jp      L_C5A4
++        jp      enter_editor
+ far_call_bank63:
+ ; Call a routine in bank 63 (SPELL.63) from this bank.
+ ; IN: A = index into the far-call table in bank 63 (far_call_table, 11 entries).
+@@ -426,16 +426,17 @@
+         ld      c,$01
+         oz      Os_mpb
+         jp      $7F80
+-L_C298:
++startup_fail_free_all:
++; Start-up failed: closes the pools opened so far (entered at the right step) and leaves with OS_Bye.
+         ld      ix,(pool_buffers)
+         oz      Os_mcl
+-L_C29E:
++startup_fail_free_second:
+         ld      ix,(pool_second)
+         oz      Os_mcl
+-L_C2A4:
++startup_fail_free_main:
+         ld      ix,(pool_main)
+         oz      Os_mcl
+-L_C2AA:
++startup_fail_exit:
+         ld      a,$07
+         oz      Os_bye
+ next_word_form:
+@@ -455,11 +456,11 @@
+         and     $0F
+         ld      e,a
+         ld      d,$00
+-        ld      hl,L_DDA8
++        ld      hl,inflection_class_offsets
+         add     hl,de
+         ld      e,(hl)
+         ld      d,$00
+-        ld      hl,L_DD64
++        ld      hl,inflection_endings
+         add     hl,de
+         ld      (dict_ending_ptr),hl
+         ld      a,(dict_word_flags)
+@@ -520,19 +521,19 @@
+         ld      b,$00
+ L_C341:
+         add     hl,bc
+-L_C342:
++expand_next_byte:
+         inc     de
+         ld      a,(de)
+         cp      $00
+         jp      m,append_token
+         cp      $10
+-        jr      c,L_C371
++        jr      c,expand_word_end
+         cp      ' '
+ L_C34F:
+-        jr      c,L_C383
++        jr      c,expand_set_class
+         ld      (hl),a
+         inc     hl
+-        jr      L_C342
++        jr      expand_next_byte
+ append_token:
+ ; IN: A = token number (bit 7 of the packed byte is ignored), HL = where to append.
+ ; Looks up the token string through token_pointer_table and copies it to HL, clearing bit 7 of its characters, until the next
+@@ -556,9 +557,9 @@
+         inc     bc
+         ld      a,(bc)
+         cp      $80
+-        jr      nc,L_C342
++        jr      nc,expand_next_byte
+         jr      L_C365
+-L_C371:
++expand_word_end:
+         ld      a,$00
+         ld      (dict_word_flags),a
+ L_C376:
+@@ -569,7 +570,7 @@
+         ld      a,l
+         ld      (dict_word_length),a
+         ret
+-L_C383:
++expand_set_class:
+         or      $80
+         ld      (dict_word_flags),a
+         jr      L_C376
+@@ -770,13 +771,14 @@
+         defb    $9b,$c4,$9d,$c4,$9f,$c4,$a1,$c4
+         defb    $a3,$c4,$a4,$c4,$a4,$c4,$a4,$c4
+         defb    $a4,$c4,$a4,$c4
+-L_C5A4:
++enter_editor:
+         ld      c,$02
+         ld      a,(line_buffer_bank)
+         ld      b,a
+         oz      Os_mpb
+         call    redefine_window1
+-L_C5AF:
++redraw_and_main_loop:
++; Redraws the screen and enters the main loop. The usual end of an editing command.
+         call    redraw_screen
+ qe_main_loop:
+ ; QuickEdit main loop (entry 0 of the command table: 'no command', just reads the next key).
+@@ -802,7 +804,7 @@
+         jr      c,qe_main_loop
+ L_C5DB:
+         cp      $00
+-        jr      nz,L_C614
++        jr      nz,handle_character
+         oz      Os_in
+         call    handle_os_error
+         jr      c,qe_main_loop
+@@ -825,7 +827,7 @@
+         sla     a
+         ld      b,$00
+         ld      c,a
+-        ld      hl,L_D171
++        ld      hl,command_table
+         add     hl,bc
+         ld      a,(hl)
+         inc     hl
+@@ -835,11 +837,12 @@
+ cmd_insert_real_tab:
+ ; Command handler: 'Insert real tab' - dispatch code $2D
+         ld      a,$09
+-        jr      L_C619
+-L_C614:
++        jr      insert_character
++handle_character:
++; An ordinary key: Enter ($0D) goes to the new-line code at $C756; any other character is inserted (or overtyped) at the cursor.
+         cp      $0D
+-        jp      z,L_C756
+-L_C619:
++        jp      z,new_line
++insert_character:
+         ld      (char_scratch),a
+         call    check_free_memory
+         jr      c,qe_main_loop
+@@ -924,7 +927,8 @@
+         ld      a,(char_scratch)
+ L_C6B0:
+         call    typing_check_char
+-L_C6B3:
++after_text_change:
++; After a character is added or removed: if the line is now longer than wrap_column the paragraph is rewrapped, otherwise just the line is redrawn.
+         ld      a,(line_length)
+         ld      b,a
+         ld      a,(wrap_column)
+@@ -955,7 +959,7 @@
+         cp      $00
+         jp      z,L_C74A
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+ L_C6F5:
+         call    step_to_prev_record
+         call    dec_cursor_line
+@@ -996,13 +1000,14 @@
+         oz      Os_mpb
+ L_C744:
+         call    take_line_record
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ L_C74A:
+         ld      a,(edit_flags)
+         call    draw_text_window
+         call    place_cursor
+         jp      qe_main_loop
+-L_C756:
++new_line:
++; Enter: splits the line at the cursor (split_at_cursor) and moves to the start of the new line. It does not call the check-as-you-type hooks (notes section 11).
+         oz      Os_pur
+         call    check_free_memory
+         jp      c,qe_main_loop
+@@ -1018,9 +1023,9 @@
+         ld      (cursor_index),a
+ L_C774:
+         call    split_at_cursor
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         call    step_to_next_record
+         call    take_line_record
+         call    inc_cursor_line
+@@ -1033,7 +1038,7 @@
+         ld      a,$03
+ L_C798:
+         ld      (cursor_row),a
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ cmd_previous_word:
+ ; Command handler: 'Previous word' - dispatch code $17
+         ld      a,$00
+@@ -1052,7 +1057,7 @@
+         or      l
+         jr      z,L_C801
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      hl,(prev_line_ptr)
+         ld      a,(prev_line_bank)
+         ld      (line_rec_ptr),hl
+@@ -1101,11 +1106,11 @@
+         sub     b
+         jr      c,L_C815
+         ld      (cursor_row),a
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ L_C815:
+         ld      a,$00
+         ld      (cursor_row),a
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ cmd_next_word:
+ ; Command handler: 'Next word' - dispatch code $16
+         ld      a,(line_length)
+@@ -1137,7 +1142,7 @@
+         jr      z,L_C87A
+ L_C848:
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      hl,(next_line_ptr)
+         ld      a,(next_line_bank)
+         ld      (line_rec_ptr),hl
+@@ -1169,10 +1174,10 @@
+         add     a,b
+         ld      (cursor_row),a
+         cp      $08
+-        jp      c,L_C5AF
++        jp      c,redraw_and_main_loop
+         ld      a,$03
+         ld      (cursor_row),a
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ cmd_delete_line:
+ ; Command handler: 'Delete line' - dispatch code $15
+         ld      a,(marker_flags)
+@@ -1209,7 +1214,7 @@
+         ld      (hl),b
+         call    take_line_record
+         call    markers_line_removed
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ L_C8DC:
+         ld      hl,(prev_line_ptr)
+         ld      a,h
+@@ -1238,12 +1243,12 @@
+         dec     a
+         ld      (cursor_row),a
+ L_C912:
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ L_C915:
+         ld      a,$00
+         ld      (cursor_index),a
+         ld      (line_length),a
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ cmd_delete_character:
+ ; Command handler: 'Delete character' - dispatch code $14
+         call    drop_markers_at_cursor
+@@ -1255,7 +1260,7 @@
+         ld      hl,(next_line_ptr)
+         ld      a,h
+         or      l
+-        jp      nz,L_CA00
++        jp      nz,rubout_join_lines
+         jp      qe_main_loop
+ L_C938:
+         inc     a
+@@ -1324,14 +1329,14 @@
+         dec     (hl)
+         ld      hl,cursor_index
+         dec     (hl)
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ L_C9AD:
+         ld      hl,(prev_line_ptr)
+         ld      a,h
+         or      l
+         jp      z,qe_main_loop
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      hl,(prev_line_ptr)
+         ld      a,(prev_line_bank)
+         ld      (line_rec_ptr),hl
+@@ -1349,7 +1354,7 @@
+         call    drop_markers_at_cursor
+         ld      a,(cursor_index)
+         cp      $00
+-        jr      z,L_CA00
++        jr      z,rubout_join_lines
+         ld      c,a
+         ld      b,$00
+         ld      hl,(line_buffer)
+@@ -1357,26 +1362,27 @@
+         dec     hl
+         ld      a,(hl)
+         cp      ' '
+-        jr      nz,L_CA00
++        jr      nz,rubout_join_lines
+         ld      hl,line_length
+         dec     (hl)
+         ld      a,(hl)
+         ld      (cursor_index),a
+         call    drop_markers_at_cursor
+-L_CA00:
++rubout_join_lines:
+         call    join_markers
+         ld      a,(edit_flags)
+         and     $F1
+         or      $08
+         ld      (edit_flags),a
+-        jp      L_C6B3
++        jp      after_text_change
+ 
+         defb    $32,$a2,$1f
+-L_CA13:
++full_redraw_and_main_loop:
++; Sets edit_flags bit 3 (redraw the whole text) and goes to redraw_and_main_loop.
+         ld      a,(edit_flags)
+         or      $08
+         ld      (edit_flags),a
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ cmd_join_lines:
+ ; Command handler: 'Join lines' - dispatch code $0D
+         ld      hl,(next_line_ptr)
+@@ -1401,7 +1407,7 @@
+         jp      qe_main_loop
+ L_CA43:
+         call    join_markers
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ join_markers:
+ ; Before the next line is joined onto the cursor line: a block marker on the next line moves up to this line, its column increased by line_length.
+         ld      a,(next_line_bank)
+@@ -1502,17 +1508,17 @@
+         ld      (hl),a
+         ld      hl,cursor_index
+         inc     (hl)
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ cmd_start_of_line:
+ ; Command handler: 'Start of line' - dispatch code $09
+         ld      a,$00
+         ld      (cursor_index),a
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ cmd_end_of_line:
+ ; Command handler: 'End of line' - dispatch code $0A
+         ld      a,(line_length)
+         ld      (cursor_index),a
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ cmd_bottom_of_text:
+ ; Command handler: 'Bottom of text' - dispatch code $08
+         ld      hl,(next_line_ptr)
+@@ -1520,7 +1526,7 @@
+         or      l
+         jp      z,qe_main_loop
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      a,(cursor_row)
+         ld      e,a
+ L_CB2D:
+@@ -1543,7 +1549,7 @@
+         call    take_line_record
+         ld      a,(line_length)
+         ld      (cursor_index),a
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ cmd_top_of_text:
+ ; Command handler: 'Top of text' - dispatch code $07
+         ld      hl,(prev_line_ptr)
+@@ -1551,7 +1557,7 @@
+         or      l
+         jp      z,qe_main_loop
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+ L_CB61:
+         call    step_to_prev_record
+         jr      nz,L_CB61
+@@ -1561,7 +1567,7 @@
+         ld      (cursor_index),a
+         ld      hl,$0000
+         ld      (cursor_line),hl
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ cmd_screen_up:
+ ; Command handler: 'Screen up' - dispatch code $01
+         ld      hl,(prev_line_ptr)
+@@ -1569,7 +1575,7 @@
+         or      l
+         jp      z,qe_main_loop
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      e,$06
+ L_CB8A:
+         call    step_to_prev_record
+@@ -1586,10 +1592,10 @@
+         scf
+         ccf
+         sbc     hl,bc
+-        jp      nc,L_CA13
++        jp      nc,full_redraw_and_main_loop
+         add     a,l
+         ld      (cursor_row),a
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ cmd_screen_down:
+ ; Command handler: 'Screen down' - dispatch code $02
+         ld      hl,(next_line_ptr)
+@@ -1597,7 +1603,7 @@
+         or      l
+         jp      z,qe_main_loop
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      e,$06
+ L_CBBF:
+         call    step_to_next_record
+@@ -1607,21 +1613,21 @@
+         jr      nz,L_CBBF
+ L_CBCA:
+         call    take_line_record
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ cmd_cursor_down:
+ ; Command handler: 'Cursor down' - dispatch code $05
+         ld      hl,(next_line_ptr)
+         ld      a,h
+         or      l
+         jp      z,qe_main_loop
+-        jr      L_CBFC
++        jr      move_to_next_line
+ cmd_cursor_up:
+ ; Command handler: 'Cursor up' - dispatch code $06
+         ld      hl,(prev_line_ptr)
+         ld      a,h
+         or      l
+         jp      z,qe_main_loop
+-        jp      L_CC6C
++        jp      move_to_prev_line
+ cmd_cursor_right:
+ ; Command handler: 'Cursor right' - dispatch code $04
+         ld      a,(line_length)
+@@ -1635,9 +1641,9 @@
+         jp      z,qe_main_loop
+         ld      a,$00
+         ld      (cursor_index),a
+-L_CBFC:
++move_to_next_line:
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      a,(next_line_bank)
+         ld      hl,(next_line_ptr)
+         ld      (line_rec_bank),a
+@@ -1649,7 +1655,7 @@
+         jr      c,L_CC2B
+         ld      hl,L_CC24
+         oz      Gn_sop
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ 
+ 
+ L_CC24:
+@@ -1657,16 +1663,16 @@
+ L_CC2B:
+         inc     a
+         ld      (cursor_row),a
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ L_CC32:
+         inc     a
+         ld      (cursor_index),a
+-L_CC36:
++place_or_scroll:
+         ld      c,a
+         ld      a,(cursor_col_limit)
+         cp      c
+         jp      nc,L_CC41
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ L_CC41:
+         call    place_cursor
+         jp      qe_main_loop
+@@ -1678,7 +1684,7 @@
+         dec     a
+         ld      (cursor_index),a
+         inc     a
+-        jp      L_CC36
++        jp      place_or_scroll
+ L_CC56:
+         ld      hl,(prev_line_ptr)
+         ld      a,h
+@@ -1691,9 +1697,9 @@
+         ld      a,(hl)
+         sub     $07
+         ld      (cursor_index),a
+-L_CC6C:
++move_to_prev_line:
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      a,(prev_line_bank)
+         ld      hl,(prev_line_ptr)
+         ld      (line_rec_bank),a
+@@ -1705,7 +1711,7 @@
+         jr      nz,L_CC9B
+         ld      hl,L_CC94
+         oz      Gn_sop
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ 
+ 
+ L_CC94:
+@@ -1713,7 +1719,7 @@
+ L_CC9B:
+         dec     a
+         ld      (cursor_row),a
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ store_cursor_line:
+ ; Writes the cursor line (line_buffer, line_length characters) into a new line record linked between prev_line and next_line. Carry set if there is no room.
+         ld      a,(line_length)
+@@ -1771,7 +1777,7 @@
+         or      l
+         jr      z,L_CD30
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      hl,(next_line_ptr)
+         ld      a,(next_line_bank)
+         ld      (line_rec_ptr),hl
+@@ -1800,7 +1806,7 @@
+         ld      a,$03
+ L_CD3E:
+         ld      (cursor_row),a
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ wrap_from_cursor_line:
+ ; Clears line_counter, then wrap_cursor_line. Called by Format paragraph, by the main loop when typing takes the line past wrap_column (word wrap as you type),
+ ; after Search and Replace (which rewraps every line from the top, $DBD3), and after Copy and Delete marked block.
+@@ -2324,7 +2330,8 @@
+         jr      nz,L_D0CA
+ L_D0D5:
+         ld      a,c
+-L_D0D6:
++no_room_exit:
++; Shows 'No Room!' and returns to the editor. The common exit when memory runs out (38 jumps).
+         call    show_no_room_error
+         jp      return_to_editor
+ show_no_room_error:
+@@ -2394,7 +2401,8 @@
+ str_cursor_to_prefix:
+         defm    $01, "3@", $00
+ 
+-L_D171:
++command_table:
++; 47 words: the handler for each dispatch code 0-46 (see docs/commands.md).
+ ; Command jump table: 47 words, indexed by dispatch code 0..46. See cmd_* handlers.
+ ; The main loop does: HL = table + 2*code; JP (HL).
+         defw    qe_main_loop
+@@ -2589,23 +2597,23 @@
+ cmd_check_from_cursor:
+ ; Command handler: 'Check from cursor' - dispatch code $1D
+         call    check_free_memory
+-        jp      c,L_D0D6
+-        ld      hl,L_D9A8
++        jp      c,no_room_exit
++        ld      hl,str_checking
+         oz      Gn_sop
+         call    find_word_start
+         ld      a,(line_length)
+         sub     c
+         ld      (scan_chars_left),a
+-        jp      L_D401
++        jp      check_next_word
+ cmd_check_marked_block:
+ ; Command handler: 'Check marked block' - dispatch code $28
+         ld      a,(marker_flags)
+         and     $02
+         jp      z,qe_main_loop
+         call    check_free_memory
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         call    order_block_markers
+-        ld      hl,L_D9A8
++        ld      hl,str_checking
+         oz      Gn_sop
+         ld      hl,(cursor_line)
+         ld      bc,(block_start_line)
+@@ -2677,7 +2685,7 @@
+         ld      (cursor_index),a
+         jr      L_D3BE
+ L_D366:
+-        ld      hl,L_D9A8
++        ld      hl,str_checking
+         oz      Gn_sop
+ L_D36C:
+         ld      a,(line_buffer_bank)
+@@ -2704,7 +2712,7 @@
+         jp      L_D325
+ L_D398:
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         call    step_to_next_record
+         jr      z,L_D3B5
+         call    inc_cursor_line
+@@ -2729,27 +2737,27 @@
+         ld      a,l
+         ld      (cursor_row),a
+ L_D3D2:
+-        jp      L_D467
++        jp      end_of_check
+ cmd_check_all_text:
+ ; Command handler: 'Check all text' - dispatch code $12
+         call    check_free_memory
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         call    store_cursor_line
+ L_D3DE:
+         call    step_to_prev_record
+         jr      nz,L_D3DE
+         ld      hl,$0000
+         ld      (cursor_line),hl
+-        ld      hl,L_D9A8
++        ld      hl,str_checking
+         oz      Gn_sop
+ L_D3EF:
+         call    take_line_record
+         call    check_free_memory
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      a,(line_length)
+         ld      (scan_chars_left),a
+         ld      hl,(line_buffer)
+-L_D401:
++check_next_word:
+         ld      a,(line_buffer_bank)
+         ld      b,a
+         ld      c,$02
+@@ -2776,16 +2784,16 @@
+         ld      a,(line_length)
+         sub     b
+         ld      (cursor_index),a
+-        jp      L_D467
++        jp      end_of_check
+ L_D443:
+-        ld      hl,L_D9A8
++        ld      hl,str_checking
+         oz      Gn_sop
+ L_D449:
+         ld      hl,(scan_ptr)
+-        jr      L_D401
++        jr      check_next_word
+ L_D44E:
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+ L_D454:
+         call    step_to_next_record
+         jr      z,L_D45E
+@@ -2795,7 +2803,7 @@
+         call    take_line_record
+         ld      a,(line_length)
+         ld      (cursor_index),a
+-L_D467:
++end_of_check:
+ ; End of the check: the ignored words are only for this check. Swap the lists, free every ignored word and the table, swap back.
+         ld      a,(edit_flags)
+         and     $F1
+@@ -2815,7 +2823,7 @@
+         ld      (user_dict_ptr),hl
+ L_D490:
+         call    swap_word_lists
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ show_check_context:
+ ; In the checking window: clears it and prints the part of the line around the word being checked, as much as fits in cursor_col_limit.
+         ld      a,(line_buffer_bank)
+@@ -2880,7 +2888,7 @@
+         call    toggle_reverse
+         jr      L_D4EA
+ L_D4FF:
+-        ld      hl,L_D983
++        ld      hl,str_reverse_off_2
+         oz      Gn_sop
+         ret
+ open_correction_menu:
+@@ -2894,7 +2902,7 @@
+         oz      Os_mpb
+         ld      hl,$0000
+         ld      (line_counter),hl
+-        ld      hl,L_D9A4
++        ld      hl,str_cursor_to_prefix_2
+         oz      Gn_sop
+         ld      a,(edit_flags)
+         and     $BF
+@@ -2904,24 +2912,24 @@
+         oz      Os_out
+         call    show_check_context
+         oz      Gn_nln
+-        ld      hl,L_DA55
++        ld      hl,str_correction_menu
+         call    open_dialog_default
+-        ld      hl,L_D9B2
++        ld      hl,str_correction_options
+         oz      Gn_sop
+-        jp      L_D60C
+-L_D542:
++        jp      correction_option_3
++redisplay_check:
+         call    redefine_window1
+-        ld      hl,L_D9A4
++        ld      hl,str_cursor_to_prefix_2
+         oz      Gn_sop
+         ld      a,' '
+         oz      Os_out
+         oz      Os_out
+         call    show_check_context
+         oz      Gn_nln
+-L_D557:
+-        ld      hl,L_DA55
++correction_menu_loop:
++        ld      hl,str_correction_menu
+         call    open_dialog_default
+-        ld      hl,L_D9B2
++        ld      hl,str_correction_options
+         oz      Gn_sop
+         ld      a,(edit_flags)
+         and     $BF
+@@ -2996,33 +3004,34 @@
+         call    save_typed_word
+         jr      nc,L_D5F7
+         call    show_no_room_error
+-        jp      L_D542
++        jp      redisplay_check
+ L_D5F7:
+         call    browse_dictionary
+         call    restore_typed_word
+         ld      a,(edit_flags)
+         and     '@'
+-        jp      nz,L_D542
++        jp      nz,redisplay_check
+         jp      replace_word_everywhere
+ L_D608:
+         cp      '3'
+         jr      nz,L_D643
+-L_D60C:
++correction_option_3:
++; Correction menu option 3: guess_correct_word, then replace the word if one was chosen (edit_flags bit 6 clear).
+         call    guess_correct_word
+         cp      $01
+         jr      nz,L_D61E
+         ld      a,(edit_flags)
+         and     '@'
+         jp      z,replace_word_everywhere
+-        jp      L_D557
++        jp      correction_menu_loop
+ L_D61E:
+         push    af
+         ld      a,(edit_flags)
+         and     $BF
+         ld      (edit_flags),a
+-        ld      hl,L_DA55
++        ld      hl,str_correction_menu
+         call    open_dialog_default
+-        ld      hl,L_D9B2
++        ld      hl,str_correction_options
+         oz      Gn_sop
+         pop     af
+         jr      L_D5CA
+@@ -3041,9 +3050,9 @@
+ change_word:
+ ; Opens 'Replace with', puts the word as it stands in the text into buffer C (leaving out a final 'S or apostrophe, which stays in the text)
+ ; and edits it with GN_Sip (40 bytes, 20 columns). Enter: letters are made upper case (is_word_char) and replace_word_everywhere runs. Escape: back to the menu.
+-        ld      hl,L_DB0A
++        ld      hl,str_replace_with
+         call    open_dialog_right
+-        ld      hl,L_DAFF
++        ld      hl,str_replace_prompt
+         oz      Gn_sop
+         ld      a,(dict_target_length)
+         ld      c,a
+@@ -3099,12 +3108,12 @@
+         cp      $0D
+         jr      z,L_D6C4
+ L_D6B6:
+-        ld      hl,L_DAFF
++        ld      hl,str_replace_prompt
+         oz      Gn_sop
+         jr      L_D692
+ L_D6BE:
+         call    dialog_window_right
+-        jp      L_D557
++        jp      correction_menu_loop
+ L_D6C4:
+         ld      hl,(ptr_buffer_c)
+         dec     b
+@@ -3130,9 +3139,9 @@
+         ld      b,a
+         ld      c,$02
+         oz      Os_mpb
+-        ld      hl,L_F5CC
++        ld      hl,str_window1_vscroll
+         oz      Gn_sop
+-        ld      hl,L_DAF2
++        ld      hl,str_replacing
+         oz      Gn_sop
+         ld      a,(dict_target_length)
+         ld      (dict_stem_length),a
+@@ -3414,14 +3423,14 @@
+ next_word_to_buffer_b:
+ ; next_word_from_text, but the word goes to buffer B. Used by replace_word_everywhere to find later copies of the word.
+         ld      de,(ptr_buffer_b)
+-        jr      L_D8CE
++        jr      next_word_into_de
+ next_word_from_text:
+ ; In: HL -> text, scan_chars_left = characters left to scan. Skips to the next word character, then copies the word into buffer A through is_word_char,
+ ; so every letter is upper case: capital letters make no difference to the check. A leading apostrophe is dropped.
+ ; The length goes to dict_target_length, leaving out a final apostrophe and a final 'S (JOHN'S is checked as JOHN). word_start_ptr = where the word starts.
+ ; Z set if no word is left; NZ when a word was found.
+         ld      de,(ptr_buffer_a)
+-L_D8CE:
++next_word_into_de:
+         ld      a,(scan_chars_left)
+         cp      $00
+         ret     z
+@@ -3499,7 +3508,7 @@
+ ; Command handler: 'Escape' - dispatch code $1B
+ ; Two dispatch codes share this handler.
+         call    check_free_memory
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      bc,(buffers_binding)
+         oz      Os_mpb
+         call    find_word_start
+@@ -3524,7 +3533,7 @@
+         ld      a,(line_length)
+         sub     b
+         ld      (cursor_index),a
+-        jp      L_D467
++        jp      end_of_check
+ L_D978:
+         ld      a,(line_buffer_bank)
+         ld      b,a
+@@ -3533,12 +3542,12 @@
+         jp      qe_main_loop
+ 
+ 
+-L_D983:
++str_reverse_off_2:
+         defb    $01,$32,$2d,$52,$00
+ toggle_reverse:
+ ; Prints the 'toggle reverse video' sequence (1 R). HL preserved.
+         push    hl
+-        ld      hl,L_D9A1
++        ld      hl,str_toggle_reverse
+         oz      Gn_sop
+         pop     hl
+         ret
+@@ -3547,20 +3556,20 @@
+         ld      a,(edit_flags)
+         xor     $01
+         ld      (edit_flags),a
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ 
+         defb    $3e,$00,$e7,$6f,$c9
+-L_D9A1:
++str_toggle_reverse:
+         defb    $01,$52,$00
+ 
+-L_D9A4:
++str_cursor_to_prefix_2:
+         defb    $01,$33,$40,$00
+-L_D9A8:
++str_checking:
+         defb    $0c
+ L_D9A9:
+         defm    "Checking"
+         defb    $00
+-L_D9B2:
++str_correction_options:
+         defb    $01
+ L_D9B3:
+         defm    "2JC1: Ignore word                "
+@@ -3577,7 +3586,7 @@
+ L_DA32:
+         defm    "5: Browse through dictionary  "
+         defb    $01,$32,$4a,$4e,$00
+-L_DA55:
++str_correction_menu:
+         defm    "Correction menu"
+         defb    $00
+ save_typed_word:
+@@ -3668,14 +3677,14 @@
+ L_DAED:
+         pop     af
+         pop     hl
+-        jp      L_D542
++        jp      redisplay_check
+ 
+-L_DAF2:
++str_replacing:
+         defm    "Replacing...", $00
+-L_DAFF:
++str_replace_prompt:
+         defm    $0c, $0a, $01, "3+CS  :", $00
+ 
+-L_DB0A:
++str_replace_with:
+         defm    "Replace with"
+         defb    $00
+ cmd_split_line:
+@@ -3687,8 +3696,8 @@
+         jp      z,qe_main_loop
+         jp      c,qe_main_loop
+         call    split_at_cursor
+-        jp      c,L_D0D6
+-        jp      L_CA13
++        jp      c,no_room_exit
++        jp      full_redraw_and_main_loop
+ split_at_cursor:
+ ; Moves the text from the cursor to the end of the line into a new line record after the cursor line (Split line, Enter, block commands), moving markers to match.
+         call    clamp_cursor_index
+@@ -3754,19 +3763,19 @@
+ cmd_search_and_replace:
+ ; Command handler: 'Search and Replace' - dispatch code $26
+         call    check_free_memory
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      a,$03
+         call    far_call_bank63
+-        jr      c,L_DC02
++        jr      c,after_far_command
+         ld      hl,(cursor_line)
+         ld      bc,(top_line)
+         scf
+         ccf
+         sbc     hl,bc
+-        jr      z,L_DC02
++        jr      z,after_far_command
+         ld      (top_line),hl
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+ L_DBC2:
+         call    step_to_prev_record
+         call    dec_cursor_line
+@@ -3784,38 +3793,38 @@
+         or      l
+         jr      z,L_DBEE
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         call    step_to_next_record
+         call    inc_cursor_line
+         jr      L_DBD3
+ L_DBEE:
+         ld      a,(line_length)
+         ld      (cursor_index),a
+-        jr      L_DC02
++        jr      after_far_command
+ cmd_next_match:
+ ; Command handler: 'Next Match' - dispatch code $2C
+         ld      a,$09
+         call    far_call_bank63
+-        jr      L_DC02
++        jr      after_far_command
+ cmd_search_for_string:
+ ; Command handler: 'Search for string' - dispatch code $25
+         ld      a,$02
+         call    far_call_bank63
+-L_DC02:
++after_far_command:
+         ld      a,(edit_flags)
+         and     $F1
+         or      $02
+         ld      (edit_flags),a
+         call    redefine_window1
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ cmd_merge_text_at_cursor:
+ ; Command handler: 'Merge text at cursor' - dispatch code $27
+         call    check_free_memory
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      a,$04
+         call    far_call_bank63
+         cp      $02
+-        jp      z,L_D0D6
++        jp      z,no_room_exit
+         ld      hl,(cursor_line)
+         push    hl
+ L_DC26:
+@@ -3825,7 +3834,7 @@
+         or      l
+         jr      z,L_DC41
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         call    step_to_next_record
+         call    take_line_record
+         call    inc_cursor_line
+@@ -3849,16 +3858,16 @@
+         jr      nz,L_DC52
+ L_DC5C:
+         call    take_line_record
+-        jr      L_DC02
++        jr      after_far_command
+ cmd_tab:
+ ; Command handler: 'Tab' - dispatch code $29
+         call    check_free_memory
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      a,$08
+         call    far_call_bank63
+         cp      $01
+-        jp      z,L_C5AF
+-        jp      L_C6B3
++        jp      z,redraw_and_main_loop
++        jp      after_text_change
+ typing_check_command:
+ ; Check as you type, command hook: called by the main loop with the dispatch code in A before every command (A preserved). Does nothing unless EF_CHECK_ON is set.
+ ; Rubout ($0B) and Delete character ($14) mark the word as pending (it is being edited). If a word is pending, the cursor movements
+@@ -3866,27 +3875,27 @@
+         push    af
+         ld      a,(edit_flags)
+         and     $10
+-        jr      z,L_DCA0
++        jr      z,typing_hook_done
+         pop     af
+         push    af
+         cp      $0B
+-        jr      z,L_DCB1
++        jr      z,typing_mark_pending
+         cp      $14
+-        jr      z,L_DCB1
++        jr      z,typing_mark_pending
+         ld      a,(typing_word_pending)
+         cp      $00
+-        jr      z,L_DCA0
++        jr      z,typing_hook_done
+         cp      $01
+-        jr      c,L_DCA0
++        jr      c,typing_hook_done
+         cp      $0B
+         jr      c,L_DC9D
+         cp      $16
+-        jr      c,L_DCA0
++        jr      c,typing_hook_done
+         cp      $18
+-        jr      nc,L_DCA0
++        jr      nc,typing_hook_done
+ L_DC9D:
+         call    typing_check_word
+-L_DCA0:
++typing_hook_done:
+         pop     af
+         ret
+ typing_check_char:
+@@ -3896,12 +3905,12 @@
+         push    af
+         ld      a,(edit_flags)
+         and     $10
+-        jr      z,L_DCA0
++        jr      z,typing_hook_done
+         pop     af
+         push    af
+         call    is_word_char
+         jr      nz,L_DCB8
+-L_DCB1:
++typing_mark_pending:
+         ld      a,$01
+         ld      (typing_word_pending),a
+         pop     af
+@@ -3990,7 +3999,7 @@
+         ld      hl,(line_buffer)
+         add     hl,bc
+         ld      d,$00
+-        jr      L_DD44
++        jr      scan_back_to_word_start
+ find_word_start:
+ ; From cursor_index, moves back to the start of the word at or before the cursor. Out: HL -> that character in line_buffer, C = its index. Z if at the start of the line.
+         call    clamp_cursor_index
+@@ -4003,7 +4012,7 @@
+         ld      d,$00
+         inc     hl
+         inc     c
+-L_DD44:
++scan_back_to_word_start:
+         dec     hl
+         dec     c
+         ret     z
+@@ -4011,11 +4020,11 @@
+         call    is_word_char
+         jr      nz,L_DD51
+         ld      d,$01
+-        jr      L_DD44
++        jr      scan_back_to_word_start
+ L_DD51:
+         ld      a,d
+         cp      $01
+-        jr      nz,L_DD44
++        jr      nz,scan_back_to_word_start
+         inc     c
+         inc     hl
+         ret
+@@ -4024,10 +4033,10 @@
+         ld      a,(edit_flags)
+         xor     $10
+         ld      (edit_flags),a
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ 
+ 
+-L_DD64:
++inflection_endings:
+         defb    $80,$c5,$44,$c9,$4e,$47,$d3,$80
+         defb    $d3,$80,$c5,$c5,$44,$c5,$53,$c9
+         defb    $4e,$47,$80,$c5,$44,$c5,$53,$c9
+@@ -4037,7 +4046,8 @@
+         defb    $49,$4e,$47,$c9,$5a,$45,$c9,$5a
+         defb    $45,$44,$c9,$5a,$45,$53,$c9,$5a
+         defb    $49,$4e,$47,$80
+-L_DDA8:
++inflection_class_offsets:
++; Seven byte offsets, one per inflection class $10-$16, into the ending strings at inflection_endings ($DD64). Used by next_word_form; inflection_class_table holds the same lists as word pointers.
+         defb    $01,$08,$13,$0a
+         defb    $1b,$20,$23
+ inflection_class_table:
+@@ -4066,14 +4076,14 @@
+         ld      (temp2_bank),a
+         ld      (temp_ptr),hl
+         ld      (temp_bank),a
+-        ld      hl,L_E07C
++        ld      hl,str_guessing
+         call    open_dialog_right
+-L_DDE4:
++guess_next_section:
+         call    section_could_match
+ L_DDE7:
+-        jp      nz,L_DE2B
++        jp      nz,guess_step_section
+         call    find_dictionary_section
+-        jp      c,L_DE2B
++        jp      c,guess_step_section
+         ld      hl,(ptr_buffer_c)
+         ld      a,(dict_letter2)
+         dec     hl
+@@ -4085,12 +4095,12 @@
+         ld      (dict_word_flags),a
+ L_DE02:
+         call    next_word_form
+-        jp      c,L_DE2B
++        jp      c,guess_step_section
+         call    is_one_edit_away
+         jr      nz,L_DE02
+         call    append_guess
+         jr      nc,L_DE02
+-L_DE12:
++guess_no_room:
+         call    show_no_room_error
+ guess_cancelled:
+ ; Guess correct word ended without a choice: sets edit_flags bit 6, frees the guess list, rebinds the line buffer, A = 1.
+@@ -4104,7 +4114,7 @@
+         oz      Os_mpb
+         ld      a,$01
+         ret
+-L_DE2B:
++guess_step_section:
+         ld      a,(dict_letter2)
+         cp      '''
+         jr      nz,L_DE34
+@@ -4113,7 +4123,7 @@
+         inc     a
+         ld      (dict_letter2),a
+         cp      '['
+-        jp      c,L_DDE4
++        jp      c,guess_next_section
+         oz      Os_xin
+         jp      nc,L_DFEF
+         ld      a,'''
+@@ -4122,7 +4132,7 @@
+         inc     a
+         ld      (dict_letter1),a
+         cp      '['
+-        jp      c,L_DDE4
++        jp      c,guess_next_section
+         ld      hl,(user_dict_ptr)
+         ld      a,h
+         or      l
+@@ -4157,7 +4167,7 @@
+         call    is_one_edit_away
+         jr      nz,L_DE91
+         call    append_guess
+-        jr      c,L_DE12
++        jr      c,guess_no_room
+ L_DE91:
+         ld      a,(line_rec_bank)
+         ld      b,a
+@@ -4169,15 +4179,15 @@
+         ld      hl,(guess_list_ptr)
+         ld      a,h
+         or      l
+-        jp      z,L_E035
++        jp      z,no_guesses_found
+         ld      a,(guess_list_bank)
+         ld      b,a
+         ld      c,$01
+         oz      Os_mpb
+-L_DEAE:
+-        ld      hl,L_E041
++show_guess_list:
++        ld      hl,str_guesses_found
+         call    open_dialog_right
+-        ld      hl,L_E085
++        ld      hl,str_set_vscroll
+         oz      Gn_sop
+         ld      hl,$0006
+         ld      (top_line),hl
+@@ -4221,7 +4231,7 @@
+         oz      Gn_nln
+         jr      L_DECC
+ L_DF09:
+-        ld      hl,L_E08A
++        ld      hl,str_cursor_home
+         oz      Gn_sop
+         ld      a,(guess_list_bank)
+         ld      hl,(guess_list_ptr)
+@@ -4386,14 +4396,14 @@
+         ld      a,(temp2_bank)
+         oz      Os_mfr
+         jr      free_guess_list
+-L_E035:
++no_guesses_found:
+         ld      hl,L_E03E
+         call    open_dialog_right
+         jp      guess_cancelled
+ 
+ L_E03E:
+         defm    "No "
+-L_E041:
++str_guesses_found:
+         defm    "Guesses found"
+         defb    $00
+ guess_os_error:
+@@ -4405,7 +4415,7 @@
+         jr      nz,L_E061
+         pop     af
+         pop     hl
+-        jp      L_DEAE
++        jp      show_guess_list
+ L_E05D:
+         pop     af
+         jp      quit_quickedit
+@@ -4434,12 +4444,12 @@
+         call    far_call_bank63
+         ret
+ 
+-L_E07C:
++str_guessing:
+         defm    "Guessing"
+         defb    $00
+-L_E085:
++str_set_vscroll:
+         defb    $01,$32,$2b,$53,$00
+-L_E08A:
++str_cursor_home:
+         defb    $01,$33
+         defb    $40,$20,$20,$00
+ is_one_edit_away:
+@@ -4582,12 +4592,12 @@
+         ld      a,(edit_flags)
+         or      $02
+         ld      (edit_flags),a
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ cmd_remove_markers:
+ ; Command handler: 'Remove markers' - dispatch code $20
+         ld      a,$00
+         ld      (marker_flags),a
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ order_block_markers:
+ ; If both markers are set and the end comes before the start, swaps them (lines and columns). Same as order_block_markers in bank 63.
+         ld      a,(marker_flags)
+@@ -4629,7 +4639,7 @@
+         cp      $01
+         ret     c
+         ld      hl,(block_start_line)
+-L_E1BA:
++compare_line_with_cursor:
+         ld      bc,(cursor_line)
+         ld      a,h
+         cp      b
+@@ -4655,7 +4665,7 @@
+         cp      $03
+         ret     c
+         ld      hl,(block_end_line)
+-        jr      L_E1BA
++        jr      compare_line_with_cursor
+ remove_start_marker:
+ ; Removes the start marker: the end marker (if set) becomes the start marker. Z if no marker is left.
+         call    shift_marker_flags
+@@ -4701,19 +4711,20 @@
+ cmd_move_marked_block:
+ ; Command handler: 'Move marked block' - dispatch code $21
+         call    check_block_marked
+-        jr      c,L_E233
+-        jp      L_E62C
++        jr      c,block_command_end
++        jp      delete_block_lines
+ cmd_copy_marked_block:
+ ; Command handler: 'Copy marked block' - dispatch code $1F
+         call    check_block_marked
+-        jp      nc,L_CA13
+-L_E233:
+-        jp      nz,L_CA13
+-L_E236:
++        jp      nc,full_redraw_and_main_loop
++block_command_end:
++        jp      nz,full_redraw_and_main_loop
++beep_and_main_loop:
+         ld      a,$07
+         oz      Os_out
+         jp      qe_main_loop
+-L_E23D:
++beep_no_room:
++; Beeps, shows 'No Room!' and returns NZ.
+         ld      a,$07
+         oz      Os_out
+         call    show_no_room_error
+@@ -4770,7 +4781,7 @@
+         cp      $00
+         jr      nz,L_E2BF
+         call    store_cursor_line
+-        jp      c,L_E23D
++        jp      c,beep_no_room
+         ld      hl,(line_rec_ptr)
+         ld      a,(line_rec_bank)
+         ld      (next_line_ptr),hl
+@@ -4785,7 +4796,7 @@
+         cp      $00
+         jr      nz,L_E2DD
+         call    store_cursor_line
+-        jp      c,L_E23D
++        jp      c,beep_no_room
+         ld      hl,(line_rec_ptr)
+         ld      a,(line_rec_bank)
+         ld      (prev_line_ptr),hl
+@@ -4793,9 +4804,9 @@
+         jp      L_E2F5
+ L_E2DD:
+         call    split_at_cursor
+-        jp      c,L_E23D
++        jp      c,beep_no_room
+         call    store_cursor_line
+-        jp      c,L_E23D
++        jp      c,beep_no_room
+         ld      hl,(line_rec_ptr)
+         ld      a,(line_rec_bank)
+         ld      (prev_line_ptr),hl
+@@ -4852,9 +4863,9 @@
+         ldir
+ L_E35B:
+         call    check_free_memory
+-        jp      c,L_E5A3
++        jp      c,block_no_room
+         call    store_cursor_line
+-        jp      c,L_E5A3
++        jp      c,block_no_room
+         call    markers_after_new_line
+         ld      hl,(line_rec_ptr)
+         ld      a,(line_rec_bank)
+@@ -4879,9 +4890,9 @@
+         jr      z,L_E3C2
+         call    copy_record_to_line_buffer
+         call    check_free_memory
+-        jp      c,L_E5A3
++        jp      c,block_no_room
+         call    store_cursor_line
+-        jp      c,L_E5A3
++        jp      c,block_no_room
+         call    markers_after_new_line
+         ld      hl,(line_rec_ptr)
+         ld      a,(line_rec_bank)
+@@ -4906,9 +4917,9 @@
+         ldir
+ L_E3E2:
+         call    check_free_memory
+-        jp      c,L_E5A3
++        jp      c,block_no_room
+         call    store_cursor_line
+-        jp      c,L_E5A3
++        jp      c,block_no_room
+         call    markers_after_new_line
+         call    inc_cursor_line
+ L_E3F4:
+@@ -4919,7 +4930,7 @@
+ L_E3FE:
+         call    join_next_line
+         call    store_cursor_line
+-        jp      c,L_E5A3
++        jp      c,block_no_room
+         pop     bc
+         push    bc
+         ld      hl,(cursor_line)
+@@ -4974,7 +4985,7 @@
+         sbc     hl,bc
+         ld      (top_line),hl
+         call    store_cursor_line
+-        jp      c,L_E23D
++        jp      c,beep_no_room
+         ld      hl,(top_line)
+         jr      L_E47E
+ L_E471:
+@@ -5014,7 +5025,7 @@
+         ldir
+ L_E4B6:
+         call    store_cursor_line
+-        jp      c,L_E5A3
++        jp      c,block_no_room
+         call    markers_after_new_line
+         call    inc_cursor_line
+         jp      L_E3F4
+@@ -5151,9 +5162,9 @@
+         ld      (next_line_bank),a
+         call    free_line_record
+         ret
+-L_E5A3:
++block_no_room:
+         pop     hl
+-        jp      L_E23D
++        jp      beep_no_room
+ is_at_cursor:
+ ; Z if line HL equals line BC and column D equals cursor_index.
+         ld      a,h
+@@ -5198,7 +5209,7 @@
+ ; Command handler: 'Delete marked block' - dispatch code $18
+         ld      a,(marker_flags)
+         and     $02
+-        jp      z,L_E236
++        jp      z,beep_and_main_loop
+         call    order_block_markers
+         ld      hl,(block_end_line)
+         ld      bc,(block_start_line)
+@@ -5207,14 +5218,14 @@
+         sbc     hl,bc
+         ld      a,h
+         cp      $00
+-        jr      nz,L_E602
++        jr      nz,confirm_delete_block
+         ld      a,l
+         cp      $05
+         jr      c,L_E629
+-L_E602:
+-        ld      hl,L_E7CB
++confirm_delete_block:
++        ld      hl,str_warning
+         call    open_dialog_centre
+-        ld      hl,L_E7D3
++        ld      hl,str_are_you_sure
+         oz      Gn_sop
+ L_E60E:
+         oz      Os_in
+@@ -5228,12 +5239,12 @@
+         cp      'N'
+         jr      nz,L_E60E
+         call    redefine_window1
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ L_E629:
+         call    redefine_window1
+-L_E62C:
++delete_block_lines:
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      hl,(block_start_line)
+         ld      bc,(cursor_line)
+         scf
+@@ -5302,7 +5313,7 @@
+         jr      L_E685
+ L_E6B7:
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         call    step_to_next_record
+         call    inc_cursor_line
+         call    take_line_record
+@@ -5320,7 +5331,7 @@
+         ldir
+ L_E6E0:
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         call    step_to_prev_record
+         call    take_line_record
+         call    dec_cursor_line
+@@ -5374,7 +5385,7 @@
+         ld      (marker_flags),a
+         call    wrap_from_cursor_line
+         call    store_cursor_line
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      a,(line_counter)
+         cp      $00
+         jr      z,L_E76C
+@@ -5399,7 +5410,7 @@
+         ld      (cursor_row),a
+ L_E77F:
+         call    take_line_record
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ L_E785:
+         ld      hl,(line_buffer)
+         push    hl
+@@ -5441,9 +5452,9 @@
+         ld      (cursor_line),hl
+         ret
+ 
+-L_E7CB:
++str_warning:
+         defm    "Warning", $00
+-L_E7D3:
++str_are_you_sure:
+         defm    $0a, $01, "2JCAre you sure ? (Y/N)", $00
+ 
+ delete_block_os_error:
+@@ -5462,13 +5473,13 @@
+ L_E7FD:
+         pop     af
+         pop     hl
+-        jp      L_E602
++        jp      confirm_delete_block
+ cmd_information:
+ ; Command handler: 'Information' - dispatch code $1A
+         ld      a,$00
+         call    far_call_bank63
+         call    redefine_window1
+-        jp      L_CA13
++        jp      full_redraw_and_main_loop
+ print_decimal:
+ ; Prints HL in decimal (leading zeros suppressed), using the table of powers of ten at $E842. Same as print_decimal in bank 63. Used for the line number in the status panel.
+         ld      (temp_ptr),hl
+@@ -5656,11 +5667,11 @@
+ save_or_export:
+ ; Shared by Save text and Export text (edit_flags bit 7 set = Export). Export writes no header, does not keep the filename,
+ ; and leaves out the CR after any line that ends in a space, so the lines of a word-wrapped paragraph are joined into one line.
+-        ld      hl,L_F07D
++        ld      hl,str_save_entire_text
+         ld      a,(edit_flags)
+         and     $80
+         jr      z,L_EC45
+-        ld      hl,L_F08E
++        ld      hl,str_export_text
+ L_EC45:
+         call    open_dialog_centre
+         ld      a,(edit_flags)
+@@ -5689,7 +5700,7 @@
+ L_EC71:
+         ld      a,'!'
+ L_EC73:
+-        ld      hl,L_F067
++        ld      hl,str_filename_prompt
+         oz      Gn_sop
+         call    input_to_buffer_a
+         jr      nc,L_EC89
+@@ -5717,16 +5728,16 @@
+         ld      hl,$0000
+         ld      (text_name_ptr),hl
+ L_ECAF:
+-        ld      hl,L_F0D8
++        ld      hl,str_saving
+         oz      Gn_sop
+         call    open_output_file
+-        jp      c,L_EF9F
++        jp      c,show_not_saved
+         ld      (file_handle),ix
+         ld      a,(edit_flags)
+         and     $80
+         jr      nz,L_ECDB
+         call    store_filename_record
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      hl,(line_rec_ptr)
+         ld      (text_name_ptr),hl
+         ld      a,(line_rec_bank)
+@@ -5734,7 +5745,7 @@
+         call    name_activity
+ L_ECDB:
+         call    store_cursor_line
+-        jp      c,L_ED6C
++        jp      c,close_file_no_room
+         ld      a,(line_rec_bank)
+         ld      hl,(line_rec_ptr)
+         ld      (next_line_bank),a
+@@ -5753,7 +5764,7 @@
+         ld      a,(hl)
+         ld      ix,(file_handle)
+         oz      Os_pb
+-        jp      c,L_EF89
++        jp      c,file_write_error
+         inc     hl
+         ld      a,(hl)
+         cp      $00
+@@ -5774,7 +5785,7 @@
+         ld      a,(hl)
+         ld      ix,(file_handle)
+         oz      Os_pb
+-        jp      c,L_EF89
++        jp      c,file_write_error
+         inc     hl
+         dec     d
+         jr      nz,L_ED28
+@@ -5789,7 +5800,7 @@
+         ld      a,$0D
+         ld      ix,(file_handle)
+         oz      Os_pb
+-        jp      c,L_EF89
++        jp      c,file_write_error
+ L_ED4E:
+         call    step_to_next_record
+         jr      nz,L_ED13
+@@ -5801,10 +5812,10 @@
+         ld      (line_rec_bank),a
+         call    take_line_record
+         jp      return_to_editor
+-L_ED6C:
++close_file_no_room:
+         ld      ix,(file_handle)
+         oz      Gn_cl
+-        jp      L_D0D6
++        jp      no_room_exit
+ step_to_prev_record:
+ ; Follows the previous link (+1..+3) of the record at line_rec. Z set (line_rec unchanged) if there is no previous line; otherwise line_rec = previous record, bound into segment 1, NZ.
+         ld      a,(line_rec_bank)
+@@ -5858,7 +5869,7 @@
+         ret
+ cmd_load_text:
+ ; Command handler: 'Load text' - dispatch code $10
+-        ld      hl,L_F09A
++        ld      hl,str_load_new_text
+         call    open_dialog_centre
+         ld      a,(line_length)
+         cp      $00
+@@ -5872,7 +5883,7 @@
+         or      l
+         jr      z,load_text_file
+ L_EDE0:
+-        ld      hl,L_F033
++        ld      hl,str_overwrite_text
+         oz      Gn_sop
+ L_EDE6:
+         oz      Os_in
+@@ -5895,7 +5906,7 @@
+         ld      (marker_flags),a
+         ld      a,' '
+ L_EE02:
+-        ld      hl,L_F067
++        ld      hl,str_filename_prompt
+         oz      Gn_sop
+         call    input_to_buffer_a
+         jr      nc,L_EE16
+@@ -5922,10 +5933,10 @@
+         ld      b,$00
+         ld      a,$01
+         oz      Gn_opf
+-        jp      c,L_EFA4
++        jp      c,show_file_not_found
+         ld      (file_handle),ix
+         call    store_filename_record
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      hl,(line_rec_ptr)
+         ld      a,(line_rec_bank)
+         ld      (text_name_ptr),hl
+@@ -5998,7 +6009,7 @@
+         ld      (next_line_bank),a
+         ld      (next_line_ptr),hl
+         ld      (cursor_line),hl
+-        ld      hl,L_F0B6
++        ld      hl,str_loading
+         oz      Gn_sop
+         ld      a,$00
+         ld      (line_length),a
+@@ -6033,7 +6044,7 @@
+         ld      (line_length),a
+         push    hl
+         ld      b,a
+-        ld      de,L_F398
++        ld      de,str_pipedream_header_end
+ L_EF35:
+         dec     hl
+         dec     de
+@@ -6068,7 +6079,7 @@
+         jr      c,L_EF50
+ L_EF69:
+         call    store_cursor_line
+-        jp      c,L_ED6C
++        jp      c,close_file_no_room
+         ld      hl,(line_rec_ptr)
+         ld      a,(line_rec_bank)
+         ld      (prev_line_ptr),hl
+@@ -6080,7 +6091,8 @@
+         cp      $01
+         jr      z,finish_load
+         jp      L_EF50
+-L_EF89:
++file_write_error:
++; A write failed: closes the file, makes the line after the saved text the cursor line again, and shows 'File NOT saved!'.
+         ld      ix,(file_handle)
+         oz      Gn_cl
+         ld      hl,(next_line_ptr)
+@@ -6088,12 +6100,12 @@
+         ld      (line_rec_ptr),hl
+         ld      (line_rec_bank),a
+         call    take_line_record
+-L_EF9F:
+-        ld      hl,L_F30B
+-        jr      L_EFA7
+-L_EFA4:
++show_not_saved:
++        ld      hl,str_file_not_saved
++        jr      show_file_error
++show_file_not_found:
+         ld      hl,L_EFC6
+-L_EFA7:
++show_file_error:
+         ld      a,$07
+         oz      Os_out
+         push    hl
+@@ -6127,7 +6139,7 @@
+         cp      $00
+         jr      z,L_F00C
+         call    store_cursor_line
+-        jp      c,L_ED6C
++        jp      c,close_file_no_room
+ L_F00C:
+         call    step_to_prev_record
+         jr      nz,L_F00C
+@@ -6142,7 +6154,7 @@
+         and     $F1
+         or      $02
+         ld      (edit_flags),a
+-        jp      L_C5AF
++        jp      redraw_and_main_loop
+ redefine_window1:
+ ; Prints str_define_window1: redefines and selects the text window, which closes any dialog drawn over it.
+         ld      hl,str_define_window1
+@@ -6150,26 +6162,26 @@
+         ret
+ 
+ 
+-L_F033:
++str_overwrite_text:
+         defb    $0a,$01
+ L_F035:
+         defm    "2JCOverwrite text? (Y/N) "
+ L_F04E:
+         defm    $01, "2JN", $00
+         defm    $01, "3@#!Enter filename", $00
+-L_F067:
++str_filename_prompt:
+         defm    $01, "2+C", $01, "3@", '"', "!", $00
+ 
+-L_F071:
++str_change_name:
+         defm    "Change name"
+         defb    $00
+-L_F07D:
++str_save_entire_text:
+         defm    "Save entire text"
+         defb    $00
+-L_F08E:
++str_export_text:
+         defm    "Export text"
+         defb    $00
+-L_F09A:
++str_load_new_text:
+         defm    "Load new text"
+         defb    $00
+ input_to_buffer_a:
+@@ -6182,14 +6194,14 @@
+         ret
+ 
+ 
+-L_F0B6:
++str_loading:
+         defb    $0c,$0a,$0a,$01,$33,$2b,$52,$46
+         defb    $01,$32,$2d,$43,$01
+ L_F0C3:
+         defm    "2JCLoading "
+         defb    $01,$33,$2d,$52,$46,$01,$32,$4a
+         defb    $4e,$00
+-L_F0D8:
++str_saving:
+         defb    $0c,$0a,$0a,$01,$33,$2b
+         defb    $52,$46,$01,$32,$2d,$43,$01
+ L_F0E5:
+@@ -6266,7 +6278,7 @@
+         oz      Dc_nam
+         ret
+ 
+-L_F153:
++str_save_marked_section:
+         defm    "Save marked section"
+         defb    $00
+ cmd_save_marked_block:
+@@ -6276,11 +6288,11 @@
+         jp      z,qe_main_loop
+ L_F16F:
+ ; Save marked block writes only the marked text, from the start marker column to the end marker column, as plain lines ending in CR, with no header.
+-        ld      hl,L_F153
++        ld      hl,str_save_marked_section
+         call    open_dialog_centre
+         ld      a,' '
+ L_F177:
+-        ld      hl,L_F067
++        ld      hl,str_filename_prompt
+         oz      Gn_sop
+         call    input_to_buffer_a
+         jr      nc,L_F18B
+@@ -6297,13 +6309,13 @@
+         jr      L_F177
+ L_F198:
+         call    redefine_window1
+-        ld      hl,L_F0D8
++        ld      hl,str_saving
+         oz      Gn_sop
+         call    open_output_file
+-        jp      c,L_EF9F
++        jp      c,show_not_saved
+         ld      (file_handle),ix
+         call    store_cursor_line
+-        jp      c,L_ED6C
++        jp      c,close_file_no_room
+         ld      a,(line_rec_bank)
+         ld      hl,(line_rec_ptr)
+         ld      (next_line_bank),a
+@@ -6367,7 +6379,7 @@
+         ld      a,(hl)
+         ld      ix,(file_handle)
+         oz      Os_pb
+-        jp      c,L_EF89
++        jp      c,file_write_error
+         inc     hl
+         dec     d
+         jr      nz,L_F227
+@@ -6375,7 +6387,7 @@
+         ld      a,$0D
+         ld      ix,(file_handle)
+         oz      Os_pb
+-        jp      c,L_EF89
++        jp      c,file_write_error
+         call    step_to_next_record
+         jr      z,L_F26B
+         call    copy_record_to_line_buffer
+@@ -6416,7 +6428,7 @@
+         oz      Gn_opf
+         jr      c,L_F2B0
+         oz      Gn_cl
+-        ld      hl,L_F2E1
++        ld      hl,str_file_exists
+         oz      Gn_sop
+ L_F29F:
+         oz      Os_in
+@@ -6428,7 +6440,7 @@
+         cp      'Y'
+         jr      nz,L_F2C7
+ L_F2B0:
+-        ld      hl,L_F0D8
++        ld      hl,str_saving
+         oz      Gn_sop
+         ld      hl,(ptr_buffer_a)
+         ld      de,(ptr_buffer_c)
+@@ -6447,21 +6459,21 @@
+         jp      z,quit_quickedit
+         cp      'f'
+         jr      nz,L_F2DF
+-        ld      hl,L_F153
++        ld      hl,str_save_marked_section
+         call    open_dialog_centre
+-        ld      hl,L_F2E1
++        ld      hl,str_file_exists
+         oz      Gn_sop
+ L_F2DF:
+         pop     af
+         ret
+ 
+ 
+-L_F2E1:
++str_file_exists:
+         defb    $0c,$0a,$0a,$01
+ L_F2E5:
+         defm    "2JCFile exists - Replace ? (Y/N) "
+         defb    $01,$32,$4a,$4e,$00
+-L_F30B:
++str_file_not_saved:
+         defb    $0c,$0a,$0a
+         defb    $01
+ L_F30F:
+@@ -6469,11 +6481,11 @@
+         defb    $01,$32,$4a,$4e,$00
+ cmd_change_name:
+ ; Command handler: 'Change name' - dispatch code $2A
+-        ld      hl,L_F071
++        ld      hl,str_change_name
+         call    open_dialog_centre
+         ld      a,' '
+ L_F33F:
+-        ld      hl,L_F067
++        ld      hl,str_filename_prompt
+         oz      Gn_sop
+         ld      b,'2'
+         ld      de,(ptr_buffer_c)
+@@ -6497,7 +6509,7 @@
+         ld      hl,(text_name_ptr)
+         call    free_sized_record
+         call    store_filename_record
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      hl,(line_rec_ptr)
+         ld      a,(line_rec_bank)
+         ld      (text_name_ptr),hl
+@@ -6510,7 +6522,7 @@
+ ; '%CO:A,72,72%': the PipeDream option line written at the start of a saved text and recognised (and dropped) when a text is loaded.
+         defb    $25,$43,$4f,$3a,$41,$2c,$37
+         defb    $32,$2c,$37,$32,$25
+-L_F398:
++str_pipedream_header_end:
+         defb    $00
+ browse_dictionary:
+ ; Browse through dictionary (Correction menu option 5). Window 'Browse'. The typed word (up to 64 letters) is copied to a work record ($1FBF/$1FC1)
+@@ -6519,7 +6531,7 @@
+ ; Extended keys (0 then a code) first clear the prefix: up/down ($FF/$FE) move one word (browse_prev_word, browse_next_word); $01/$02 (Screen up/down) = previous/next
+ ; two-letter section; $07/$08 (Top/Bottom of text) = previous/next first letter (wrapping Z/A); $1B and $FC cancel (edit_flags bit 6 = nothing chosen).
+ ; A $7F code (at $F4FD) would remove the last prefix letter, but the prefix has already been cleared on that path, so it appears to do nothing.
+-        ld      hl,L_F880
++        ld      hl,str_browse
+         call    open_dialog_right
+         ld      ix,(pool_main)
+         ld      bc,$0040
+@@ -6544,7 +6556,7 @@
+         djnz    L_F3C4
+ L_F3CA:
+         call    browse_seek_prefix
+-        ld      hl,L_F887
++        ld      hl,str_set_vscroll_2
+         oz      Gn_sop
+         ld      a,$00
+         ld      (wf_menu_sel),a
+@@ -6590,10 +6602,10 @@
+         ld      a,(edit_flags)
+         or      '@'
+         ld      (edit_flags),a
+-        jp      L_F5B6
++        jp      browse_end
+ L_F42F:
+         cp      $0D
+-        jp      z,L_F5A1
++        jp      z,browse_take_word
+         cp      '''
+         jr      nz,L_F443
+         ld      a,(wf_menu_sel)
+@@ -6786,15 +6798,15 @@
+         jp      z,quit_quickedit
+         cp      'f'
+         jr      nz,L_F59F
+-        ld      hl,L_F880
++        ld      hl,str_browse
+         call    open_dialog_right
+-        ld      hl,L_F887
++        ld      hl,str_set_vscroll_2
+         oz      Gn_sop
+         call    draw_browse_page
+ L_F59F:
+         pop     af
+         ret
+-L_F5A1:
++browse_take_word:
+         ld      a,(dict_word_length)
+         ld      c,a
+         ld      b,$00
+@@ -6811,8 +6823,8 @@
+         ld      (hl),a
+         dec     c
+         jr      nz,L_F5AF
+-L_F5B6:
+-        ld      hl,L_F5CC
++browse_end:
++        ld      hl,str_window1_vscroll
+         oz      Gn_sop
+         ld      hl,(temp2_ptr)
+         ld      bc,$0040
+@@ -6822,7 +6834,7 @@
+         ret
+ 
+ 
+-L_F5CC:
++str_window1_vscroll:
+         defb    $01,$32,$43,$31,$01,$33,$2b,$43
+         defb    $53,$00
+ print_current_word:
+@@ -6851,7 +6863,7 @@
+         ld      a,(hl)
+         cp      $80
+         jr      z,L_F60B
+-L_F5FC:
++browse_next_ending:
+         ld      hl,dict_stem_length
+         dec     (hl)
+         dec     (hl)
+@@ -6939,7 +6951,7 @@
+         ret
+ L_F6A5:
+         ld      (dict_ending_ptr),hl
+-        jp      L_F5FC
++        jp      browse_next_ending
+ L_F6AB:
+         ld      hl,(browse_pos)
+         ld      (dict_pos),hl
+@@ -6977,7 +6989,7 @@
+         cp      $80
+         jr      c,L_F6EA
+         ld      (dict_ending_ptr),hl
+-        jp      L_F5FC
++        jp      browse_next_ending
+ dict_back_one_record:
+ ; Moves dict_pos back to the start of the previous dictionary record (the first byte below $10). Carry set if that is the start of the section ($0F).
+         ld      hl,(dict_pos)
+@@ -7210,9 +7222,9 @@
+         call    browse_next_word
+         jr      L_F817
+ 
+-L_F880:
++str_browse:
+         defm    "Browse", $00
+-L_F887:
++str_set_vscroll_2:
+         defm    $01, "2+S", $00
+ 
+ word_list_add:
+@@ -7225,7 +7237,7 @@
+ ; Returns Z if the word is already there; carry set if the first character is not a letter A-Z. No memory -> show_no_room_error.
+ ; $1FEB and $1FED hold the link to be patched (its address and the OS_Mpb binding) while the list is searched.
+         call    check_free_memory
+-        jp      c,L_FC41
++        jp      c,word_list_no_room
+         ld      hl,(user_dict_ptr)
+         ld      a,h
+         or      l
+@@ -7234,7 +7246,7 @@
+         ld      ix,(pool_main)
+         ld      a,$00
+         oz      Os_mal
+-        jp      c,L_FC41
++        jp      c,word_list_no_room
+         ld      (user_dict_ptr),hl
+         ld      a,b
+         ld      (user_dict_bank),a
+@@ -7289,7 +7301,7 @@
+         ld      a,$00
+         ld      ix,(pool_main)
+         oz      Os_mal
+-        jp      c,L_FC41
++        jp      c,word_list_no_room
+         push    hl
+         push    bc
+         oz      Os_mpb
+@@ -7388,7 +7400,7 @@
+         ld      a,$00
+         ld      ix,(pool_main)
+         oz      Os_mal
+-        jp      c,L_FC41
++        jp      c,word_list_no_room
+         push    hl
+         push    bc
+         oz      Os_mpb
+@@ -7459,7 +7471,7 @@
+         ret
+ L_FA18:
+         jr      z,L_FA16
+-L_FA1A:
++user_word_found:
+         ld      a,(char_scratch)
+         ld      de,(ptr_buffer_c)
+         dec     de
+@@ -7494,7 +7506,7 @@
+         ld      hl,(ptr_buffer_a)
+         ld      a,(dict_target_length)
+         call    word_list_compare
+-        jp      c,L_FA1A
++        jp      c,user_word_found
+         call    word_list_next
+         jr      nc,L_FA50
+         ld      a,'A'
+@@ -7505,10 +7517,10 @@
+         ld      a,(dict_stem_length)
+         call    word_list_compare
+         ret     c
+-        jp      nz,L_FA1A
++        jp      nz,user_word_found
+         scf
+         ret
+-L_FA77:
++browse_user_prev_scan:
+         ld      a,'A'
+         call    word_list_first_from
+         ld      hl,$0000
+@@ -7542,8 +7554,8 @@
+         dec     hl
+         ld      a,(dict_stem_length)
+         call    word_list_compare
+-        jp      c,L_FA1A
+-L_FAC5:
++        jp      c,user_word_found
++user_word_none:
+         scf
+         ret
+ L_FAC7:
+@@ -7555,7 +7567,7 @@
+         ld      b,a
+         ld      c,$01
+         oz      Os_mpb
+-        jp      L_FA1A
++        jp      user_word_found
+ browse_user_prev:
+ ; Browse: as browse_user_next, going backwards.
+         ld      a,(misc_flags)
+@@ -7569,8 +7581,8 @@
+         ret
+ L_FAEF:
+         call    compare_word_with_stem
+-        jr      z,L_FAC5
+-        jp      nc,L_FA77
++        jr      z,user_word_none
++        jp      nc,browse_user_prev_scan
+         ld      a,'A'
+         call    word_list_first_from
+         ld      hl,$0000
+@@ -7612,7 +7624,7 @@
+         ld      a,(dict_stem_length)
+         call    word_list_compare
+         jr      nc,L_FB2D
+-        jp      L_FA1A
++        jp      user_word_found
+ compare_word_with_stem:
+ ; Compares the current dictionary word (buffer C - 2, dict_stem_length) with buffer A (dict_target_length): Z = equal, NZ at the first difference.
+         ld      de,(ptr_buffer_c)
+@@ -7648,11 +7660,11 @@
+ ; Moves line_rec to the next word record, going on to the following letters at the end of a list. Carry set at the end of the table.
+         ld      hl,(line_rec_ptr)
+         inc     hl
+-        jr      L_FB84
++        jr      word_list_follow_link
+ word_list_first_from:
+ ; In: A = letter. Finds the first word record at or after that letter (line_rec). Carry set if there is none.
+         call    word_list_select_letter
+-L_FB84:
++word_list_follow_link:
+         ld      d,(hl)
+         inc     hl
+         ld      c,(hl)
+@@ -7782,7 +7794,7 @@
+         ld      hl,(line_rec_ptr)
+         inc     hl
+         jr      L_FC04
+-L_FC41:
++word_list_no_room:
+         jp      show_no_room_error
+ word_list_compare:
+ ; Compares the word at HL (A letters, first letter included) with the list word at line_rec, whose first letter is in $1FE4.
+@@ -7845,7 +7857,7 @@
+         ld      a,h
+         or      l
+         jp      z,qe_main_loop
+-        ld      hl,L_FE97
++        ld      hl,str_save_user_dictionary
+         call    open_dialog_centre
+         ld      hl,(user_dict_name_ptr)
+         ld      a,h
+@@ -7869,7 +7881,7 @@
+ L_FCBE:
+         ld      a,'!'
+ L_FCC0:
+-        ld      hl,L_FE8D
++        ld      hl,str_filename_prompt_2
+         oz      Gn_sop
+         call    input_to_buffer_a
+         cp      $1B
+@@ -7880,7 +7892,7 @@
+         jr      L_FCC0
+ L_FCD6:
+         call    redefine_window1
+-        ld      hl,L_F0D8
++        ld      hl,str_saving
+         oz      Gn_sop
+         ld      hl,(user_dict_name_ptr)
+         ld      a,(user_dict_name_bank)
+@@ -7893,7 +7905,7 @@
+         ld      b,$00
+         ld      a,$02
+         oz      Gn_opf
+-        jp      c,L_EF9F
++        jp      c,show_not_saved
+         ld      (file_handle),ix
+         call    store_filename_record
+         ld      hl,(line_rec_ptr)
+@@ -7935,7 +7947,7 @@
+         add     a,'A'
+         ld      ix,(file_handle)
+         oz      Os_pb
+-        jp      c,L_EF89
++        jp      c,file_write_error
+         ld      hl,(line_rec_ptr)
+         ld      b,(hl)
+         ld      de,$0004
+@@ -7944,13 +7956,13 @@
+         ld      a,(hl)
+         ld      ix,(file_handle)
+         oz      Os_pb
+-        jp      c,L_EF89
++        jp      c,file_write_error
+         inc     hl
+         djnz    L_FD5E
+         ld      a,$0D
+         ld      ix,(file_handle)
+         oz      Os_pb
+-        jp      c,L_EF89
++        jp      c,file_write_error
+         ld      hl,(line_rec_ptr)
+         inc     hl
+         jp      L_FD2E
+@@ -7962,13 +7974,13 @@
+         ld      ix,(file_handle)
+         oz      Gn_cl
+         jp      return_to_editor
+-L_FD8F:
++close_file_no_room_2:
+         ld      ix,(file_handle)
+         oz      Gn_cl
+-        jp      L_D0D6
++        jp      no_room_exit
+ cmd_load_user_dictionary:
+ ; Command handler: 'Load user dictionary' - dispatch code $23
+-        ld      hl,L_FEAC
++        ld      hl,str_load_user_dictionary
+         call    open_dialog_centre
+         ld      hl,(user_dict_ptr)
+         ld      a,h
+@@ -7985,7 +7997,7 @@
+         oz      Os_out
+         ld      a,' '
+ L_FDBB:
+-        ld      hl,L_FE8D
++        ld      hl,str_filename_prompt_2
+         oz      Gn_sop
+         call    input_to_buffer_a
+         cp      $1B
+@@ -8006,17 +8018,17 @@
+         ld      b,$00
+         ld      a,$01
+         oz      Gn_opf
+-        jp      c,L_EFA4
++        jp      c,show_file_not_found
+         ld      (file_handle),ix
+         call    store_filename_record
+-        jp      c,L_D0D6
++        jp      c,no_room_exit
+         ld      hl,(line_rec_ptr)
+         ld      a,(line_rec_bank)
+         ld      (user_dict_name_bank),a
+         ld      (user_dict_name_ptr),hl
+         call    redefine_window1
+         call    word_list_clear
+-        ld      hl,L_F0B6
++        ld      hl,str_loading
+         oz      Gn_sop
+ L_FE15:
+ ; Load user dictionary: each run of word characters (is_word_char, at most 64) is one word; any other byte ends it. Words of fewer than 3 characters are skipped.
+@@ -8039,7 +8051,7 @@
+         jr      c,L_FE1D
+ L_FE37:
+         call    check_free_memory
+-        jp      c,L_FD8F
++        jp      c,close_file_no_room_2
+         ld      a,(dict_target_length)
+         cp      $03
+         jr      c,L_FE15
+@@ -8065,13 +8077,13 @@
+ L_FE75:
+         defm    $0a, "dictionary? (Y/N) "
+         defm    $01, "2JN", $00
+-L_FE8D:
++str_filename_prompt_2:
+         defm    $01, "2+C", $01, "3@", '"', "!", $00
+ 
+-L_FE97:
++str_save_user_dictionary:
+         defm    "Save user dictionary"
+         defb    $00
+-L_FEAC:
++str_load_user_dictionary:
+         defm    "Load user dictionary"
+         defb    $00
+ word_list_clear:
+@@ -8157,11 +8169,11 @@
+         ret
+ open_dialog_centre:
+ ; open_dialog_with_title with the centre geometry: x 25, 30 columns, full height (title on row 0).
+-        ld      bc,L_FFCA
++        ld      bc,geom_dialog_centre
+         jr      open_dialog_with_title
+ open_dialog_right:
+ ; open_dialog_with_title with the right-hand geometry: x 38, 35 columns, rows 1-7. (open_dialog_default is the same on the left, x 1.)
+-        ld      bc,L_FFC0
++        ld      bc,geom_dialog_right
+         jr      open_dialog_with_title
+ dialog_window_right:
+ ; Opens dialog window 3 in the RIGHT half of the screen (x=37, 37 columns, 7 rows). Called from several routines (menus and lists).
+@@ -8174,7 +8186,7 @@
+         oz      Gn_sop
+         ret
+ open_dialog_default:
+-        ld      bc,L_FFB6
++        ld      bc,geom_dialog_left
+ open_dialog_with_title:
+ ; Open a dialog box with a title bar in window 3.
+ ; IN: HL = the title text, BC = the window description (the outer x,y,w,d, a NUL, then the inner x,y,w,d).
+@@ -8216,13 +8228,13 @@
+ str_dialog_type_81:
+         defb    $81,$01,$32,$43
+         defb    $33,$00
+-L_FFB6:
++geom_dialog_left:
+         defb    $21,$21,$43,$27,$00,$21
+         defb    $22,$43,$26,$00
+-L_FFC0:
++geom_dialog_right:
+         defb    $46,$21,$43,$27
+         defb    $00,$46,$22,$43,$26,$00
+-L_FFCA:
++geom_dialog_centre:
+         defb    $39,$20
+         defb    $3e,$28,$00,$39,$21,$3e,$27,$00
+ 
+diff -ruN spellmasterz88-main/spell63.asm spellmasterz88-main/spell63.asm
+--- spellmasterz88-main/spell63.asm	2026-11-10 23:59:49.178430481 +0000
++++ spellmasterz88-main/spell63.asm	2026-11-11 00:10:26.922102649 +0000
+@@ -66,7 +66,7 @@
+         ld      a,(hl)
+         ld      (bc),a
+         cp      $0F
+-        jr      z,L_C06E
++        jr      z,dict_section_end
+ L_C048:
+         inc     hl
+         inc     bc
+@@ -94,7 +94,7 @@
+         scf
+         ccf
+         ret
+-L_C06E:
++dict_section_end:
+         scf
+         ret
+ skip_to_next_letter_group:
+@@ -107,7 +107,7 @@
+         cp      $00
+         jr      z,L_C081
+         cp      $0F
+-        jr      z,L_C06E
++        jr      z,dict_section_end
+         inc     hl
+         jr      L_C073
+ L_C081:
+@@ -122,7 +122,7 @@
+         ld      l,a
+         ld      h,$00
+         add     hl,hl
+-        ld      bc,L_DE2B
++        ld      bc,first_letter_index
+         add     hl,bc
+         ld      c,(hl)
+         inc     hl
+@@ -193,11 +193,11 @@
+         and     $0F
+         ld      e,a
+         ld      d,$00
+-        ld      hl,L_D84D
++        ld      hl,inflection_class_offsets
+         add     hl,de
+         ld      e,(hl)
+         ld      d,$00
+-        ld      hl,L_D809
++        ld      hl,inflection_endings
+         add     hl,de
+         ld      (dict_ending_ptr),hl
+         ld      a,(dict_word_flags)
+@@ -275,17 +275,17 @@
+         ld      a,'`'
+         ld      bc,$0000
+         oz      Os_mop
+-        jp      c,L_C30E
++        jp      c,startup_fail_exit
+         ld      (pool_main),ix
+         ld      a,$80
+         ld      bc,$0000
+         oz      Os_mop
+-        jp      c,L_C308
++        jp      c,startup_fail_free_main
+         ld      (pool_second),ix
+         ld      bc,$00F8
+         ld      a,$00
+         oz      Os_mal
+-        jp      c,L_C302
++        jp      c,startup_fail_free_second
+         ld      a,b
+         ld      (line_buffer_bank),a
+         ld      (line_buffer),hl
+@@ -300,12 +300,12 @@
+         ld      a,$00
+         ld      bc,$0000
+         oz      Os_mop
+-        jp      c,L_C302
++        jp      c,startup_fail_free_second
+         ld      (pool_buffers),ix
+         ld      bc,$00C2
+         ld      a,$00
+         oz      Os_mal
+-        jp      c,L_C2FC
++        jp      c,startup_fail_free_all
+         ld      (buffers_binding),bc
+         ld      (ptr_buffer_a),hl
+         ld      bc,$0040
+@@ -318,11 +318,11 @@
+         oz      Os_mpb
+ wf_show_menu:
+ ; Draws the WordFinder window and menu ('Browse through dictionary', 'Find anagrams', 'Find close matches', 'Solve crossword').
+-        ld      hl,L_ED4B
++        ld      hl,str_wf_menu_window
+         oz      Gn_sop
+-        ld      hl,L_C339
++        ld      hl,str_wordfinder
+         call    open_dialog_wf
+-        ld      hl,L_C344
++        ld      hl,str_wf_menu
+         oz      Gn_sop
+         ld      a,$00
+         ld      (wf_menu_sel),a
+@@ -407,25 +407,26 @@
+ L_C2F6:
+         call    wf_option_1_browse_dictionary
+         jp      wf_show_menu
+-L_C2FC:
++startup_fail_free_all:
++; WordFinder start-up failed: closes the pools opened so far and leaves with OS_Bye.
+         ld      ix,(pool_buffers)
+         oz      Os_mcl
+-L_C302:
++startup_fail_free_second:
+         ld      ix,(pool_second)
+         oz      Os_mcl
+-L_C308:
++startup_fail_free_main:
+         ld      ix,(pool_main)
+         oz      Os_mcl
+-L_C30E:
++startup_fail_exit:
+         ld      a,$07
+         oz      Os_bye
+ wf_os_error:
+ ; OS_In error in the WordFinder menu: RC_Draw redraws the menu, RC_Quit leaves (falls into wf_quit).
+         push    af
+         cp      'f'
+-        jr      z,L_C334
++        jr      z,wf_redraw_menu
+         cp      'g'
+-        jr      nz,L_C332
++        jr      nz,wf_os_error_return
+ wf_quit:
+ ; RC_Quit: closes the three memory pools and leaves WordFinder with OS_Bye.
+         pop     af
+@@ -437,18 +438,18 @@
+         oz      Os_mcl
+         ld      a,$00
+         oz      Os_bye
+-L_C332:
++wf_os_error_return:
+         pop     af
+         ret
+-L_C334:
++wf_redraw_menu:
+         pop     af
+         pop     hl
+         jp      wf_show_menu
+ 
+-L_C339:
++str_wordfinder:
+         defm    "WordFinder"
+         defb    $00
+-L_C344:
++str_wf_menu:
+         defb    $0c,$01
+ L_C346:
+         defm    "2JCBrowse through dictionary"
+@@ -468,7 +469,8 @@
+ L_C3CA:
+         defm    "Bad category!"
+         defb    $00
+-L_C3D8:
++quit_quickedit:
++; Same as quit_quickedit in bank 62: RC_Quit during a far-called command closes the pools and leaves with OS_Bye.
+         ld      ix,(pool_buffers)
+         oz      Os_mcl
+         ld      ix,(pool_main)
+@@ -529,7 +531,7 @@
+         oz      Gn_nln
+         jr      show_found_word
+ L_C448:
+-        ld      hl,L_C485
++        ld      hl,str_press_space
+         oz      Gn_sop
+         oz      Os_in
+         call    c,check_quit
+@@ -556,7 +558,7 @@
+         ret
+ open_words_found:
+ ; Opens the 'Words found' dialog (wide window) and clears cursor_row and cursor_index.
+-        ld      hl,L_C4AC
++        ld      hl,str_words_found
+         call    open_dialog_wide
+         ld      a,$00
+         ld      (cursor_row),a
+@@ -564,12 +566,12 @@
+         ret
+ 
+ 
+-L_C485:
++str_press_space:
+         defb    $0a,$0d,$01,$32,$4a,$43,$01
+ L_C48C:
+         defm    "RPress SPACE to continue "
+         defb    $01,$52,$01,$32,$4a,$4e,$00
+-L_C4AC:
++str_words_found:
+         defm    "Words found"
+         defb    $00
+ input_wf_word:
+@@ -609,9 +611,9 @@
+ ; If the pattern starts with letters only the matching sections are searched. Matching backtracks to the last '*' on a mismatch (line_rec_ptr, $1FEB, $1FBC, $1FBD).
+ ; Unlike Find anagrams this search does not stop for a key press; only the 'Press SPACE' page prompt can end it early.
+ ; Menu option 4: Solve crossword (window title 'Crossword').
+-        ld      hl,L_C737
++        ld      hl,str_crossword
+         call    open_dialog_wf
+-        ld      hl,L_C75C
++        ld      hl,str_word_prompt
+         oz      Gn_sop
+         call    input_wf_word
+         cp      $1B
+@@ -773,9 +775,9 @@
+         jp      end_of_search
+ wf_option_2_find_anagrams:
+ ; Menu option 2: Find anagrams (window title 'Anagram'). Asks for a word, checks it is letters only, then searches.
+-        ld      hl,L_C741
++        ld      hl,str_anagram
+         call    open_dialog_wf
+-        ld      hl,L_C75C
++        ld      hl,str_word_prompt
+         oz      Gn_sop
+         call    input_wf_word
+         cp      $1B
+@@ -871,7 +873,7 @@
+         jp      c,L_C66E
+ end_of_search:
+ ; Shows 'Press SPACE to continue' and waits for a key before going back to the menu.
+-        ld      hl,L_C485
++        ld      hl,str_press_space
+         oz      Gn_sop
+         oz      Os_in
+         call    c,check_quit
+@@ -923,17 +925,17 @@
+         push    bc
+         jr      L_C719
+ 
+-L_C737:
++str_crossword:
+         defm    "Crossword"
+ L_C740:
+         defm    $00
+-L_C741:
++str_anagram:
+         defm    "Anagram", $00
+ 
+-L_C749:
++str_find_close_matches:
+         defm    "Find close matches"
+         defb    $00
+-L_C75C:
++str_word_prompt:
+         defb    $01,$32,$2b,$43,$01,$33,$40
+         defb    $22,$21,$3a,$20,$00,$fe,$27,$c8
+         defb    $e6,$df,$fe,$41,$d8,$fe,$5a,$28
+@@ -1159,7 +1161,7 @@
+         ld      h,(ix+6)
+         ld      a,h
+         or      l
+-        jp      z,L_C969
++        jp      z,next_text_row
+         ld      a,(ix+4)
+         ld      (line_rec_bank),a
+         ld      (line_rec_ptr),hl
+@@ -1226,7 +1228,7 @@
+         oz      Os_out
+ L_C968:
+         ret
+-L_C969:
++next_text_row:
+         ld      hl,line_counter
+         inc     (hl)
+ draw_end_of_text_marker:
+@@ -1245,7 +1247,7 @@
+         oz      Gn_sop
+         ld      a,(cursor_col_limit)
+         sub     $0D
+-        jr      L_C9B2
++        jr      pad_row
+ clear_remaining_rows:
+ ; Blank every remaining row of the text window below the End of text marker, up to row 7.
+         ld      hl,line_counter
+@@ -1261,7 +1263,7 @@
+         add     a,SD_COORD
+         oz      Os_out
+         ld      a,(cursor_col_limit)
+-L_C9B2:
++pad_row:
+         ld      b,a
+         ld      a,SD_COORD
+ L_C9B5:
+@@ -1425,13 +1427,13 @@
+         push    hl
+         push    bc
+         ld      hl,(block_start_line)
+-        jr      L_CADB
++        jr      compare_marker_line
+ is_end_marker_line:
+ ; Z if block_end_line equals cursor_line. HL and BC preserved.
+         push    hl
+         push    bc
+         ld      hl,(block_end_line)
+-L_CADB:
++compare_marker_line:
+         ld      bc,(cursor_line)
+         ld      a,h
+         cp      b
+@@ -1607,13 +1609,13 @@
+ ; Far-call table entry 0.
+ ; Called from the QuickEdit handler for Information (command $1A).
+ ; Shows the Information window ('Currently editing', number of lines, memory, word count, user dictionary).
+-        ld      hl,L_CF72
++        ld      hl,str_information
+         call    open_dialog_mid
+-        ld      hl,L_CEEB
++        ld      hl,str_information_labels
+         oz      Gn_sop
+-        ld      hl,L_D87A
++        ld      hl,str_cursor_home
+         oz      Gn_sop
+-        ld      hl,L_CF7E
++        ld      hl,str_info_column
+         oz      Gn_sop
+         ld      hl,(text_name_ptr)
+         ld      a,(text_name_bank)
+@@ -1621,7 +1623,7 @@
+         call    print_name_record
+         oz      Gn_nln
+         oz      Gn_nln
+-        ld      hl,L_CF7E
++        ld      hl,str_info_column
+         oz      Gn_sop
+         ld      bc,NQ_Mfs
+         ld      ix,(pool_main)
+@@ -1633,15 +1635,15 @@
+         ld      h,a
+         ld      l,b
+         call    print_decimal
+-        ld      hl,L_CF5F
++        ld      hl,str_k
+         oz      Gn_sop
+-        ld      hl,L_CF7E
++        ld      hl,str_info_column
+         oz      Gn_sop
+         ld      hl,(user_dict_ptr)
+         ld      a,h
+         or      l
+         jr      nz,L_CDE6
+-        ld      hl,L_CF6D
++        ld      hl,str_none
+         oz      Gn_sop
+         jr      L_CDF0
+ L_CDE6:
+@@ -1694,12 +1696,12 @@
+         ld      c,$00
+         jr      L_CE33
+ L_CE47:
+-        ld      hl,L_CF53
++        ld      hl,str_info_lines_pos
+         oz      Gn_sop
+         ld      hl,(cursor_line)
+         inc     hl
+         call    print_decimal
+-        ld      hl,L_CF59
++        ld      hl,str_info_words_pos
+         oz      Gn_sop
+         ld      hl,(top_line)
+         call    print_decimal
+@@ -1746,7 +1748,7 @@
+         ret
+ L_CEA8:
+         cp      'g'
+-        jp      z,L_C3D8
++        jp      z,quit_quickedit
+         cp      'f'
+         jp      z,far_information
+         jr      L_CE9B
+@@ -1755,7 +1757,7 @@
+         ld      a,h
+         or      l
+         jr      nz,L_CEBF
+-        ld      hl,L_CF64
++        ld      hl,str_untitled
+         oz      Gn_sop
+         ret
+ L_CEBF:
+@@ -1792,7 +1794,7 @@
+         and     $00
+         ret
+ 
+-L_CEEB:
++str_information_labels:
+         defm    "Currently editing :"
+         defb    $0d,$0a
+ L_CF00:
+@@ -1807,26 +1809,26 @@
+ L_CF3F:
+         defm    "User dictionary   :"
+         defb    $00
+-L_CF53:
++str_info_lines_pos:
+         defb    $01,$33,$40,$33,$21,$00
+-L_CF59:
++str_info_words_pos:
+         defb    $01
+         defb    $33,$40,$33,$23,$00
+-L_CF5F:
++str_k:
+         defb    $4b,$0a,$0a
+         defb    $0d,$00
+-L_CF64:
++str_untitled:
+         defm    "Untitled"
+         defb    $00
+-L_CF6D:
++str_none:
+         defb    $4e,$6f,$6e
+ L_CF70:
+         defm    "e", $00
+ 
+-L_CF72:
++str_information:
+         defm    "Information"
+         defb    $00
+-L_CF7E:
++str_info_column:
+         defm    $01, "2X3", $00
+ 
+ ; $CF83-$CF8A: pushes AF and BC and prints A as two hex digits (print_hex_byte). Nothing calls it: probably left from debugging.
+@@ -2071,7 +2073,7 @@
+         cp      $01
+         ret     c
+         ld      hl,(block_start_line)
+-L_D0DE:
++compare_line_with_cursor:
+         ld      bc,(cursor_line)
+         ld      a,h
+         cp      b
+@@ -2096,7 +2098,7 @@
+         cp      $03
+         ret     c
+         ld      hl,(block_end_line)
+-        jr      L_D0DE
++        jr      compare_line_with_cursor
+ far_print_text:
+ ; Enables Escape detection (OS_Esc SC_ENA), sends $05 '[' to the printer filter, then every line of the whole text followed by LF CR (through OS_Prt),
+ ; then $05 ']' and disables Escape detection again (SC_DIS). An error from OS_Prt (for example Escape) beeps and ends the printout.
+@@ -2104,7 +2106,7 @@
+ ; Far-call table entry 10.
+ ; Called from the QuickEdit handler for Print out text (command $2E).
+ ; Shows the 'Printing' window and sends the text to the printer.
+-        ld      hl,L_D17A
++        ld      hl,str_printing
+         oz      Gn_sop
+         ld      a,SC_ENA
+         oz      Os_esc
+@@ -2169,7 +2171,7 @@
+         jr      end_printout
+ 
+ 
+-L_D17A:
++str_printing:
+         defb    $0c,$0a,$0a,$01,$33,$2b,$52,$46
+         defb    $01,$32,$2d,$43,$01
+ L_D187:
+@@ -2192,15 +2194,15 @@
+         ld      de,(ptr_buffer_c)
+         call    load_string_record
+ L_D1B7:
+-        ld      hl,L_D519
++        ld      hl,str_search_and_replace
+         call    open_dialog_mid
+-        ld      hl,L_D783
++        ld      hl,str_global_or_selective
+         oz      Gn_sop
+ L_D1C3:
+         oz      Os_in
+         jr      nc,L_D1D2
+         cp      'g'
+-        jp      z,L_C3D8
++        jp      z,quit_quickedit
+         cp      'f'
+         jr      z,L_D1B7
+         jr      L_D1C3
+@@ -2229,9 +2231,9 @@
+ L_D1FD:
+         ld      a,$0C
+         oz      Os_out
+-        ld      hl,L_D53C
++        ld      hl,str_replace_prompt
+         oz      Gn_sop
+-        ld      hl,L_D52C
++        ld      hl,str_find_prompt
+         oz      Gn_sop
+         ld      de,(ptr_buffer_a)
+         ld      b,'?'
+@@ -2244,8 +2246,8 @@
+         cp      'f'
+         jr      z,L_D1B7
+         cp      'g'
+-        jp      z,L_C3D8
+-        ld      hl,L_D52C
++        jp      z,quit_quickedit
++        ld      hl,str_find_prompt
+         oz      Gn_sop
+         ld      b,'?'
+         jr      L_D215
+@@ -2257,7 +2259,7 @@
+         cp      $FE
+         jr      nz,L_D1FD
+ L_D23D:
+-        ld      hl,L_D53C
++        ld      hl,str_replace_prompt
+         oz      Gn_sop
+         ld      de,(ptr_buffer_c)
+         ld      b,'?'
+@@ -2270,8 +2272,8 @@
+         cp      'f'
+         jp      z,L_D1B7
+         cp      'g'
+-        jp      z,L_C3D8
+-        ld      hl,L_D53C
++        jp      z,quit_quickedit
++        ld      hl,str_replace_prompt
+         oz      Gn_sop
+         ld      b,'?'
+         jr      L_D24B
+@@ -2391,14 +2393,14 @@
+         or      $02
+         ld      (edit_flags),a
+         call    far_redraw_text_window
+-        ld      hl,L_D766
++        ld      hl,str_replace_yn
+         oz      Gn_sop
+         call    place_cursor
+ L_D345:
+         oz      Os_in
+         jr      nc,L_D354
+         cp      'g'
+-        jp      z,L_C3D8
++        jp      z,quit_quickedit
+         cp      'f'
+         jr      z,L_D32C
+         jr      L_D345
+@@ -2450,7 +2452,7 @@
+         sub     c
+         ld      c,a
+         jr      nc,L_D3B1
+-        jp      L_D4FD
++        jp      set_found_row
+ L_D3B1:
+         jr      z,L_D3BE
+ L_D3B3:
+@@ -2488,7 +2490,7 @@
+ L_D3EC:
+         pop     hl
+         ld      (top_line),hl
+-        jp      L_D4FD
++        jp      set_found_row
+ L_D3F3:
+         ld      a,(cursor_index)
+         ld      b,a
+@@ -2602,9 +2604,9 @@
+         ld      a,(search_str_bank)
+         call    load_string_record
+ L_D4A5:
+-        ld      hl,L_D512
++        ld      hl,str_search
+         call    open_dialog_mid
+-        ld      hl,L_D52C
++        ld      hl,str_find_prompt
+         oz      Gn_sop
+         ld      de,(ptr_buffer_a)
+         ld      b,'?'
+@@ -2617,8 +2619,8 @@
+         cp      'f'
+         jr      z,L_D4A5
+         cp      'g'
+-        jp      z,L_C3D8
+-        ld      hl,L_D52C
++        jp      z,quit_quickedit
++        ld      hl,str_find_prompt
+         oz      Gn_sop
+         ld      b,'?'
+         jr      L_D4B9
+@@ -2641,7 +2643,7 @@
+         ld      (search_str_ptr),hl
+         ld      (search_str_bank),a
+         call    find_next_match
+-L_D4FD:
++set_found_row:
+         ld      hl,(cursor_line)
+         ld      a,h
+         cp      $00
+@@ -2657,16 +2659,16 @@
+         ccf
+         ret
+ 
+-L_D512:
++str_search:
+         defm    "Search", $00
+ 
+-L_D519:
++str_search_and_replace:
+         defm    "Search and Replace"
+ L_D52B:
+         defm    $00
+-L_D52C:
++str_find_prompt:
+         defm    $01, "2+C", $01, "3@", '"', "!Find :", $00
+-L_D53C:
++str_replace_prompt:
+         defm    $01, "2+C", $01, "3@", '"', "#Replace :", $00
+ 
+ find_next_match:
+@@ -2955,10 +2957,10 @@
+         defb    $01,$00,$89,$dd,$2a,$a7,$1f,$e7
+         defb    $66,$fe,$00,$c0,$78,$fe,$05,$c9
+ 
+-L_D766:
++str_replace_yn:
+         defm    $01, "3@>'", $01, "2+RReplace ? (Y/N)"
+         defm    $01, "2-R", $00
+-L_D783:
++str_global_or_selective:
+         defm    $01, "2JC", $0a, $0a
+ L_D789:
+         defm    "Global or selective ? (G/S) "
+@@ -3038,7 +3040,7 @@
+         ret
+ 
+ 
+-L_D809:
++inflection_endings:
+         defb    $80,$c5,$44,$c9,$4e,$47,$d3,$80
+         defb    $d3,$80,$c5,$c5,$44,$c5,$53,$c9
+         defb    $4e,$47,$80,$c5,$44,$c5,$53,$c9
+@@ -3048,10 +3050,11 @@
+         defb    $49,$4e,$47,$c9,$5a,$45,$c9,$5a
+         defb    $45,$44,$c9,$5a,$45,$53,$c9,$5a
+         defb    $49,$4e,$47,$80
+-L_D84D:
++inflection_class_offsets:
+         defb    $01,$08,$13,$0a
+         defb    $1b,$20,$23
+-L_D854:
++inflection_class_table:
++; Copy of inflection_class_table in bank 62.
+         defb    $0a,$d8,$11,$d8,$1c
+         defb    $d8,$13,$d8,$24,$d8,$29,$d8,$2c
+         defb    $d8
+@@ -3072,7 +3075,7 @@
+         ret
+ 
+         defb    $01,$32,$2b,$53,$00
+-L_D87A:
++str_cursor_home:
+         defb    $01,$33,$40
+         defb    $20,$20,$00
+ far_append_guess:
+@@ -3204,7 +3207,7 @@
+         ld      a,(line_rec_bank)
+         ld      (prev_line_ptr),hl
+         ld      (prev_line_bank),a
+-        ld      hl,L_DA31
++        ld      hl,str_loading
+         oz      Gn_sop
+         ld      hl,(cursor_line)
+         push    hl
+@@ -3303,7 +3306,7 @@
+         ret
+ 
+ 
+-L_DA31:
++str_loading:
+         defb    $0c,$01,$33,$40,$20,$22,$01,$33
+         defb    $2b,$52,$46,$01,$32,$2d,$43,$01
+ 
+@@ -3510,7 +3513,7 @@
+         add     a,a
+         ld      e,a
+         ld      d,$00
+-        ld      hl,L_D854
++        ld      hl,inflection_class_table
+         add     hl,de
+         ld      e,(hl)
+         inc     hl
+@@ -3705,9 +3708,9 @@
+ wf_option_3_find_close_matches:
+ ; Option 3 uses the same test as Guess correct word (section_could_match, is_one_edit_away) over the whole ROM dictionary, without the user dictionary and without stopping for a key press.
+ ; Menu option 3: Find close matches (window title 'Find close matches').
+-        ld      hl,L_C749
++        ld      hl,str_find_close_matches
+         call    open_dialog_wf
+-        ld      hl,L_C75C
++        ld      hl,str_word_prompt
+         oz      Gn_sop
+         call    input_wf_word
+         cp      $1B
+@@ -3882,7 +3885,8 @@
+         jp      L_DDE4
+ 
+ 
+-L_DE2B:
++first_letter_index:
++; Copy of first_letter_index in bank 62 (26 words).
+         defb    $5f,$de,$ae,$de,$d6,$de,$04,$df
+         defb    $29,$df,$72,$df,$8b,$df,$ad,$df
+         defb    $c3,$df,$f4,$df,$04,$e0,$20,$e0
+@@ -4011,7 +4015,7 @@
+ ; Option 1 is the bank 62 Browse (browse_dictionary) almost instruction for instruction: same keys, same routines (names as in bank 62),
+ ; except that it starts at 'AA' instead of the typed word and calls no_user_word where QuickEdit looks in the user dictionary.
+ ; Menu option 1: Browse through dictionary.
+-        ld      hl,L_E6D5
++        ld      hl,str_browse
+         call    open_dialog_right
+         ld      ix,(pool_main)
+         ld      bc,$0040
+@@ -4028,7 +4032,7 @@
+         inc     hl
+         ld      (hl),a
+         call    browse_seek_prefix
+-        ld      hl,L_E6DC
++        ld      hl,str_set_vscroll
+         oz      Gn_sop
+         ld      a,$00
+         ld      (wf_menu_sel),a
+@@ -4074,10 +4078,10 @@
+         ld      a,(edit_flags)
+         or      '@'
+         ld      (edit_flags),a
+-        jp      L_E413
++        jp      browse_end
+ L_E28C:
+         cp      $0D
+-        jp      z,L_E3FE
++        jp      z,browse_take_word
+         cp      '''
+         jr      nz,L_E2A0
+         ld      a,(wf_menu_sel)
+@@ -4264,18 +4268,18 @@
+ ; OS_In error in Browse: RC_Quit leaves, RC_Draw redraws the Browse window.
+         push    af
+         cp      'g'
+-        jp      z,L_C3D8
++        jp      z,quit_quickedit
+         cp      'f'
+         jr      nz,L_E3FC
+-        ld      hl,L_E6D5
++        ld      hl,str_browse
+         call    open_dialog_centre
+-        ld      hl,L_E6DC
++        ld      hl,str_set_vscroll
+         oz      Gn_sop
+         call    draw_browse_page
+ L_E3FC:
+         pop     af
+         ret
+-L_E3FE:
++browse_take_word:
+         ld      a,(dict_word_length)
+         ld      c,a
+         ld      b,$00
+@@ -4292,7 +4296,7 @@
+         ld      (hl),a
+         dec     c
+         jr      nz,L_E40C
+-L_E413:
++browse_end:
+         ld      hl,L_E429
+         oz      Gn_sop
+         ld      hl,(temp2_ptr)
+@@ -4329,7 +4333,7 @@
+         ld      a,(hl)
+         cp      $80
+         jr      z,L_E468
+-L_E459:
++browse_next_ending:
+         ld      hl,dict_stem_length
+         dec     (hl)
+         dec     (hl)
+@@ -4416,7 +4420,7 @@
+         ret
+ L_E502:
+         ld      (dict_ending_ptr),hl
+-        jp      L_E459
++        jp      browse_next_ending
+ L_E508:
+         ld      hl,(browse_pos)
+         ld      (dict_pos),hl
+@@ -4454,7 +4458,7 @@
+         cp      $80
+         jr      c,L_E547
+         ld      (dict_ending_ptr),hl
+-        jp      L_E459
++        jp      browse_next_ending
+ dict_back_one_record:
+         ld      hl,(dict_pos)
+ L_E556:
+@@ -4680,9 +4684,9 @@
+         call    browse_next_word
+         jr      L_E674
+ 
+-L_E6D5:
++str_browse:
+         defm    "Browse", $00
+-L_E6DC:
++str_set_vscroll:
+         defm    $01, "2+S", $00
+ 
+ toggle_reverse:
+@@ -5191,23 +5195,23 @@
+         defb    $0c,$00
+ open_dialog_centre:
+ ; Titled dialog x 25, 30 columns, full height (as open_dialog_centre in bank 62).
+-        ld      bc,L_ECF9
++        ld      bc,geom_dialog_centre
+         jr      open_dialog_with_title
+ open_dialog_wide:
+ ; Titled dialog x 5, 70 columns, full height ('Words found').
+-        ld      bc,L_ED0D
++        ld      bc,geom_dialog_wide
+         jr      open_dialog_with_title
+ open_dialog_mid:
+ ; Titled dialog x 18, 44 columns, full height.
+-        ld      bc,L_ED03
++        ld      bc,geom_dialog_mid
+         jr      open_dialog_with_title
+ open_dialog_wf:
+ ; Titled dialog x 20, 40 columns, full height (the WordFinder option windows: Anagram, Find close matches, Crossword).
+-        ld      bc,L_ED17
++        ld      bc,geom_dialog_wf
+         jr      open_dialog_with_title
+ open_dialog_right:
+ ; Titled dialog x 40, 35 columns, rows 1-7 (Browse).
+-        ld      bc,L_ECEF
++        ld      bc,geom_dialog_right
+ L_EC74:
+         jr      open_dialog_with_title
+ 
+@@ -5215,7 +5219,7 @@
+         defb    $e7,$09,$3a,$c9
+ clear_words_window:
+ ; Redefines window 3 as a plain wide window, clearing the 'Words found' dialog when a search is stopped.
+-        ld      hl,L_ED3D
++        ld      hl,str_words_window
+         oz      Gn_sop
+         ret
+ 
+@@ -5262,31 +5266,31 @@
+         defb    $81,$01,$32,$43
+         defb    $33,$00,$23,$21,$43,$27,$00,$23
+         defb    $22,$43,$26,$00
+-L_ECEF:
++geom_dialog_right:
+         defb    $48,$21,$43,$27
+         defb    $00,$48,$22,$43,$26,$00
+-L_ECF9:
++geom_dialog_centre:
+         defb    $39,$20
+         defb    $3e,$28,$00,$39,$21,$3e,$27,$00
+ 
+-L_ED03:
++geom_dialog_mid:
+         defb    $32,$20,$4c,$28,$00,$32,$21,$4c
+         defb    $27,$00
+-L_ED0D:
++geom_dialog_wide:
+         defb    $25,$20,$66,$28,$00,$25
+         defb    $21,$66,$27,$00
+-L_ED17:
++geom_dialog_wf:
+         defb    $34,$20,$48,$28
+         defb    $00,$34,$21,$48,$27,$00,$01,$37
+         defb    $23,$33,$47,$21,$45,$27,$80,$01
+         defb    $32,$43,$33,$00,$01,$37,$23,$33
+         defb    $22,$21,$45,$27,$80,$01,$32,$43
+         defb    $33,$00
+-L_ED3D:
++str_words_window:
+         defb    $01,$37,$23,$33,$24,$20
+         defb    $68,$28,$80,$01,$32,$43,$33,$00
+ 
+-L_ED4B:
++str_wf_menu_window:
+         defb    $01,$37,$23,$33,$20,$20,$7c,$28
+         defb    $80,$01,$32,$43,$33,$00
+         defs    4647 ($ff)	; ED59h - FF7Fh

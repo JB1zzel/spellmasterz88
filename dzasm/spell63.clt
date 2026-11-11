@@ -156,7 +156,7 @@ $6029 QuickEdit_help_page30, $6223 QuickEdit_help_page56
 $6329 QuickEdit_help_page47, $C000 QuickEdit_entry
 $C001 applDor_QuickEdit, $C03B read_dictionary_record
 $C048, $C051
-$C06B, $C06E
+$C06B, $C06E dict_section_end
 $C070 skip_to_next_letter_group, $C073
 $C081, $C087 find_dictionary_section
 $C0A8, $C0AA
@@ -173,11 +173,11 @@ $C2A5, $C2B1
 $C2C7 wf_menu_key, $C2D0
 $C2E4, $C2EA
 $C2F0, $C2F6
-$C2FC, $C302
-$C308, $C30E
+$C2FC startup_fail_free_all, $C302 startup_fail_free_second
+$C308 startup_fail_free_main, $C30E startup_fail_exit
 $C312 wf_os_error, $C31B wf_quit
-$C332, $C334
-$C3D8, $C3E6
+$C332 wf_os_error_return, $C334 wf_redraw_menu
+$C3D8 quit_quickedit, $C3E6
 $C3EE show_found_word, $C3F6
 $C401, $C410
 $C421, $C42A
@@ -214,8 +214,8 @@ $C8D8, $C90A
 $C90E, $C91F
 $C93D redraw_done, $C948 put_text_char
 $C959, $C968
-$C969, $C96D draw_end_of_text_marker
-$C992 clear_remaining_rows, $C9B2
+$C969 next_text_row, $C96D draw_end_of_text_marker
+$C992 clear_remaining_rows, $C9B2 pad_row
 $C9B5, $C9D9 reverse_on
 $C9E5 reverse_off, $C9F1
 $C9FC order_block_markers, $CA19
@@ -224,7 +224,7 @@ $CA4F, $CA67
 $CA8A, $CA93
 $CAA5, $CAC0
 $CACF is_start_marker_line, $CAD6 is_end_marker_line
-$CADB, $CAE5
+$CADB compare_marker_line, $CAE5
 $CAE8 place_cursor, $CAF9
 $CB05 expand_word, $CB11
 $CB24, $CB34
@@ -256,7 +256,7 @@ $D052, $D068
 $D09C, $D0B3
 $D0B5, $D0BE
 $D0CF is_block_start_line, $D0D5 test_block_start_line
-$D0DE, $D0ED
+$D0DE compare_line_with_cursor, $D0ED
 $D0EF is_block_end_line, $D0F5 test_block_end_line
 $D100 far_print_text, $D11F
 $D121, $D126
@@ -288,7 +288,7 @@ $D466, $D479 far_next_match
 $D495, $D498 far_search_for_string
 $D4A5, $D4B9
 $D4D5, $D4D8 start_search
-$D4FD, $D50A
+$D4FD set_found_row, $D50A
 $D50C, $D54F find_next_match
 $D55D, $D578
 $D5A9, $D5B5
@@ -361,10 +361,10 @@ $E37E, $E39A prev_section_letters
 $E3A3, $E3BF draw_browse_page
 $E3C5, $E3D6
 $E3E3 browse_os_error, $E3FC
-$E3FE, $E40C
-$E413, $E433 print_current_word
+$E3FE browse_take_word, $E40C
+$E413 browse_end, $E433 print_current_word
 $E43C, $E447 browse_next_word
-$E459, $E468
+$E459 browse_next_ending, $E468
 $E476, $E48B
 $E492, $E49B
 $E4B3, $E4C0
@@ -482,39 +482,39 @@ $4400, $7F8B
 
 ; Local Data References:
 {
-$C191 str_cursor_to_prefix_b, $C339
-$C344, $C346
+$C191 str_cursor_to_prefix_b, $C339 str_wordfinder
+$C344 str_wf_menu, $C346
 $C363, $C37D
 $C397, $C3B7
-$C3CA, $C485
-$C48C, $C4AC
+$C3CA, $C485 str_press_space
+$C48C, $C4AC str_words_found
 $C4E4, $C4E8
-$C737, $C740
-$C741, $C749
-$C75C, $C791
+$C737 str_crossword, $C740
+$C741 str_anagram, $C749 str_find_close_matches
+$C75C str_word_prompt, $C791
 $C9BC str_end_of_text, $C9BD
 $C9EE str_reverse_off, $C9F3 str_reverse_on
 $C9F8 str_cursor_to_prefix, $CACB str_toggle_over_n
 $CC73 token_pointer_table, $CD73
-$CEEB, $CF00
+$CEEB str_information_labels, $CF00
 $CF15, $CF2A
-$CF3F, $CF53
-$CF59, $CF5F
-$CF64, $CF6D
-$CF72, $CF7E
+$CF3F, $CF53 str_info_lines_pos
+$CF59 str_info_words_pos, $CF5F str_k
+$CF64 str_untitled, $CF6D str_none
+$CF72 str_information, $CF7E str_info_column
 $CFDA, $D008 far_call_table
-$D17A, $D187
-$D512, $D519
-$D52B, $D52C
-$D53C, $D766
-$D783, $D789
-$D809, $D84D
-$D854, $D87A
+$D17A str_printing, $D187
+$D512 str_search, $D519 str_search_and_replace
+$D52B, $D52C str_find_prompt
+$D53C str_replace_prompt, $D766 str_replace_yn
+$D783 str_global_or_selective, $D789
+$D809 inflection_endings, $D84D inflection_class_offsets
+$D854 inflection_class_table, $D87A str_cursor_home
 $DA05, $DA0F
-$DA31, $DA41
+$DA31 str_loading, $DA41
 $DB0D, $DB17
-$DE2B, $E429
-$E6D5, $E6DC
+$DE2B first_letter_index, $E429
+$E6D5 str_browse, $E6DC str_set_vscroll
 $E6E8, $E71A
 $E72D, $E741
 $E759, $E771
@@ -545,10 +545,10 @@ $EBE5, $EBF6
 $EC09, $EC1E
 $EC3B, $ECBB
 $ECC5, $ECDA
-$ECDF, $ECEF
-$ECF9, $ED03
-$ED0D, $ED17
-$ED3D, $ED4B
+$ECDF, $ECEF geom_dialog_right
+$ECF9 geom_dialog_centre, $ED03 geom_dialog_mid
+$ED0D geom_dialog_wide, $ED17 geom_dialog_wf
+$ED3D str_words_window, $ED4B str_wf_menu_window
 $FD12, $FEFE
 }
 
@@ -653,8 +653,10 @@ $8900
 	($C267,< "WordFinder menu loop: reads keys. Keys 1 to 4 choose an option, Cursor up/down moves wf_menu_sel,"
 		 "Enter runs the selected option, Escape frees the pools and exits (OS_Bye).")
 	($C2C7,< "Handles a key typed in the WordFinder menu.")
+	($C2FC,< "WordFinder start-up failed: closes the pools opened so far and leaves with OS_Bye.")
 	($C312,< "OS_In error in the WordFinder menu: RC_Draw redraws the menu, RC_Quit leaves (falls into wf_quit).")
 	($C31B,< "RC_Quit: closes the three memory pools and leaves WordFinder with OS_Bye.")
+	($C3D8,< "Same as quit_quickedit in bank 62: RC_Quit during a far-called command closes the pools and leaves with OS_Bye.")
 	($C3EE,< "Prints the found word (the two section letters, then buffer C) in 16-column slots, four to a 64-column row, using cursor_index and cursor_row (borrowed) as column and row."
 		 "After six rows: 'Press SPACE to continue'. Any key clears the window and goes on; an extended Escape stops the search (carry set).")
 	($C46E,< "After an OS_In error: if it is RC_Quit ('g', $67) leaves WordFinder (wf_quit); otherwise returns.")
@@ -755,6 +757,7 @@ $8900
 		 "The OS_Mal result is not checked for an error.")
 	($D7DD,< "Frees a record whose byte 0 is its size (HL = offset, A = bank); does nothing if HL = 0. Same as free_sized_record in bank 62.")
 	($D7F2,< "Copies the string saved in the record HL (bank A) to DE, so the last Find or Replace string is offered again; an empty string if HL = 0.")
+	($D854,< "Copy of inflection_class_table in bank 62.")
 	($D862,< "Same routine as section_could_match in bank 62 (identical bytes).")
 	($D880,< "Far-call table entry 6."
 		 "Called from append_guess (bank 62 $E076) by Guess correct word, once for each dictionary or user word that is one edit away from the typed word."
@@ -777,6 +780,7 @@ $8900
 	($DCFE,< "Option 3 uses the same test as Guess correct word (section_could_match, is_one_edit_away) over the whole ROM dictionary, without the user dictionary and without stopping for a key press."
 		 "Menu option 3: Find close matches (window title 'Find close matches').")
 	($DD8A,< "Same routine as is_one_edit_away in bank 62 (identical apart from the jump addresses): Z if the word is one letter different, missing, extra or swapped.")
+	($DE2B,< "Copy of first_letter_index in bank 62 (26 words).")
 	($E203,< "Option 1 is the bank 62 Browse (browse_dictionary) almost instruction for instruction: same keys, same routines (names as in bank 62),"
 		 "except that it starts at 'AA' instead of the typed word and calls no_user_word where QuickEdit looks in the user dictionary."
 		 "Menu option 1: Browse through dictionary.")

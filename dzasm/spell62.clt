@@ -87,12 +87,12 @@
 {
 $C000, $C005 read_dictionary_record
 $C012, $C01B
-$C035, $C038
+$C035, $C038 dict_section_end
 $C03A skip_to_next_letter_group, $C03D
 $C04B, $C051 dictionary_lookup
-$C067, $C083
+$C067, $C083 lookup_word_lists
 $C093 compare_expanded_word, $C0AD
-$C0C0, $C0E1
+$C0C0 compare_with_endings, $C0E1
 $C0EB, $C0F8
 $C10B, $C110
 $C11F, $C144
@@ -103,16 +103,16 @@ $C19F, $C1A1
 $C1A2, $C1B4
 $C1B6 bind_dictionary_bank, $C1E2 qe_start
 $C22A, $C245
-$C286 far_call_bank63, $C298
-$C29E, $C2A4
-$C2AA, $C2AE next_word_form
+$C286 far_call_bank63, $C298 startup_fail_free_all
+$C29E startup_fail_free_second, $C2A4 startup_fail_free_main
+$C2AA startup_fail_exit, $C2AE next_word_form
 $C2E9, $C2FA
 $C30A, $C312
 $C336 expand_word, $C341
-$C342, $C34F
+$C342 expand_next_byte, $C34F
 $C355 append_token, $C365
-$C371, $C376
-$C383, $C38E
+$C371 expand_word_end, $C376
+$C383 expand_set_class, $C38E
 $C391, $C394
 $C397, $C39A
 $C39D, $C3A0
@@ -137,19 +137,19 @@ $C461, $C465
 $C469, $C491
 $C495, $C499
 $C49D, $C4A1
-$C5A4, $C5AF
+$C5A4 enter_editor, $C5AF redraw_and_main_loop
 $C5B2 qe_main_loop, $C5D1
 $C5D5, $C5DB
 $C5F5, $C5FB
-$C610 cmd_insert_real_tab, $C614
-$C619, $C62F
+$C610 cmd_insert_real_tab, $C614 handle_character
+$C619 insert_character, $C62F
 $C653, $C659
 $C668, $C670
 $C694, $C6A9
-$C6B0, $C6B3
+$C6B0, $C6B3 after_text_change
 $C6C8, $C6F5
 $C726, $C744
-$C74A, $C756
+$C74A, $C756 new_line
 $C774, $C798
 $C79E cmd_previous_word, $C7B2
 $C7E1, $C7E8
@@ -168,7 +168,7 @@ $C968, $C96F
 $C985, $C988
 $C996, $C9A2
 $C9AD, $C9D8
-$CA00, $CA13
+$CA00 rubout_join_lines, $CA13 full_redraw_and_main_loop
 $CA1E cmd_join_lines, $CA3C
 $CA43, $CA49 join_markers
 $CA73, $CA91
@@ -182,10 +182,10 @@ $CB8A, $CB95
 $CBAF cmd_screen_down, $CBBF
 $CBCA, $CBD0 cmd_cursor_down
 $CBDA cmd_cursor_up, $CBE5 cmd_cursor_right
-$CBFC, $CC2B
-$CC32, $CC36
+$CBFC move_to_next_line, $CC2B
+$CC32, $CC36 place_or_scroll
 $CC41, $CC47 cmd_cursor_left
-$CC56, $CC6C
+$CC56, $CC6C move_to_prev_line
 $CC9B, $CCA2 store_cursor_line
 $CCB9, $CCBC load_line_record
 $CCE2 take_line_record, $CCE5 free_line_record
@@ -213,7 +213,7 @@ $D040, $D06F draw_text_window
 $D089 handle_os_error, $D09F
 $D0B4 quit_quickedit, $D0C3
 $D0CA, $D0D5
-$D0D6, $D0DC show_no_room_error
+$D0D6 no_room_exit, $D0DC show_no_room_error
 $D0F7 draw_status_line, $D117
 $D12D, $D1CF cmd_print_out_text
 $D1D7 markers_line_removed, $D1EE
@@ -234,22 +234,22 @@ $D36C, $D392
 $D398, $D3B5
 $D3BE, $D3D2
 $D3D5 cmd_check_all_text, $D3DE
-$D3EF, $D401
+$D3EF, $D401 check_next_word
 $D443, $D445
 $D448, $D449
 $D44E, $D454
-$D45E, $D467
+$D45E, $D467 end_of_check
 $D490, $D496 show_check_context
 $D4BD, $D4CB
 $D4E2, $D4EA
 $D4F7, $D4FF
-$D506 open_correction_menu, $D542
-$D557, $D575
+$D506 open_correction_menu, $D542 redisplay_check
+$D557 correction_menu_loop, $D575
 $D597, $D5AD
 $D5B8, $D5CA
 $D5D2, $D5E0
 $D5F7, $D608
-$D60C, $D61E
+$D60C correction_option_3, $D61E
 $D636, $D643
 $D645, $D64A change_word
 $D67B, $D682
@@ -271,7 +271,7 @@ $D825, $D83B
 $D85E, $D87D
 $D8AC, $D8B2
 $D8BC, $D8C4 next_word_to_buffer_b
-$D8CA next_word_from_text, $D8CE
+$D8CA next_word_from_text, $D8CE next_word_into_de
 $D8D7, $D8E1
 $D8E6, $D8E9
 $D8F9, $D8FB
@@ -289,26 +289,26 @@ $DB85 compare_marker_with_cursor, $DB9D
 $DB9F cmd_search_and_replace, $DBC2
 $DBD3, $DBEE
 $DBF6 cmd_next_match, $DBFD cmd_search_for_string
-$DC02, $DC12 cmd_merge_text_at_cursor
+$DC02 after_far_command, $DC12 cmd_merge_text_at_cursor
 $DC26, $DC41
 $DC52, $DC5C
 $DC61 cmd_tab, $DC74 typing_check_command
-$DC9D, $DCA0
-$DCA2 typing_check_char, $DCB1
+$DC9D, $DCA0 typing_hook_done
+$DCA2 typing_check_char, $DCB1 typing_mark_pending
 $DCB8, $DCBD typing_check_word
 $DCD1, $DCDB
 $DCE4, $DCF5
 $DD04, $DD09
 $DD19, $DD22 find_word_start_at_cursor
-$DD33 find_word_start, $DD44
+$DD33 find_word_start, $DD44 scan_back_to_word_start
 $DD51, $DD59 cmd_check_as_you_type
-$DDBD guess_correct_word, $DDE4
+$DDBD guess_correct_word, $DDE4 guess_next_section
 $DDE7, $DE02
-$DE12, $DE15 guess_cancelled
-$DE2B, $DE34
+$DE12 guess_no_room, $DE15 guess_cancelled
+$DE2B guess_step_section, $DE34
 $DE61, $DE81
 $DE91, $DE9E
-$DEAE, $DECC
+$DEAE show_guess_list, $DECC
 $DEDC, $DF09
 $DF15, $DF3B
 $DF49, $DF72
@@ -316,7 +316,7 @@ $DF7B, $DF97
 $DFA0, $DFB7
 $DFC0, $DFDC
 $DFEF, $DFF5 free_guess_list
-$E035, $E04F guess_os_error
+$E035 no_guesses_found, $E04F guess_os_error
 $E05D, $E061
 $E063 section_could_match, $E076 append_guess
 $E090 is_one_edit_away, $E0B3
@@ -330,14 +330,14 @@ $E12A, $E131 cmd_insert_marker
 $E13D, $E147
 $E169 cmd_remove_markers, $E171 order_block_markers
 $E18E, $E1AB is_block_start_line
-$E1B1 test_block_start_line, $E1BA
+$E1B1 test_block_start_line, $E1BA compare_line_with_cursor
 $E1C9, $E1CB is_block_end_line
 $E1D1 test_block_end_line, $E1DC remove_start_marker
 $E1F1 shift_marker_flags, $E1FA drop_markers_at_cursor
 $E200, $E215
 $E225 cmd_move_marked_block, $E22D cmd_copy_marked_block
-$E233, $E236
-$E23D, $E249 check_block_marked
+$E233 block_command_end, $E236 beep_and_main_loop
+$E23D beep_no_room, $E249 check_block_marked
 $E250, $E256
 $E272, $E280
 $E28E, $E2A1
@@ -358,11 +358,11 @@ $E4FC, $E501 join_markers_b
 $E520, $E524
 $E53A, $E53C
 $E541 join_next_line, $E583
-$E5A3, $E5A7 is_at_cursor
+$E5A3 block_no_room, $E5A7 is_at_cursor
 $E5B4 copy_record_to_line_buffer, $E5D2 check_free_memory
-$E5E2 cmd_delete_marked_block, $E602
+$E5E2 cmd_delete_marked_block, $E602 confirm_delete_block
 $E60E, $E629
-$E62C, $E642
+$E62C delete_block_lines, $E642
 $E655, $E65A
 $E66B, $E685
 $E6B7, $E6E0
@@ -385,7 +385,7 @@ $ECAF, $ECDB
 $ECED, $ED03
 $ED13, $ED28
 $ED43, $ED4E
-$ED6C, $ED76 step_to_prev_record
+$ED6C close_file_no_room, $ED76 step_to_prev_record
 $ED9C step_to_next_record, $EDC5 cmd_load_text
 $EDE0, $EDE6
 $EDF7 load_text_file, $EE02
@@ -395,9 +395,9 @@ $EED4, $EF05
 $EF35, $EF45
 $EF48, $EF50
 $EF58, $EF69
-$EF7E, $EF89
-$EF9F, $EFA4
-$EFA7, $EFB3
+$EF7E, $EF89 file_write_error
+$EF9F show_not_saved, $EFA4 show_file_not_found
+$EFA7 show_file_error, $EFB3
 $EFBE, $EFF5 finish_load
 $F00C, $F01C return_to_editor
 $F02C redefine_window1, $F0A8 input_to_buffer_a
@@ -436,10 +436,10 @@ $F518 next_section_letters, $F521
 $F53D prev_section_letters, $F546
 $F562 draw_browse_page, $F568
 $F579, $F586 browse_os_error
-$F59F, $F5A1
-$F5AF, $F5B6
+$F59F, $F5A1 browse_take_word
+$F5AF, $F5B6 browse_end
 $F5D6 print_current_word, $F5DF
-$F5EA browse_next_word, $F5FC
+$F5EA browse_next_word, $F5FC browse_next_ending
 $F60B, $F619
 $F62E, $F635
 $F63E, $F656
@@ -469,31 +469,31 @@ $F977, $F995
 $F9C7, $F9DF browse_user_next
 $F9F0, $F9FE
 $FA16, $FA18
-$FA1A, $FA45
+$FA1A user_word_found, $FA45
 $FA4B, $FA50
-$FA77, $FA82
+$FA77 browse_user_prev_scan, $FA82
 $FAA6, $FAB2
-$FAC5, $FAC7
+$FAC5 user_word_none, $FAC7
 $FADE browse_user_prev, $FAEF
 $FB02, $FB26
 $FB2D, $FB2F
 $FB53 compare_word_with_stem, $FB64
 $FB73, $FB76
 $FB7B word_list_next, $FB81 word_list_first_from
-$FB84, $FB8D
+$FB84 word_list_follow_link, $FB8D
 $FB9D, $FBA1
 $FBB8, $FBC6 word_list_select_letter
 $FBE3 word_list_lookup, $FBEA
 $FBEC, $FC04
 $FC2E, $FC3B
-$FC41, $FC44 word_list_compare
+$FC41 word_list_no_room, $FC44 word_list_compare
 $FC51, $FC60
 $FC6D, $FC71 swap_word_lists
 $FC8E cmd_save_user_dictionary, $FCA7
 $FCBE, $FCC0
 $FCD6, $FD16
 $FD2E, $FD5E
-$FD7D, $FD8F
+$FD7D, $FD8F close_file_no_room_2
 $FD99 cmd_load_user_dictionary, $FDB5
 $FDBB, $FDD1
 $FE15, $FE1D
@@ -526,40 +526,40 @@ $D137 str_select_window1, $D13C str_status_row7
 $D146 str_insert, $D14D str_overtype
 $D155, $D156 str_status_row6_check
 $D166 str_off, $D16A str_on
-$D16D str_cursor_to_prefix, $D171
-$D983, $D9A1
-$D9A4, $D9A8
-$D9A9, $D9B2
+$D16D str_cursor_to_prefix, $D171 command_table
+$D983 str_reverse_off_2, $D9A1 str_toggle_reverse
+$D9A4 str_cursor_to_prefix_2, $D9A8 str_checking
+$D9A9, $D9B2 str_correction_options
 $D9B3, $D9D5
 $D9F4, $DA13
-$DA32, $DA55
-$DAD6, $DAF2
-$DAFF, $DB0A
-$DD64, $DDA8
+$DA32, $DA55 str_correction_menu
+$DAD6, $DAF2 str_replacing
+$DAFF str_replace_prompt, $DB0A str_replace_with
+$DD64 inflection_endings, $DDA8 inflection_class_offsets
 $DDAF inflection_class_table, $E03E
-$E041, $E07C
-$E085, $E08A
-$E7CB, $E7D3
+$E041 str_guesses_found, $E07C str_guessing
+$E085 str_set_vscroll, $E08A str_cursor_home
+$E7CB str_warning, $E7D3 str_are_you_sure
 $E842, $E84E first_letter_index
 $EFC6, $EFCA
-$F033, $F035
-$F04E, $F067
-$F071, $F07D
-$F08E, $F09A
-$F0B6, $F0C3
-$F0D8, $F0E5
-$F153, $F2E1
-$F2E5, $F30B
+$F033 str_overwrite_text, $F035
+$F04E, $F067 str_filename_prompt
+$F071 str_change_name, $F07D str_save_entire_text
+$F08E str_export_text, $F09A str_load_new_text
+$F0B6 str_loading, $F0C3
+$F0D8 str_saving, $F0E5
+$F153 str_save_marked_section, $F2E1 str_file_exists
+$F2E5, $F30B str_file_not_saved
 $F30F, $F38C str_pipedream_header
-$F398, $F5CC
-$F880, $F887
+$F398 str_pipedream_header_end, $F5CC str_window1_vscroll
+$F880 str_browse, $F887 str_set_vscroll_2
 $FE62, $FE64
-$FE75, $FE8D
-$FE97, $FEAC
+$FE75, $FE8D str_filename_prompt_2
+$FE97 str_save_user_dictionary, $FEAC str_load_user_dictionary
 $FF8C str_dialog_type_83, $FF96 str_dialog_title_bar
 $FFAB str_define_window3_prefix, $FFB0 str_dialog_type_81
-$FFB6, $FFC0
-$FFCA, $FFD4 str_dialog_window_right
+$FFB6 geom_dialog_left, $FFC0 geom_dialog_right
+$FFCA geom_dialog_centre, $FFD4 str_dialog_window_right
 $FFE2 str_dialog_window_left
 }
 
@@ -675,6 +675,7 @@ $B82A
 		 "IN: A = index into the far-call table in bank 63 (far_call_table, 11 entries)."
 		 "Binds bank 63 into segment 1 and jumps to the stub at $7F80 (file offset $3F80 of SPELL.63)."
 		 "BANK-ADDRESSING SITE 2 (patched): INC A after OS_Mgb gives the bank after the running one, bank 63. The ORIGINAL ROM had AND $C0 / OR $3F.")
+	($C298,< "Start-up failed: closes the pools opened so far (entered at the right step) and leaves with OS_Bye.")
 	($C2AE,< "Puts the next accepted word form in buffer C: the next ending of the current stem's inflection class if there is one, otherwise the next record of the section, expanded."
 		 "Carry set at the end of the section (from read_dictionary_record).")
 	($C315,< "Window 1, the text window: x=0 y=0, 74 columns by 8 rows, type $81 (bars). Selected and cleared, vertical scroll and cursor on.")
@@ -693,13 +694,18 @@ $B82A
 	($C4A4,< "128 words: token number -> address of its string. Token 0 (TION) has four letters, tokens 1 to 35 three letters, 36 to 121 two letters;"
 		 "122 to 127 are not used.")
 	($C4F0,< "Pointers for the later tokens (the 2-letter tokens, $C3F7 onward); the last six words (tokens 122 to 127) are unused.")
+	($C5AF,< "Redraws the screen and enters the main loop. The usual end of an editing command.")
 	($C5B2,< "QuickEdit main loop (entry 0 of the command table: 'no command', just reads the next key).")
 	($C610,< "Command handler: 'Insert real tab' - dispatch code $2D")
+	($C614,< "An ordinary key: Enter ($0D) goes to the new-line code at $C756; any other character is inserted (or overtyped) at the cursor.")
+	($C6B3,< "After a character is added or removed: if the line is now longer than wrap_column the paragraph is rewrapped, otherwise just the line is redrawn.")
+	($C756,< "Enter: splits the line at the cursor (split_at_cursor) and moves to the start of the new line. It does not call the check-as-you-type hooks (notes section 11).")
 	($C79E,< "Command handler: 'Previous word' - dispatch code $17")
 	($C81D,< "Command handler: 'Next word' - dispatch code $16")
 	($C896,< "Command handler: 'Delete line' - dispatch code $15")
 	($C920,< "Command handler: 'Delete character' - dispatch code $14")
 	($C93F,< "Command handler: 'Rubout' - dispatch code $0B")
+	($CA13,< "Sets edit_flags bit 3 (redraw the whole text) and goes to redraw_and_main_loop.")
 	($CA1E,< "Command handler: 'Join lines' - dispatch code $0D")
 	($CA49,< "Before the next line is joined onto the cursor line: a block marker on the next line moves up to this line, its column increased by line_length.")
 	($CAE0,< "Command handler: 'Swap case' - dispatch code $0C")
@@ -735,6 +741,7 @@ $B82A
 		 "Other codes are passed back to the caller.")
 	($D0B4,< "RC_Quit: closes the three memory pools and leaves QuickEdit with OS_Bye.")
 	($D0CA,< "$D0CA-$D0D5 follow OS_Bye and nothing jumps to them, so they are never run (tools/reach.py). They look like the tail of a backwards scan.")
+	($D0D6,< "Shows 'No Room!' and returns to the editor. The common exit when memory runs out (38 jumps).")
 	($D0DC,< "Displays 'No Room!' (QuickEdit reports this when it cannot get more memory for the text).")
 	($D0F7,< "Draw the status line in window 2 (the 19-column panel at the right of the screen)."
 		 "Redefines and clears window 2, prints the cursor line number, then in tiny type: row 7 = Insert or Overtype (edit_flags bit 0),"
@@ -742,7 +749,8 @@ $B82A
 	($D13C,< "Cursor to column 0, row 7 of window 2, tiny type on. Followed by str_insert or str_overtype.")
 	($D156,< "Cursor to column 0, row 6 of window 2, tiny type on, then the text Check: (followed by str_off or str_on).")
 	($D16D,< "Cursor-to prefix: SOH, 3, @. The caller sends the column and row, each plus 32.")
-	($D171,< "Command jump table: 47 words, indexed by dispatch code 0..46. See cmd_* handlers."
+	($D171,< "47 words: the handler for each dispatch code 0-46 (see docs/commands.md)."
+		 "Command jump table: 47 words, indexed by dispatch code 0..46. See cmd_* handlers."
 		 "The main loop does: HL = table + 2*code; JP (HL).")
 	($D1CF,< "Command handler: 'Print out text' - dispatch code $2E")
 	($D1D7,< "A line has been removed above or at a marker: block_start_line and block_end_line after the cursor line go down by one.")
@@ -761,6 +769,7 @@ $B82A
 	($D506,< "Shows the checking window and the 'Correction menu' dialog with its five options (str at $D9B2).")
 	($D5CA,< "Correction menu option 2 'Add word to user dictionary': word_list_add. Option 1 'Ignore word' (below) adds it to the ignored words instead.")
 	($D5E0,< "Correction menu option 5 'Browse through dictionary': save_typed_word, browse_dictionary, restore_typed_word.")
+	($D60C,< "Correction menu option 3: guess_correct_word, then replace the word if one was chosen (edit_flags bit 6 clear).")
 	($D643,< "Correction menu option 4 'Change word'.")
 	($D64A,< "Opens 'Replace with', puts the word as it stands in the text into buffer C (leaving out a final 'S or apostrophe, which stays in the text)"
 		 "and edits it with GN_Sip (40 bytes, 20 columns). Enter: letters are made upper case (is_word_char) and replace_word_everywhere runs. Escape: back to the menu.")
@@ -805,6 +814,7 @@ $B82A
 		 "Returns at once (Z) if cursor_index is 0, leaving HL unchanged.")
 	($DD33,< "From cursor_index, moves back to the start of the word at or before the cursor. Out: HL -> that character in line_buffer, C = its index. Z if at the start of the line.")
 	($DD59,< "Command handler: 'Check as you type' - dispatch code $19")
+	($DDA8,< "Seven byte offsets, one per inflection class $10-$16, into the ending strings at inflection_endings ($DD64). Used by next_word_form; inflection_class_table holds the same lists as word pointers.")
 	($DDAF,< "7 words: inflection class $10 to $16 -> list of endings. The list holds endings each starting with a letter that has bit 7 set, ending with $80."
 		 "$10 = ED ING S;  $11 = S;  $12 = ED ES ING;  $13 = E ED ES ING (the stem has lost its final E);  $14 = IES Y;  $15 = E Y;"
 		 "$16 = ISE ISED ISES ISING IZE IZED IZES IZING.")
@@ -835,6 +845,7 @@ $B82A
 	($E1FA,< "Removes any block marker that is exactly at the cursor (used when the character there is deleted).")
 	($E225,< "Command handler: 'Move marked block' - dispatch code $21")
 	($E22D,< "Command handler: 'Copy marked block' - dispatch code $1F")
+	($E23D,< "Beeps, shows 'No Room!' and returns NZ.")
 	($E249,< "Carry set (and Z) if no block is marked (end marker not set); otherwise continues with the block command.")
 	($E4DC,< "As markers_line_inserted, used by the block commands.")
 	($E501,< "As join_markers, used by join_next_line.")
@@ -866,6 +877,7 @@ $B82A
 		 "A line longer than 239 characters is cut into pieces of 239. The lines are not rewrapped. Reading stops at end of file (RC_Eof) or Escape (RC_Esc);"
 		 "other read errors make it read again ($EF7E).")
 	($EE61,< "Frees every line record before the cursor line (the prev_line chain) and after it (the next_line chain).")
+	($EF89,< "A write failed: closes the file, makes the line after the saved text the cursor line again, and shows 'File NOT saved!'.")
 	($EFF5,< "Closes the file, stores the last line and makes the first line the cursor line.")
 	($F01C,< "Redefines window 1, asks for a full redraw and goes back to the main loop.")
 	($F02C,< "Prints str_define_window1: redefines and selects the text window, which closes any dialog drawn over it.")

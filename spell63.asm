@@ -66,7 +66,7 @@ read_dictionary_record:
         ld      a,(hl)
         ld      (bc),a
         cp      $0F
-        jr      z,L_C06E
+        jr      z,dict_section_end
 L_C048:
         inc     hl
         inc     bc
@@ -94,7 +94,7 @@ L_C06B:
         scf
         ccf
         ret
-L_C06E:
+dict_section_end:
         scf
         ret
 skip_to_next_letter_group:
@@ -107,7 +107,7 @@ L_C073:
         cp      $00
         jr      z,L_C081
         cp      $0F
-        jr      z,L_C06E
+        jr      z,dict_section_end
         inc     hl
         jr      L_C073
 L_C081:
@@ -122,7 +122,7 @@ find_dictionary_section:
         ld      l,a
         ld      h,$00
         add     hl,hl
-        ld      bc,L_DE2B
+        ld      bc,first_letter_index
         add     hl,bc
         ld      c,(hl)
         inc     hl
@@ -193,11 +193,11 @@ next_word_form:
         and     $0F
         ld      e,a
         ld      d,$00
-        ld      hl,L_D84D
+        ld      hl,inflection_class_offsets
         add     hl,de
         ld      e,(hl)
         ld      d,$00
-        ld      hl,L_D809
+        ld      hl,inflection_endings
         add     hl,de
         ld      (dict_ending_ptr),hl
         ld      a,(dict_word_flags)
@@ -275,17 +275,17 @@ wf_start:
         ld      a,'`'
         ld      bc,$0000
         oz      Os_mop
-        jp      c,L_C30E
+        jp      c,startup_fail_exit
         ld      (pool_main),ix
         ld      a,$80
         ld      bc,$0000
         oz      Os_mop
-        jp      c,L_C308
+        jp      c,startup_fail_free_main
         ld      (pool_second),ix
         ld      bc,$00F8
         ld      a,$00
         oz      Os_mal
-        jp      c,L_C302
+        jp      c,startup_fail_free_second
         ld      a,b
         ld      (line_buffer_bank),a
         ld      (line_buffer),hl
@@ -300,12 +300,12 @@ wf_start:
         ld      a,$00
         ld      bc,$0000
         oz      Os_mop
-        jp      c,L_C302
+        jp      c,startup_fail_free_second
         ld      (pool_buffers),ix
         ld      bc,$00C2
         ld      a,$00
         oz      Os_mal
-        jp      c,L_C2FC
+        jp      c,startup_fail_free_all
         ld      (buffers_binding),bc
         ld      (ptr_buffer_a),hl
         ld      bc,$0040
@@ -318,11 +318,11 @@ wf_start:
         oz      Os_mpb
 wf_show_menu:
 ; Draws the WordFinder window and menu ('Browse through dictionary', 'Find anagrams', 'Find close matches', 'Solve crossword').
-        ld      hl,L_ED4B
+        ld      hl,str_wf_menu_window
         oz      Gn_sop
-        ld      hl,L_C339
+        ld      hl,str_wordfinder
         call    open_dialog_wf
-        ld      hl,L_C344
+        ld      hl,str_wf_menu
         oz      Gn_sop
         ld      a,$00
         ld      (wf_menu_sel),a
@@ -407,25 +407,26 @@ L_C2F0:
 L_C2F6:
         call    wf_option_1_browse_dictionary
         jp      wf_show_menu
-L_C2FC:
+startup_fail_free_all:
+; WordFinder start-up failed: closes the pools opened so far and leaves with OS_Bye.
         ld      ix,(pool_buffers)
         oz      Os_mcl
-L_C302:
+startup_fail_free_second:
         ld      ix,(pool_second)
         oz      Os_mcl
-L_C308:
+startup_fail_free_main:
         ld      ix,(pool_main)
         oz      Os_mcl
-L_C30E:
+startup_fail_exit:
         ld      a,$07
         oz      Os_bye
 wf_os_error:
 ; OS_In error in the WordFinder menu: RC_Draw redraws the menu, RC_Quit leaves (falls into wf_quit).
         push    af
         cp      'f'
-        jr      z,L_C334
+        jr      z,wf_redraw_menu
         cp      'g'
-        jr      nz,L_C332
+        jr      nz,wf_os_error_return
 wf_quit:
 ; RC_Quit: closes the three memory pools and leaves WordFinder with OS_Bye.
         pop     af
@@ -437,18 +438,18 @@ wf_quit:
         oz      Os_mcl
         ld      a,$00
         oz      Os_bye
-L_C332:
+wf_os_error_return:
         pop     af
         ret
-L_C334:
+wf_redraw_menu:
         pop     af
         pop     hl
         jp      wf_show_menu
 
-L_C339:
+str_wordfinder:
         defm    "WordFinder"
         defb    $00
-L_C344:
+str_wf_menu:
         defb    $0c,$01
 L_C346:
         defm    "2JCBrowse through dictionary"
@@ -468,7 +469,8 @@ L_C3B7:
 L_C3CA:
         defm    "Bad category!"
         defb    $00
-L_C3D8:
+quit_quickedit:
+; Same as quit_quickedit in bank 62: RC_Quit during a far-called command closes the pools and leaves with OS_Bye.
         ld      ix,(pool_buffers)
         oz      Os_mcl
         ld      ix,(pool_main)
@@ -529,7 +531,7 @@ L_C433:
         oz      Gn_nln
         jr      show_found_word
 L_C448:
-        ld      hl,L_C485
+        ld      hl,str_press_space
         oz      Gn_sop
         oz      Os_in
         call    c,check_quit
@@ -556,7 +558,7 @@ check_quit:
         ret
 open_words_found:
 ; Opens the 'Words found' dialog (wide window) and clears cursor_row and cursor_index.
-        ld      hl,L_C4AC
+        ld      hl,str_words_found
         call    open_dialog_wide
         ld      a,$00
         ld      (cursor_row),a
@@ -564,12 +566,12 @@ open_words_found:
         ret
 
 
-L_C485:
+str_press_space:
         defb    $0a,$0d,$01,$32,$4a,$43,$01
 L_C48C:
         defm    "RPress SPACE to continue "
         defb    $01,$52,$01,$32,$4a,$4e,$00
-L_C4AC:
+str_words_found:
         defm    "Words found"
         defb    $00
 input_wf_word:
@@ -609,9 +611,9 @@ wf_option_4_solve_crossword:
 ; If the pattern starts with letters only the matching sections are searched. Matching backtracks to the last '*' on a mismatch (line_rec_ptr, $1FEB, $1FBC, $1FBD).
 ; Unlike Find anagrams this search does not stop for a key press; only the 'Press SPACE' page prompt can end it early.
 ; Menu option 4: Solve crossword (window title 'Crossword').
-        ld      hl,L_C737
+        ld      hl,str_crossword
         call    open_dialog_wf
-        ld      hl,L_C75C
+        ld      hl,str_word_prompt
         oz      Gn_sop
         call    input_wf_word
         cp      $1B
@@ -773,9 +775,9 @@ L_C610:
         jp      end_of_search
 wf_option_2_find_anagrams:
 ; Menu option 2: Find anagrams (window title 'Anagram'). Asks for a word, checks it is letters only, then searches.
-        ld      hl,L_C741
+        ld      hl,str_anagram
         call    open_dialog_wf
-        ld      hl,L_C75C
+        ld      hl,str_word_prompt
         oz      Gn_sop
         call    input_wf_word
         cp      $1B
@@ -871,7 +873,7 @@ L_C6D7:
         jp      c,L_C66E
 end_of_search:
 ; Shows 'Press SPACE to continue' and waits for a key before going back to the menu.
-        ld      hl,L_C485
+        ld      hl,str_press_space
         oz      Gn_sop
         oz      Os_in
         call    c,check_quit
@@ -923,17 +925,17 @@ L_C722:
         push    bc
         jr      L_C719
 
-L_C737:
+str_crossword:
         defm    "Crossword"
 L_C740:
         defm    $00
-L_C741:
+str_anagram:
         defm    "Anagram", $00
 
-L_C749:
+str_find_close_matches:
         defm    "Find close matches"
         defb    $00
-L_C75C:
+str_word_prompt:
         defb    $01,$32,$2b,$43,$01,$33,$40
         defb    $22,$21,$3a,$20,$00,$fe,$27,$c8
         defb    $e6,$df,$fe,$41,$d8,$fe,$5a,$28
@@ -1159,7 +1161,7 @@ L_C8D8:
         ld      h,(ix+6)
         ld      a,h
         or      l
-        jp      z,L_C969
+        jp      z,next_text_row
         ld      a,(ix+4)
         ld      (line_rec_bank),a
         ld      (line_rec_ptr),hl
@@ -1226,7 +1228,7 @@ L_C959:
         oz      Os_out
 L_C968:
         ret
-L_C969:
+next_text_row:
         ld      hl,line_counter
         inc     (hl)
 draw_end_of_text_marker:
@@ -1245,7 +1247,7 @@ draw_end_of_text_marker:
         oz      Gn_sop
         ld      a,(cursor_col_limit)
         sub     $0D
-        jr      L_C9B2
+        jr      pad_row
 clear_remaining_rows:
 ; Blank every remaining row of the text window below the End of text marker, up to row 7.
         ld      hl,line_counter
@@ -1261,7 +1263,7 @@ clear_remaining_rows:
         add     a,SD_COORD
         oz      Os_out
         ld      a,(cursor_col_limit)
-L_C9B2:
+pad_row:
         ld      b,a
         ld      a,SD_COORD
 L_C9B5:
@@ -1425,13 +1427,13 @@ is_start_marker_line:
         push    hl
         push    bc
         ld      hl,(block_start_line)
-        jr      L_CADB
+        jr      compare_marker_line
 is_end_marker_line:
 ; Z if block_end_line equals cursor_line. HL and BC preserved.
         push    hl
         push    bc
         ld      hl,(block_end_line)
-L_CADB:
+compare_marker_line:
         ld      bc,(cursor_line)
         ld      a,h
         cp      b
@@ -1607,13 +1609,13 @@ far_information:
 ; Far-call table entry 0.
 ; Called from the QuickEdit handler for Information (command $1A).
 ; Shows the Information window ('Currently editing', number of lines, memory, word count, user dictionary).
-        ld      hl,L_CF72
+        ld      hl,str_information
         call    open_dialog_mid
-        ld      hl,L_CEEB
+        ld      hl,str_information_labels
         oz      Gn_sop
-        ld      hl,L_D87A
+        ld      hl,str_cursor_home
         oz      Gn_sop
-        ld      hl,L_CF7E
+        ld      hl,str_info_column
         oz      Gn_sop
         ld      hl,(text_name_ptr)
         ld      a,(text_name_bank)
@@ -1621,7 +1623,7 @@ far_information:
         call    print_name_record
         oz      Gn_nln
         oz      Gn_nln
-        ld      hl,L_CF7E
+        ld      hl,str_info_column
         oz      Gn_sop
         ld      bc,NQ_Mfs
         ld      ix,(pool_main)
@@ -1633,15 +1635,15 @@ far_information:
         ld      h,a
         ld      l,b
         call    print_decimal
-        ld      hl,L_CF5F
+        ld      hl,str_k
         oz      Gn_sop
-        ld      hl,L_CF7E
+        ld      hl,str_info_column
         oz      Gn_sop
         ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
         jr      nz,L_CDE6
-        ld      hl,L_CF6D
+        ld      hl,str_none
         oz      Gn_sop
         jr      L_CDF0
 L_CDE6:
@@ -1694,12 +1696,12 @@ L_CE43:
         ld      c,$00
         jr      L_CE33
 L_CE47:
-        ld      hl,L_CF53
+        ld      hl,str_info_lines_pos
         oz      Gn_sop
         ld      hl,(cursor_line)
         inc     hl
         call    print_decimal
-        ld      hl,L_CF59
+        ld      hl,str_info_words_pos
         oz      Gn_sop
         ld      hl,(top_line)
         call    print_decimal
@@ -1746,7 +1748,7 @@ L_CEA7:
         ret
 L_CEA8:
         cp      'g'
-        jp      z,L_C3D8
+        jp      z,quit_quickedit
         cp      'f'
         jp      z,far_information
         jr      L_CE9B
@@ -1755,7 +1757,7 @@ print_name_record:
         ld      a,h
         or      l
         jr      nz,L_CEBF
-        ld      hl,L_CF64
+        ld      hl,str_untitled
         oz      Gn_sop
         ret
 L_CEBF:
@@ -1792,7 +1794,7 @@ L_CEE8:
         and     $00
         ret
 
-L_CEEB:
+str_information_labels:
         defm    "Currently editing :"
         defb    $0d,$0a
 L_CF00:
@@ -1807,26 +1809,26 @@ L_CF2A:
 L_CF3F:
         defm    "User dictionary   :"
         defb    $00
-L_CF53:
+str_info_lines_pos:
         defb    $01,$33,$40,$33,$21,$00
-L_CF59:
+str_info_words_pos:
         defb    $01
         defb    $33,$40,$33,$23,$00
-L_CF5F:
+str_k:
         defb    $4b,$0a,$0a
         defb    $0d,$00
-L_CF64:
+str_untitled:
         defm    "Untitled"
         defb    $00
-L_CF6D:
+str_none:
         defb    $4e,$6f,$6e
 L_CF70:
         defm    "e", $00
 
-L_CF72:
+str_information:
         defm    "Information"
         defb    $00
-L_CF7E:
+str_info_column:
         defm    $01, "2X3", $00
 
 ; $CF83-$CF8A: pushes AF and BC and prints A as two hex digits (print_hex_byte). Nothing calls it: probably left from debugging.
@@ -2071,7 +2073,7 @@ test_block_start_line:
         cp      $01
         ret     c
         ld      hl,(block_start_line)
-L_D0DE:
+compare_line_with_cursor:
         ld      bc,(cursor_line)
         ld      a,h
         cp      b
@@ -2096,7 +2098,7 @@ test_block_end_line:
         cp      $03
         ret     c
         ld      hl,(block_end_line)
-        jr      L_D0DE
+        jr      compare_line_with_cursor
 far_print_text:
 ; Enables Escape detection (OS_Esc SC_ENA), sends $05 '[' to the printer filter, then every line of the whole text followed by LF CR (through OS_Prt),
 ; then $05 ']' and disables Escape detection again (SC_DIS). An error from OS_Prt (for example Escape) beeps and ends the printout.
@@ -2104,7 +2106,7 @@ far_print_text:
 ; Far-call table entry 10.
 ; Called from the QuickEdit handler for Print out text (command $2E).
 ; Shows the 'Printing' window and sends the text to the printer.
-        ld      hl,L_D17A
+        ld      hl,str_printing
         oz      Gn_sop
         ld      a,SC_ENA
         oz      Os_esc
@@ -2169,7 +2171,7 @@ print_error:
         jr      end_printout
 
 
-L_D17A:
+str_printing:
         defb    $0c,$0a,$0a,$01,$33,$2b,$52,$46
         defb    $01,$32,$2d,$43,$01
 L_D187:
@@ -2192,15 +2194,15 @@ far_search_and_replace:
         ld      de,(ptr_buffer_c)
         call    load_string_record
 L_D1B7:
-        ld      hl,L_D519
+        ld      hl,str_search_and_replace
         call    open_dialog_mid
-        ld      hl,L_D783
+        ld      hl,str_global_or_selective
         oz      Gn_sop
 L_D1C3:
         oz      Os_in
         jr      nc,L_D1D2
         cp      'g'
-        jp      z,L_C3D8
+        jp      z,quit_quickedit
         cp      'f'
         jr      z,L_D1B7
         jr      L_D1C3
@@ -2229,9 +2231,9 @@ L_D1F5:
 L_D1FD:
         ld      a,$0C
         oz      Os_out
-        ld      hl,L_D53C
+        ld      hl,str_replace_prompt
         oz      Gn_sop
-        ld      hl,L_D52C
+        ld      hl,str_find_prompt
         oz      Gn_sop
         ld      de,(ptr_buffer_a)
         ld      b,'?'
@@ -2244,8 +2246,8 @@ L_D215:
         cp      'f'
         jr      z,L_D1B7
         cp      'g'
-        jp      z,L_C3D8
-        ld      hl,L_D52C
+        jp      z,quit_quickedit
+        ld      hl,str_find_prompt
         oz      Gn_sop
         ld      b,'?'
         jr      L_D215
@@ -2257,7 +2259,7 @@ L_D231:
         cp      $FE
         jr      nz,L_D1FD
 L_D23D:
-        ld      hl,L_D53C
+        ld      hl,str_replace_prompt
         oz      Gn_sop
         ld      de,(ptr_buffer_c)
         ld      b,'?'
@@ -2270,8 +2272,8 @@ L_D24B:
         cp      'f'
         jp      z,L_D1B7
         cp      'g'
-        jp      z,L_C3D8
-        ld      hl,L_D53C
+        jp      z,quit_quickedit
+        ld      hl,str_replace_prompt
         oz      Gn_sop
         ld      b,'?'
         jr      L_D24B
@@ -2391,14 +2393,14 @@ L_D32C:
         or      $02
         ld      (edit_flags),a
         call    far_redraw_text_window
-        ld      hl,L_D766
+        ld      hl,str_replace_yn
         oz      Gn_sop
         call    place_cursor
 L_D345:
         oz      Os_in
         jr      nc,L_D354
         cp      'g'
-        jp      z,L_C3D8
+        jp      z,quit_quickedit
         cp      'f'
         jr      z,L_D32C
         jr      L_D345
@@ -2450,7 +2452,7 @@ L_D399:
         sub     c
         ld      c,a
         jr      nc,L_D3B1
-        jp      L_D4FD
+        jp      set_found_row
 L_D3B1:
         jr      z,L_D3BE
 L_D3B3:
@@ -2488,7 +2490,7 @@ L_D3DD:
 L_D3EC:
         pop     hl
         ld      (top_line),hl
-        jp      L_D4FD
+        jp      set_found_row
 L_D3F3:
         ld      a,(cursor_index)
         ld      b,a
@@ -2602,9 +2604,9 @@ far_search_for_string:
         ld      a,(search_str_bank)
         call    load_string_record
 L_D4A5:
-        ld      hl,L_D512
+        ld      hl,str_search
         call    open_dialog_mid
-        ld      hl,L_D52C
+        ld      hl,str_find_prompt
         oz      Gn_sop
         ld      de,(ptr_buffer_a)
         ld      b,'?'
@@ -2617,8 +2619,8 @@ L_D4B9:
         cp      'f'
         jr      z,L_D4A5
         cp      'g'
-        jp      z,L_C3D8
-        ld      hl,L_D52C
+        jp      z,quit_quickedit
+        ld      hl,str_find_prompt
         oz      Gn_sop
         ld      b,'?'
         jr      L_D4B9
@@ -2641,7 +2643,7 @@ start_search:
         ld      (search_str_ptr),hl
         ld      (search_str_bank),a
         call    find_next_match
-L_D4FD:
+set_found_row:
         ld      hl,(cursor_line)
         ld      a,h
         cp      $00
@@ -2657,16 +2659,16 @@ L_D50C:
         ccf
         ret
 
-L_D512:
+str_search:
         defm    "Search", $00
 
-L_D519:
+str_search_and_replace:
         defm    "Search and Replace"
 L_D52B:
         defm    $00
-L_D52C:
+str_find_prompt:
         defm    $01, "2+C", $01, "3@", '"', "!Find :", $00
-L_D53C:
+str_replace_prompt:
         defm    $01, "2+C", $01, "3@", '"', "#Replace :", $00
 
 find_next_match:
@@ -2955,10 +2957,10 @@ copy_record_to_line_buffer:
         defb    $01,$00,$89,$dd,$2a,$a7,$1f,$e7
         defb    $66,$fe,$00,$c0,$78,$fe,$05,$c9
 
-L_D766:
+str_replace_yn:
         defm    $01, "3@>'", $01, "2+RReplace ? (Y/N)"
         defm    $01, "2-R", $00
-L_D783:
+str_global_or_selective:
         defm    $01, "2JC", $0a, $0a
 L_D789:
         defm    "Global or selective ? (G/S) "
@@ -3038,7 +3040,7 @@ L_D800:
         ret
 
 
-L_D809:
+inflection_endings:
         defb    $80,$c5,$44,$c9,$4e,$47,$d3,$80
         defb    $d3,$80,$c5,$c5,$44,$c5,$53,$c9
         defb    $4e,$47,$80,$c5,$44,$c5,$53,$c9
@@ -3048,10 +3050,11 @@ L_D809:
         defb    $49,$4e,$47,$c9,$5a,$45,$c9,$5a
         defb    $45,$44,$c9,$5a,$45,$53,$c9,$5a
         defb    $49,$4e,$47,$80
-L_D84D:
+inflection_class_offsets:
         defb    $01,$08,$13,$0a
         defb    $1b,$20,$23
-L_D854:
+inflection_class_table:
+; Copy of inflection_class_table in bank 62.
         defb    $0a,$d8,$11,$d8,$1c
         defb    $d8,$13,$d8,$24,$d8,$29,$d8,$2c
         defb    $d8
@@ -3072,7 +3075,7 @@ section_could_match:
         ret
 
         defb    $01,$32,$2b,$53,$00
-L_D87A:
+str_cursor_home:
         defb    $01,$33,$40
         defb    $20,$20,$00
 far_append_guess:
@@ -3204,7 +3207,7 @@ L_D939:
         ld      a,(line_rec_bank)
         ld      (prev_line_ptr),hl
         ld      (prev_line_bank),a
-        ld      hl,L_DA31
+        ld      hl,str_loading
         oz      Gn_sop
         ld      hl,(cursor_line)
         push    hl
@@ -3303,7 +3306,7 @@ input_merge_filename:
         ret
 
 
-L_DA31:
+str_loading:
         defb    $0c,$01,$33,$40,$20,$22,$01,$33
         defb    $2b,$52,$46,$01,$32,$2d,$43,$01
 
@@ -3510,7 +3513,7 @@ L_DBB5:
         add     a,a
         ld      e,a
         ld      d,$00
-        ld      hl,L_D854
+        ld      hl,inflection_class_table
         add     hl,de
         ld      e,(hl)
         inc     hl
@@ -3705,9 +3708,9 @@ L_DCF8:
 wf_option_3_find_close_matches:
 ; Option 3 uses the same test as Guess correct word (section_could_match, is_one_edit_away) over the whole ROM dictionary, without the user dictionary and without stopping for a key press.
 ; Menu option 3: Find close matches (window title 'Find close matches').
-        ld      hl,L_C749
+        ld      hl,str_find_close_matches
         call    open_dialog_wf
-        ld      hl,L_C75C
+        ld      hl,str_word_prompt
         oz      Gn_sop
         call    input_wf_word
         cp      $1B
@@ -3882,7 +3885,8 @@ L_DE24:
         jp      L_DDE4
 
 
-L_DE2B:
+first_letter_index:
+; Copy of first_letter_index in bank 62 (26 words).
         defb    $5f,$de,$ae,$de,$d6,$de,$04,$df
         defb    $29,$df,$72,$df,$8b,$df,$ad,$df
         defb    $c3,$df,$f4,$df,$04,$e0,$20,$e0
@@ -4011,7 +4015,7 @@ wf_option_1_browse_dictionary:
 ; Option 1 is the bank 62 Browse (browse_dictionary) almost instruction for instruction: same keys, same routines (names as in bank 62),
 ; except that it starts at 'AA' instead of the typed word and calls no_user_word where QuickEdit looks in the user dictionary.
 ; Menu option 1: Browse through dictionary.
-        ld      hl,L_E6D5
+        ld      hl,str_browse
         call    open_dialog_right
         ld      ix,(pool_main)
         ld      bc,$0040
@@ -4028,7 +4032,7 @@ wf_option_1_browse_dictionary:
         inc     hl
         ld      (hl),a
         call    browse_seek_prefix
-        ld      hl,L_E6DC
+        ld      hl,str_set_vscroll
         oz      Gn_sop
         ld      a,$00
         ld      (wf_menu_sel),a
@@ -4074,10 +4078,10 @@ L_E281:
         ld      a,(edit_flags)
         or      '@'
         ld      (edit_flags),a
-        jp      L_E413
+        jp      browse_end
 L_E28C:
         cp      $0D
-        jp      z,L_E3FE
+        jp      z,browse_take_word
         cp      '''
         jr      nz,L_E2A0
         ld      a,(wf_menu_sel)
@@ -4264,18 +4268,18 @@ browse_os_error:
 ; OS_In error in Browse: RC_Quit leaves, RC_Draw redraws the Browse window.
         push    af
         cp      'g'
-        jp      z,L_C3D8
+        jp      z,quit_quickedit
         cp      'f'
         jr      nz,L_E3FC
-        ld      hl,L_E6D5
+        ld      hl,str_browse
         call    open_dialog_centre
-        ld      hl,L_E6DC
+        ld      hl,str_set_vscroll
         oz      Gn_sop
         call    draw_browse_page
 L_E3FC:
         pop     af
         ret
-L_E3FE:
+browse_take_word:
         ld      a,(dict_word_length)
         ld      c,a
         ld      b,$00
@@ -4292,7 +4296,7 @@ L_E40C:
         ld      (hl),a
         dec     c
         jr      nz,L_E40C
-L_E413:
+browse_end:
         ld      hl,L_E429
         oz      Gn_sop
         ld      hl,(temp2_ptr)
@@ -4329,7 +4333,7 @@ browse_next_word:
         ld      a,(hl)
         cp      $80
         jr      z,L_E468
-L_E459:
+browse_next_ending:
         ld      hl,dict_stem_length
         dec     (hl)
         dec     (hl)
@@ -4416,7 +4420,7 @@ L_E4E8:
         ret
 L_E502:
         ld      (dict_ending_ptr),hl
-        jp      L_E459
+        jp      browse_next_ending
 L_E508:
         ld      hl,(browse_pos)
         ld      (dict_pos),hl
@@ -4454,7 +4458,7 @@ L_E547:
         cp      $80
         jr      c,L_E547
         ld      (dict_ending_ptr),hl
-        jp      L_E459
+        jp      browse_next_ending
 dict_back_one_record:
         ld      hl,(dict_pos)
 L_E556:
@@ -4680,9 +4684,9 @@ L_E6D0:
         call    browse_next_word
         jr      L_E674
 
-L_E6D5:
+str_browse:
         defm    "Browse", $00
-L_E6DC:
+str_set_vscroll:
         defm    $01, "2+S", $00
 
 toggle_reverse:
@@ -5191,23 +5195,23 @@ WordFinder_cmd9_end:
         defb    $0c,$00
 open_dialog_centre:
 ; Titled dialog x 25, 30 columns, full height (as open_dialog_centre in bank 62).
-        ld      bc,L_ECF9
+        ld      bc,geom_dialog_centre
         jr      open_dialog_with_title
 open_dialog_wide:
 ; Titled dialog x 5, 70 columns, full height ('Words found').
-        ld      bc,L_ED0D
+        ld      bc,geom_dialog_wide
         jr      open_dialog_with_title
 open_dialog_mid:
 ; Titled dialog x 18, 44 columns, full height.
-        ld      bc,L_ED03
+        ld      bc,geom_dialog_mid
         jr      open_dialog_with_title
 open_dialog_wf:
 ; Titled dialog x 20, 40 columns, full height (the WordFinder option windows: Anagram, Find close matches, Crossword).
-        ld      bc,L_ED17
+        ld      bc,geom_dialog_wf
         jr      open_dialog_with_title
 open_dialog_right:
 ; Titled dialog x 40, 35 columns, rows 1-7 (Browse).
-        ld      bc,L_ECEF
+        ld      bc,geom_dialog_right
 L_EC74:
         jr      open_dialog_with_title
 
@@ -5215,7 +5219,7 @@ L_EC74:
         defb    $e7,$09,$3a,$c9
 clear_words_window:
 ; Redefines window 3 as a plain wide window, clearing the 'Words found' dialog when a search is stopped.
-        ld      hl,L_ED3D
+        ld      hl,str_words_window
         oz      Gn_sop
         ret
 
@@ -5262,31 +5266,31 @@ L_ECDF:
         defb    $81,$01,$32,$43
         defb    $33,$00,$23,$21,$43,$27,$00,$23
         defb    $22,$43,$26,$00
-L_ECEF:
+geom_dialog_right:
         defb    $48,$21,$43,$27
         defb    $00,$48,$22,$43,$26,$00
-L_ECF9:
+geom_dialog_centre:
         defb    $39,$20
         defb    $3e,$28,$00,$39,$21,$3e,$27,$00
 
-L_ED03:
+geom_dialog_mid:
         defb    $32,$20,$4c,$28,$00,$32,$21,$4c
         defb    $27,$00
-L_ED0D:
+geom_dialog_wide:
         defb    $25,$20,$66,$28,$00,$25
         defb    $21,$66,$27,$00
-L_ED17:
+geom_dialog_wf:
         defb    $34,$20,$48,$28
         defb    $00,$34,$21,$48,$27,$00,$01,$37
         defb    $23,$33,$47,$21,$45,$27,$80,$01
         defb    $32,$43,$33,$00,$01,$37,$23,$33
         defb    $22,$21,$45,$27,$80,$01,$32,$43
         defb    $33,$00
-L_ED3D:
+str_words_window:
         defb    $01,$37,$23,$33,$24,$20
         defb    $68,$28,$80,$01,$32,$43,$33,$00
 
-L_ED4B:
+str_wf_menu_window:
         defb    $01,$37,$23,$33,$20,$20,$7c,$28
         defb    $80,$01,$32,$43,$33,$00
         defs    4647 ($ff)	; ED59h - FF7Fh

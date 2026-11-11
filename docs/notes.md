@@ -273,7 +273,7 @@ From reading the OZ ROM (`ozs0-7e93476`) and the developer notes; untested.
 
 ## 19. What is still unknown
 
-- Every routine that is called has a name (`docs/routine_index_bank*.md`); the `L_xxxx` labels left are jump targets inside named routines, plus the few routines noted as unreachable in section 16.
+- Every routine that is called has a name, and so has every label that another routine jumps to or uses (shared exits such as `no_room_exit`, `redraw_and_main_loop`, and the strings). The `L_xxxx` labels left are branch targets inside a named routine (`docs/routine_index_bank*.md`).
 - Names of scratch locations and borrowed variables describe their main use only (`docs/workspace.md`).
 - `tools/reach.py` shows that no reachable path runs into data, and the data that had been decoded as code has been converted. It cannot prove that a `defb` area is not code reached in some way it does not model (for example a jump through a table it does not know).
 - Behaviour has not been traced on a running machine. Worth testing in OZvm: the last word before Enter is not checked as you type (section 11); a failed search leaves the cursor at the end of the text (section 13); a file with CR LF line ends shows ^J at the start of each line (section 14).
