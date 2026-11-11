@@ -26,17 +26,17 @@ Both applications use the same layout. 'refs' counts instructions naming the add
 | $1F9F | next_line_ptr | 2 | 52/9 | Offset (segment 1) of the line record below the cursor line; 0 = the cursor line is the last line |
 | $1FA1 | next_line_bank | 1 | 35/7 | Bank of the record below the cursor line |
 | $1FA2 | cursor_row | 1 | 32/14 | Screen row (0 to 7) of the cursor line in window 1 |
-| $1FA3 | wrap_column | 1 | 8/1 | Right margin for word wrap and Format paragraph: 72, set at start-up and never changed (notes section 16) |
+| $1FA3 | wrap_column | 1 | 8/1 | Right margin for word wrap and Format paragraph: 72, set at start-up and never changed (notes section 10) |
 | $1FA4 | cursor_col_limit | 1 | 5/8 | Screen column at which the cursor stops while the line scrolls sideways; also the number of columns drawn per row |
 | $1FA5 | cursor_index | 1 | 58/36 | Cursor position as a character index within the current line |
 | $1FA6 | line_length | 1 | 112/34 | Length of the current line in characters |
 | $1FA7 | pool_main | 2 | 20/14 | Memory pool handle #1 (created first with OS_Mop) |
 | $1FA9 | pool_second | 2 | 3/5 | Memory pool handle #2 (created second with OS_Mop) |
 | $1FAB | edit_flags | 1 | 65/9 | QuickEdit flags: bit 0 = overtype mode (toggled by Insert/Over), bit 4 = check-as-you-type on, bits 1-3 (mask $0E) = screen redraw state (2 = redraw requested, 4 = redraw finished) |
-| $1FAC | user_dict_ptr | 2 | 20/4 | Offset (segment 1) of the user dictionary table: 26 three-byte list heads, one per letter A-Z; 0 = no table yet (see notes section 14) |
+| $1FAC | user_dict_ptr | 2 | 20/4 | Offset (segment 1) of the user dictionary table: 26 three-byte list heads, one per letter A-Z; 0 = no table yet (see notes section 12) |
 | $1FAE | user_dict_bank | 1 | 13/2 | Bank of the user dictionary table |
 | $1FAF | browse_pos | 2 | 15/15 | Browse (Correction menu and WordFinder): dictionary position of the record of the current word, used to step back |
-| $1FB1 | typing_word_pending | 1 | 5/0 | Check as you type: 1 while a word is being typed or edited and has not been checked yet (notes section 15) |
+| $1FB1 | typing_word_pending | 1 | 5/0 | Check as you type: 1 while a word is being typed or edited and has not been checked yet (notes section 11) |
 | $1FB3 | misc_flags | 1 | 9/13 | Bit 1 = the current Browse word comes from the user dictionary; bit 6 cleared by Browse; bit 7 = Search and Replace is selective |
 | $1FB4 | saved_word_bank | 1 | 3/0 | Bank of the record holding the typed word while Browse runs (save_typed_word) |
 | $1FB5 | saved_word_ptr | 2 | 3/0 | Offset of that record |
@@ -48,7 +48,7 @@ Both applications use the same layout. 'refs' counts instructions naming the add
 | $1FBE | temp_bank | 1 | 17/3 | Bank for temp_ptr |
 | $1FBF | temp2_ptr | 2 | 11/9 | Second scratch banked pointer, offset: new guess, Browse prefix record |
 | $1FC1 | temp2_bank | 1 | 10/8 | Bank for temp2_ptr |
-| $1FC2 | guess_list_ptr | 2 | 6/1 | Offset of the first record of the guess list built by Guess correct word; 0 = none (notes section 15) |
+| $1FC2 | guess_list_ptr | 2 | 6/1 | Offset of the first record of the guess list built by Guess correct word; 0 = none (notes section 11) |
 | $1FC4 | guess_list_bank | 1 | 6/1 | Bank of that record |
 | $1FC8 | block_start_line | 2 | 32/9 | Block start marker: line number |
 | $1FC9 |  | 1 | 1/0 | High byte of block_start_line, read on its own once (written as block_start_line+1) |
@@ -61,13 +61,13 @@ Both applications use the same layout. 'refs' counts instructions naming the add
 | $1FD0 |  | 1 | 1/0 | High byte of cursor_line, read on its own once (written as cursor_line+1) |
 | $1FD1 | top_line | 2 | 51/17 | Number of the line shown on row 0 of the text window |
 | $1FD3 | wf_menu_sel | 1 | 21/16 | WordFinder: currently selected menu line (0 to 3) |
-| $1FD4 | text_name_ptr | 2 | 9/1 | Offset of the record holding the text filename last loaded or saved; offered by Save, shown by Information (notes section 18) |
+| $1FD4 | text_name_ptr | 2 | 9/1 | Offset of the record holding the text filename last loaded or saved; offered by Save, shown by Information (notes section 14) |
 | $1FD6 | text_name_bank | 1 | 7/1 | Bank of that record |
 | $1FD7 | user_dict_name_ptr | 2 | 7/1 | Offset of a record holding the user dictionary filename last saved or loaded (byte 0 = length); shown by Information |
 | $1FD9 | user_dict_name_bank | 1 | 5/1 | Bank of that record |
 | $1FDA | ignore_list_ptr | 2 | 2/0 | Offset of the ignored-words table (same structure as the user dictionary); only touched by swap_word_lists |
 | $1FDC | ignore_list_bank | 1 | 2/0 | Bank of the ignored-words table |
-| $1FDD | search_str_ptr | 2 | 0/9 | Offset of the record holding the last Find string (byte 0 = record size, then the string); 0 = none (notes section 17) |
+| $1FDD | search_str_ptr | 2 | 0/9 | Offset of the record holding the last Find string (byte 0 = record size, then the string); 0 = none (notes section 13) |
 | $1FDF | search_str_bank | 1 | 0/7 | Bank of that record |
 | $1FE0 | replace_str_ptr | 2 | 0/4 | Offset of the record holding the last Replace string; 0 = none |
 | $1FE2 | replace_str_bank | 1 | 0/3 | Bank of that record |

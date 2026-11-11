@@ -1,8 +1,8 @@
-\## About SpellMaster
+## About SpellMaster
 
+SpellMaster is one of the largest applications released for the Cambridge Z88: a **128 KB EPROM cartridge** containing two programs, QuickEdit (a text editor with spell checking) and WordFinder (dictionary browser, anagrams, close matches and crossword solver), plus a **96 KB, ~60,000-word dictionary** burned into ROM. It was written by James Lynn, © 1988 Computer Concepts Ltd.; this is cartridge version 1.05 (10th August 1989).
 
-
-SpellMaster  the largest applications released for the Cambridge Z88 — a \*\*128 KB EPROM cartridge\*\* containing two programs, plus a \*\*96 KB, \~60,000-word dictionary\*\* burned into ROM.
+This repository is an annotated disassembly of the two code banks. Every routine that is called has a name, every workspace variable is described, and `docs/notes.md` explains how the program works: how the text is stored and drawn, word wrap, the spelling check, check as you type, Guess correct word, the user dictionary, search and replace, the file formats, printing and WordFinder. The names and comments are inferred from the code; nothing in them is an original label.
 
 ## Layout
 
@@ -12,6 +12,7 @@ SpellMaster  the largest applications released for the Cambridge Z88 — a \*\*1
 - `dzasm/` the DZasm projects and the annotation commands; `genasm.sh` regenerates the source. See `dzasm/README.txt`.
 - `docs/` technical notes (`notes.md`), the command table, the screen strings, the workspace map, the dictionary format, routine indexes and the DZasm issues found.
 - `tools/spelldict.py` reads the dictionary from the bank files.
+- `tools/reach.py` follows every path through the code from the entry points and jump tables, and reports unreachable code and data decoded as code.
 
 ## Build and check
 
@@ -19,3 +20,5 @@ SpellMaster  the largest applications released for the Cambridge Z88 — a \*\*1
     mpm -b -Idef spell63.asm
 
 or run `verify.bat` (Windows) / `verify.sh`, which rebuild both banks and compare them with the bank files. `make_epr.bat` / `make_epr.sh` build the 128K card image.
+
+To change a name or comment, edit `dzasm/annotate_bank62.cmd` or `annotate_bank63.cmd`, run `dzasm/genasm.sh` (DZasm 0.36 or later) and then `verify.sh`.

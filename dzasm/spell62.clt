@@ -170,7 +170,7 @@ $C996, $C9A2
 $C9AD, $C9D8
 $CA00, $CA13
 $CA1E cmd_join_lines, $CA3C
-$CA43, $CA49
+$CA43, $CA49 join_markers
 $CA73, $CA91
 $CAB5, $CAE0 cmd_swap_case
 $CB0A cmd_start_of_line, $CB12 cmd_end_of_line
@@ -211,14 +211,14 @@ $CFDE, $CFE8
 $CFE9 alloc_line_record, $D021
 $D040, $D06F draw_text_window
 $D089 handle_os_error, $D09F
-$D0B4, $D0C3
+$D0B4 quit_quickedit, $D0C3
 $D0CA, $D0D5
 $D0D6, $D0DC show_no_room_error
 $D0F7 draw_status_line, $D117
 $D12D, $D1CF cmd_print_out_text
-$D1D7, $D1EE
+$D1D7 markers_line_removed, $D1EE
 $D1F2, $D207
-$D20C, $D223
+$D20C markers_line_inserted, $D223
 $D227, $D23C
 $D241 redraw_screen, $D247 place_cursor
 $D258, $D264 clamp_cursor_index
@@ -239,11 +239,11 @@ $D443, $D445
 $D448, $D449
 $D44E, $D454
 $D45E, $D467
-$D490, $D496
+$D490, $D496 show_check_context
 $D4BD, $D4CB
 $D4E2, $D4EA
 $D4F7, $D4FF
-$D506, $D542
+$D506 open_correction_menu, $D542
 $D557, $D575
 $D597, $D5AD
 $D5B8, $D5CA
@@ -281,11 +281,11 @@ $D92F, $D931 cmd_check_this_word_or_escape
 $D978, $D988 toggle_reverse
 $D991 cmd_insert_over, $DA65 save_typed_word
 $DA88, $DA91 restore_typed_word
-$DAA7, $DABC
-$DADE, $DAE7
+$DAA7, $DABC mark_menu_line
+$DADE quit_on_rc_quit, $DAE7
 $DAED, $DB17 cmd_split_line
-$DB2E, $DB52
-$DB85, $DB9D
+$DB2E split_at_cursor, $DB52
+$DB85 compare_marker_with_cursor, $DB9D
 $DB9F cmd_search_and_replace, $DBC2
 $DBD3, $DBEE
 $DBF6 cmd_next_match, $DBFD cmd_search_for_string
@@ -304,7 +304,7 @@ $DD33 find_word_start, $DD44
 $DD51, $DD59 cmd_check_as_you_type
 $DDBD guess_correct_word, $DDE4
 $DDE7, $DE02
-$DE12, $DE15
+$DE12, $DE15 guess_cancelled
 $DE2B, $DE34
 $DE61, $DE81
 $DE91, $DE9E
@@ -316,7 +316,7 @@ $DF7B, $DF97
 $DFA0, $DFB7
 $DFC0, $DFDC
 $DFEF, $DFF5 free_guess_list
-$E035, $E04F
+$E035, $E04F guess_os_error
 $E05D, $E061
 $E063 section_could_match, $E076 append_guess
 $E090 is_one_edit_away, $E0B3
@@ -328,16 +328,16 @@ $E0FE, $E108
 $E10F, $E11F
 $E12A, $E131 cmd_insert_marker
 $E13D, $E147
-$E169 cmd_remove_markers, $E171
+$E169 cmd_remove_markers, $E171 order_block_markers
 $E18E, $E1AB is_block_start_line
-$E1B1, $E1BA
+$E1B1 test_block_start_line, $E1BA
 $E1C9, $E1CB is_block_end_line
-$E1D1, $E1DC
-$E1F1, $E1FA
+$E1D1 test_block_end_line, $E1DC remove_start_marker
+$E1F1 shift_marker_flags, $E1FA drop_markers_at_cursor
 $E200, $E215
 $E225 cmd_move_marked_block, $E22D cmd_copy_marked_block
 $E233, $E236
-$E23D, $E249
+$E23D, $E249 check_block_marked
 $E250, $E256
 $E272, $E280
 $E28E, $E2A1
@@ -352,13 +352,13 @@ $E43B, $E442
 $E45B, $E471
 $E47E, $E486
 $E4B6, $E4C5
-$E4CB, $E4DC
+$E4CB, $E4DC markers_after_new_line
 $E4ED, $E4F1
-$E4FC, $E501
+$E4FC, $E501 join_markers_b
 $E520, $E524
 $E53A, $E53C
-$E541, $E583
-$E5A3, $E5A7
+$E541 join_next_line, $E583
+$E5A3, $E5A7 is_at_cursor
 $E5B4 copy_record_to_line_buffer, $E5D2 check_free_memory
 $E5E2 cmd_delete_marked_block, $E602
 $E60E, $E629
@@ -370,9 +370,9 @@ $E72F, $E746
 $E75B, $E76C
 $E77F, $E785
 $E7A0, $E7BB dec_cursor_line
-$E7C3 inc_cursor_line, $E7ED
+$E7C3 inc_cursor_line, $E7ED delete_block_os_error
 $E7F8, $E7FD
-$E802 cmd_information, $E80D
+$E802 cmd_information, $E80D print_decimal
 $E815, $E823
 $E830, $E837
 $E83D, $EC26 cmd_export_text
@@ -414,7 +414,7 @@ $F224, $F227
 $F235, $F261
 $F26B, $F284 open_output_file
 $F29F, $F2B0
-$F2C7, $F2C9
+$F2C7, $F2C9 save_os_error
 $F2DF, $F337 cmd_change_name
 $F33F, $F35D
 $F36A, $F399 browse_dictionary
@@ -435,7 +435,7 @@ $F4FD, $F510
 $F518 next_section_letters, $F521
 $F53D prev_section_letters, $F546
 $F562 draw_browse_page, $F568
-$F579, $F586
+$F579, $F586 browse_os_error
 $F59F, $F5A1
 $F5AF, $F5B6
 $F5D6 print_current_word, $F5DF
@@ -448,13 +448,13 @@ $F683, $F68B
 $F6A5, $F6AB
 $F6BE, $F6DA
 $F6E3, $F6EA
-$F6F6, $F6F9
+$F6F6 dict_back_one_record, $F6F9
 $F70A, $F713
 $F730, $F738
-$F73E, $F74D
+$F73E, $F74D browse_reexpand
 $F757, $F766
 $F77C, $F788 next_full_word
-$F7A6, $F7B9
+$F7A6, $F7B9 copy_stem_to_buffer_a
 $F7D1 browse_seek_prefix, $F7EC
 $F7F6, $F80C
 $F817, $F830
@@ -466,7 +466,7 @@ $F8B8, $F8D1
 $F8EE, $F931
 $F940, $F962
 $F977, $F995
-$F9C7, $F9DF
+$F9C7, $F9DF browse_user_next
 $F9F0, $F9FE
 $FA16, $FA18
 $FA1A, $FA45
@@ -474,10 +474,10 @@ $FA4B, $FA50
 $FA77, $FA82
 $FAA6, $FAB2
 $FAC5, $FAC7
-$FADE, $FAEF
+$FADE browse_user_prev, $FAEF
 $FB02, $FB26
 $FB2D, $FB2F
-$FB53, $FB64
+$FB53 compare_word_with_stem, $FB64
 $FB73, $FB76
 $FB7B word_list_next, $FB81 word_list_first_from
 $FB84, $FB8D
@@ -642,7 +642,7 @@ $B82A
 {
 	($C000,< "Spell-Master for the Cambridge Z88 - bank 62 ($3E, SPELL.62). Mostly the QuickEdit application (a text editor with spell checking)."
 		 "Annotated disassembly made with DZasm; the names, comments and constants are in the DZasm project (spell62.clt). It assembles to bytes IDENTICAL to bank_files/spell62.bin (the original ROM bank with the bank-addressing fix: 7 bytes changed)."
-		 "Names and comments are inferred from what the code does, not original. See NOTES.md for the method, the evidence and what is still unknown."
+		 "Names and comments are inferred from what the code does, not original. See docs/notes.md for the method, the evidence and what is still unknown."
 		 "Hex digits are written with a leading dollar sign; the equates used here are in spell_names.def."
 		 "Application entry point (set in the QuickEdit DOR: entry $C000, segment 3 = bank $3E = SPELL.62)."
 		 "Immediately jumps to qe_start.")
@@ -668,7 +668,7 @@ $B82A
 		 "(IX+1),(IX+2) = offset within that bank."
 		 "OUT: dict_bank = absolute bank number bound into segment 2, dict_pos = offset."
 		 "BANK-ADDRESSING SITE 1 (patched, as patters): the bank is worked out relative to the running bank: ADD A,D / SUB $3E, where D = $38 + index."
-		 "The ORIGINAL ROM had AND $C0 / OR D (the slot bits of the running bank OR the fixed number), which only works when the eight banks are the top of a slot. See NOTES.md 'Bank addressing'.")
+		 "The ORIGINAL ROM had AND $C0 / OR D (the slot bits of the running bank OR the fixed number), which only works when the eight banks are the top of a slot. See docs/notes.md section 4.")
 	($C1E2,< "QuickEdit start-up: creates memory pools (OS_Mop), allocates buffers (OS_Mal), sets the error handler,"
 		 "clears working variables, draws the window, then enters qe_main_loop.")
 	($C286,< "Call a routine in bank 63 (SPELL.63) from this bank."
@@ -689,7 +689,7 @@ $B82A
 	($C38A,< "The token strings: common groups of letters that the dictionary stores as a single byte ($80 to $FF) to save space."
 		 "Each token starts with a letter that has bit 7 set, followed by the rest of its letters ('TION', then 3-letter tokens such as WAY, ITY,"
 		 "IES, MAN, IAN, ISM, FUL, IAL, ING, then 2-letter tokens). They are not only word endings: AR, OL, BL and so on are used as well."
-		 "See NOTES.md section 13 for the dictionary format.")
+		 "See docs/notes.md section 2 and docs/dictionary.md for the dictionary format.")
 	($C4A4,< "128 words: token number -> address of its string. Token 0 (TION) has four letters, tokens 1 to 35 three letters, 36 to 121 two letters;"
 		 "122 to 127 are not used.")
 	($C4F0,< "Pointers for the later tokens (the 2-letter tokens, $C3F7 onward); the last six words (tokens 122 to 127) are unused.")
@@ -701,6 +701,7 @@ $B82A
 	($C920,< "Command handler: 'Delete character' - dispatch code $14")
 	($C93F,< "Command handler: 'Rubout' - dispatch code $0B")
 	($CA1E,< "Command handler: 'Join lines' - dispatch code $0D")
+	($CA49,< "Before the next line is joined onto the cursor line: a block marker on the next line moves up to this line, its column increased by line_length.")
 	($CAE0,< "Command handler: 'Swap case' - dispatch code $0C")
 	($CB0A,< "Command handler: 'Start of line' - dispatch code $09")
 	($CB12,< "Command handler: 'End of line' - dispatch code $0A")
@@ -732,6 +733,8 @@ $B82A
 		 "RC_Draw: the screen was corrupted by another application - redefine window 1 and redraw."
 		 "RC_Quit: free the three memory pools and leave with OS_Bye."
 		 "Other codes are passed back to the caller.")
+	($D0B4,< "RC_Quit: closes the three memory pools and leaves QuickEdit with OS_Bye.")
+	($D0CA,< "$D0CA-$D0D5 follow OS_Bye and nothing jumps to them, so they are never run (tools/reach.py). They look like the tail of a backwards scan.")
 	($D0DC,< "Displays 'No Room!' (QuickEdit reports this when it cannot get more memory for the text).")
 	($D0F7,< "Draw the status line in window 2 (the 19-column panel at the right of the screen)."
 		 "Redefines and clears window 2, prints the cursor line number, then in tiny type: row 7 = Insert or Overtype (edit_flags bit 0),"
@@ -742,6 +745,8 @@ $B82A
 	($D171,< "Command jump table: 47 words, indexed by dispatch code 0..46. See cmd_* handlers."
 		 "The main loop does: HL = table + 2*code; JP (HL).")
 	($D1CF,< "Command handler: 'Print out text' - dispatch code $2E")
+	($D1D7,< "A line has been removed above or at a marker: block_start_line and block_end_line after the cursor line go down by one.")
+	($D20C,< "A line has been inserted at the cursor line (word wrap): block_start_line and block_end_line after the cursor line go up by one.")
 	($D241,< "Redraw the whole screen: the text window (far call 7 into bank 63), then the status line, then place the cursor.")
 	($D247,< "Position the cursor in window 1: x = the smaller of cursor_col_limit and cursor_index, y = cursor_row."
 		 "Both are sent as the coordinate plus SD_COORD (32), after the cursor-to prefix string.")
@@ -752,6 +757,8 @@ $B82A
 	($D2B9,< "Command handler: 'Check marked block' - dispatch code $28")
 	($D3D5,< "Command handler: 'Check all text' - dispatch code $12")
 	($D467,< "End of the check: the ignored words are only for this check. Swap the lists, free every ignored word and the table, swap back.")
+	($D496,< "In the checking window: clears it and prints the part of the line around the word being checked, as much as fits in cursor_col_limit.")
+	($D506,< "Shows the checking window and the 'Correction menu' dialog with its five options (str at $D9B2).")
 	($D5CA,< "Correction menu option 2 'Add word to user dictionary': word_list_add. Option 1 'Ignore word' (below) adds it to the ignored words instead.")
 	($D5E0,< "Correction menu option 5 'Browse through dictionary': save_typed_word, browse_dictionary, restore_typed_word.")
 	($D643,< "Correction menu option 4 'Change word'.")
@@ -775,7 +782,11 @@ $B82A
 	($D991,< "Command handler: 'Insert/Over' - dispatch code $1C")
 	($DA65,< "Copies the word in buffer A (dict_target_length letters) into a small record from pool_main (saved_word_ptr/bank), so Browse can use buffer A. Carry set if no room.")
 	($DA91,< "Copies the saved word back into buffer A and dict_target_length, and frees the record.")
+	($DABC,< "In: A = menu line, C = character. Prints C at the start of that line in reverse video: used to move the '#' pointer in the Correction menu.")
+	($DADE,< "After an OS_In error: RC_Quit ('g') leaves QuickEdit; any other error returns.")
 	($DB17,< "Command handler: 'Split line' - dispatch code $13")
+	($DB2E,< "Moves the text from the cursor to the end of the line into a new line record after the cursor line (Split line, Enter, block commands), moving markers to match.")
+	($DB85,< "In: HL = a marker's line, A = its column. Used by split_at_cursor to decide whether the marker is after the split point.")
 	($DB9F,< "Command handler: 'Search and Replace' - dispatch code $26")
 	($DBF6,< "Command handler: 'Next Match' - dispatch code $2C")
 	($DBFD,< "Command handler: 'Search for string' - dispatch code $25")
@@ -803,7 +814,9 @@ $B82A
 		 "A key pressed during the scan stops it (checked with OS_Xin after each first letter). The guesses are then shown six at a time in the right-hand dialog:"
 		 "up and down move the highlight, Enter puts the chosen word in buffer C and returns, 1-5 go to that Correction menu option, Escape cancels."
 		 "Out: A = 1, or the menu key pressed. edit_flags bit 6 ($40) is set when no word was chosen. top_line is borrowed as a row counter while the list is drawn.")
+	($DE15,< "Guess correct word ended without a choice: sets edit_flags bit 6, frees the guess list, rebinds the line buffer, A = 1.")
 	($DFF5,< "Frees every record of the guess list and clears guess_list_ptr.")
+	($E04F,< "OS_In error while the guesses are shown: RC_Quit leaves QuickEdit, RC_Draw redraws the guess list.")
 	($E063,< "Z set if the section's first letter (dict_letter1) or second letter (dict_letter2) equals the first or the second letter of the typed word."
 		 "Only those sections are searched, so a guess must share one of its first two letters with the typed word.")
 	($E076,< "Far call 6 (far_append_guess in bank 63): appends the word in buffer C - 2 to the guess list. Carry set if there is no room.")
@@ -812,14 +825,27 @@ $B82A
 		 "typed word one letter shorter, i.e. a letter missing ($E0EF); typed word one letter longer, i.e. an extra letter ($E10F). Lengths further apart are rejected.")
 	($E131,< "Command handler: 'Insert marker' - dispatch code $1E")
 	($E169,< "Command handler: 'Remove markers' - dispatch code $20")
+	($E171,< "If both markers are set and the end comes before the start, swaps them (lines and columns). Same as order_block_markers in bank 63.")
 	($E1AB,< "Carry clear if the start marker is set and is on the cursor line; carry set otherwise. BC preserved.")
+	($E1B1,< "is_block_start_line without preserving BC.")
 	($E1CB,< "Carry clear if both markers are set and the end marker is on the cursor line; carry set otherwise. BC preserved.")
+	($E1D1,< "is_block_end_line without preserving BC.")
+	($E1DC,< "Removes the start marker: the end marker (if set) becomes the start marker. Z if no marker is left.")
+	($E1F1,< "marker_flags shifted right by one bit (end marker flag becomes start marker flag).")
+	($E1FA,< "Removes any block marker that is exactly at the cursor (used when the character there is deleted).")
 	($E225,< "Command handler: 'Move marked block' - dispatch code $21")
 	($E22D,< "Command handler: 'Copy marked block' - dispatch code $1F")
+	($E249,< "Carry set (and Z) if no block is marked (end marker not set); otherwise continues with the block command.")
+	($E4DC,< "As markers_line_inserted, used by the block commands.")
+	($E501,< "As join_markers, used by join_next_line.")
+	($E541,< "Takes the line at line_rec as the cursor line and appends the next line to it if the result stays below 240 characters, moving markers to match.")
+	($E5A7,< "Z if line HL equals line BC and column D equals cursor_index.")
 	($E5B4,< "Binds the record's bank into segment 1, sets line_length = record length - 7 and copies the text into line_buffer.")
 	($E5D2,< "OS_Nq NQ_Mfs (free memory) for pool_main. Carry set when the high byte returned in A is 0 and B is below 5, i.e. memory is nearly full; callers then refuse the command.")
 	($E5E2,< "Command handler: 'Delete marked block' - dispatch code $18")
+	($E7ED,< "OS_In error during Delete marked block's 'Are you sure' question: RC_Quit leaves, RC_Draw asks again.")
 	($E802,< "Command handler: 'Information' - dispatch code $1A")
+	($E80D,< "Prints HL in decimal (leading zeros suppressed), using the table of powers of ten at $E842. Same as print_decimal in bank 63. Used for the line number in the status panel.")
 	($E84E,< "26 words, one per first letter A to Z: the address of that letter's list of 3-byte section entries."
 		 "Each entry is [bank*32 + second letter (0 = apostrophe, 1 to 26 = A to Z)] [offset low] [offset high]; offsets are in segment 2 ($8000-$BFFF)."
 		 "A list ends with $FF. There are 302 sections in all.")
@@ -851,6 +877,7 @@ $B82A
 	($F167,< "Command handler: 'Save marked block' - dispatch code $24")
 	($F16F,< "Save marked block writes only the marked text, from the start marker column to the end marker column, as plain lines ending in CR, with no header.")
 	($F284,< "Opens the file named in buffer A for writing (GN_Opf). If it already exists, asks 'Overwrite text? (Y/N)'; carry set if the answer is not Y. Out: IX = handle.")
+	($F2C9,< "OS_In error during the 'Overwrite text?' question: RC_Quit leaves, RC_Draw redraws the question.")
 	($F337,< "Command handler: 'Change name' - dispatch code $2A")
 	($F38C,< "'%CO:A,72,72%': the PipeDream option line written at the start of a saved text and recognised (and dropped) when a text is loaded.")
 	($F399,< "Browse through dictionary (Correction menu option 5). Window 'Browse'. The typed word (up to 64 letters) is copied to a work record ($1FBF/$1FC1)"
@@ -862,14 +889,18 @@ $B82A
 	($F518,< "Steps dict_letter1/dict_letter2 to the next two-letter section (second letter apostrophe, A-Z; then the next first letter, Z wraps to A).")
 	($F53D,< "Steps dict_letter1/dict_letter2 back to the previous two-letter section (A wraps to Z).")
 	($F562,< "Clears the window and draws the five words after the current one, then walks back so the current word is highlighted with its neighbours around it.")
+	($F586,< "OS_In error in Browse: RC_Quit leaves, RC_Draw redraws the Browse window.")
 	($F5D6,< "Prints the whole current word (buffer C - 2, dict_word_length letters) and a CR.")
 	($F5EA,< "Moves to the next word for Browse: the next ending of the current stem, or the next record, with any user dictionary word that falls in between (L_F9DF)."
 		 "browse_pos keeps the dictionary position of the current word. $1FB3 bit 1 is set while the current word comes from the user dictionary.")
 	($F676,< "Moves to the previous word for Browse (previous ending, or back one record from browse_pos), with any user dictionary word in between (L_FADE).")
+	($F6F6,< "Moves dict_pos back to the start of the previous dictionary record (the first byte below $10). Carry set if that is the start of the section ($0F).")
+	($F74D,< "Records are packed against the word before them, so to show the previous word Browse goes back to the start of the section and reads forward until it reaches browse_pos again.")
 	($F77E,< "$F77E-$F787 are code left as data, and nothing calls them: LD A,($1FB3) / AND $FD / LD ($1FB3),A / SCF / RET."
 		 "The same bytes are the no_user_word stub of the WordFinder Browse in bank 63 ($E5DB); here they are unused.")
 	($F788,< "next_word_form, then writes the two section letters (dict_letter1, dict_letter2) just before buffer C and adds 2 to dict_word_length and dict_stem_length,"
 		 "so the whole word starts two bytes before buffer C. Returns the flags of next_word_form (carry = end of section).")
+	($F7B9,< "Copies the current word's stem (buffer C - 2, dict_stem_length letters) to buffer A and sets dict_target_length to its length.")
 	($F7D1,< "Finds the first word at or after the typed prefix: its first two letters select the section (stepping back with prev_section_letters if there is none), then words are read forward.")
 	($F88C,< "Word lists. The user dictionary (user_dict_ptr/bank) and the ignored words (ignore_list_ptr/bank) have the same structure:"
 		 "a 78-byte ($4E) table of 26 three-byte heads (bank, offset low, offset high), one per letter A-Z, each the start of a linked list of word records in alphabetical order."
@@ -879,6 +910,9 @@ $B82A
 		 "Adds the word in buffer A (dict_target_length letters, first letter A-Z) to the list, in alphabetical order. Allocates and clears the table on first use."
 		 "Returns Z if the word is already there; carry set if the first character is not a letter A-Z. No memory -> show_no_room_error."
 		 "$1FEB and $1FED hold the link to be patched (its address and the OS_Mpb binding) while the list is searched.")
+	($F9DF,< "Browse: finds a user dictionary word that comes between the current dictionary word and the next one. Carry set if there is none (or no user dictionary).")
+	($FADE,< "Browse: as browse_user_next, going backwards.")
+	($FB53,< "Compares the current dictionary word (buffer C - 2, dict_stem_length) with buffer A (dict_target_length): Z = equal, NZ at the first difference.")
 	($FB7B,< "Moves line_rec to the next word record, going on to the following letters at the end of a list. Carry set at the end of the table.")
 	($FB81,< "In: A = letter. Finds the first word record at or after that letter (line_rec). Carry set if there is none.")
 	($FBC6,< "In: A = letter 'A'-'Z'. Binds the table, saves the letter in $1FE4 and points line_rec_ptr at that letter's head.")

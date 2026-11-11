@@ -28,109 +28,111 @@
 ($C9BC, $C9BC defb), ($C9BD, $C9CC string)
 ($C9CD, $C9D8 defb), ($C9D9, $C9E1 program)
 ($C9E2, $C9E4 defb), ($C9E5, $C9ED program)
-($C9EE, $C9F0 defb), ($C9F1, $CACA program)
-($CACB, $CACE defb), ($CACF, $CB58 program)
-($CB59, $CC09 defb), ($CC0A, $CC12 program)
-($CC13, $CC35 defb), ($CC36, $CC38 program)
-($CC39, $CD72 defb), ($CD73, $CD83 string)
-($CD84, $CD86 defb), ($CD87, $CEEA program)
-($CEEB, $CEFD string), ($CEFE, $CEFF defb)
-($CF00, $CF12 string), ($CF13, $CF14 defb)
-($CF15, $CF27 string), ($CF28, $CF29 defb)
-($CF2A, $CF3C string), ($CF3D, $CF3E defb)
-($CF3F, $CF51 string), ($CF52, $CF63 defb)
-($CF64, $CF6B string), ($CF6C, $CF6F defb)
-($CF70, $CF71 program), ($CF72, $CF7C string)
-($CF7D, $CFD9 program), ($CFDA, $CFE5 defb)
-($CFE6, $D007 program), ($D008, $D01D addrtable)
-($D01E, $D179 program), ($D17A, $D186 defb)
-($D187, $D192 string), ($D193, $D19C defb)
-($D19D, $D511 program), ($D512, $D518 string)
-($D519, $D52A string), ($D52B, $D54E string)
-($D54F, $D755 program), ($D756, $D765 defb)
-($D766, $D788 string), ($D789, $D7A4 string)
-($D7A5, $D7A9 defb), ($D7AA, $D808 program)
-($D809, $D861 defb), ($D862, $D874 program)
-($D875, $D87F defb), ($D880, $D9BF program)
-($D9C0, $D9C3 defb), ($D9C4, $DA04 program)
-($DA05, $DA0E defb), ($DA0F, $DA21 string)
-($DA22, $DA22 defb), ($DA23, $DA30 program)
-($DA31, $DA40 defb), ($DA41, $DA4B string)
-($DA4C, $DA55 defb), ($DA56, $DB0C program)
-($DB0D, $DB16 defb), ($DB17, $DB21 string)
-($DB22, $DB24 defb), ($DB25, $DE2A program)
-($DE2B, $E202 defb), ($E203, $E428 program)
-($E429, $E432 defb), ($E433, $E6D4 program)
-($E6D5, $E6E0 string), ($E6E1, $E6E7 program)
-($E6E8, $E6EA defb), ($E6EB, $E719 defb)
-($E71A, $E721 string), ($E722, $E72C defb)
-($E72D, $E739 string), ($E73A, $E740 defb)
-($E741, $E751 string), ($E752, $E758 defb)
-($E759, $E769 string), ($E76A, $E770 defb)
-($E771, $E783 string), ($E784, $E78B defb)
-($E78C, $E79C string), ($E79D, $E7A4 defb)
-($E7A5, $E7AE string), ($E7AF, $E7B6 defb)
-($E7B7, $E7C8 string), ($E7C9, $E7CE defb)
-($E7CF, $E7DC string), ($E7DD, $E7E3 defb)
-($E7E4, $E7EC string), ($E7ED, $E7F2 defb)
-($E7F3, $E7FD string), ($E7FE, $E803 defb)
-($E804, $E80E string), ($E80F, $E814 defb)
-($E815, $E820 string), ($E821, $E826 defb)
-($E827, $E82F string), ($E830, $E835 defb)
-($E836, $E840 string), ($E841, $E846 defb)
-($E847, $E851 string), ($E852, $E857 defb)
-($E858, $E865 string), ($E866, $E86B defb)
-($E86C, $E878 string), ($E879, $E87E defb)
-($E87F, $E889 string), ($E88A, $E88F defb)
-($E890, $E898 string), ($E899, $E89E defb)
-($E89F, $E8AB string), ($E8AC, $E8B1 defb)
-($E8B2, $E8BC string), ($E8BD, $E8D7 defb)
-($E8D8, $E8E6 string), ($E8E7, $E8F9 defb)
-($E8FA, $E909 string), ($E90A, $E90F defb)
-($E910, $E91A string), ($E91B, $E920 defb)
-($E921, $E929 string), ($E92A, $E931 defb)
-($E932, $E93B string), ($E93C, $E943 defb)
-($E944, $E94D string), ($E94E, $E953 defb)
-($E954, $E963 string), ($E964, $E969 defb)
-($E96A, $E974 string), ($E975, $E97C defb)
-($E97D, $E985 string), ($E986, $E98C defb)
-($E98D, $E995 string), ($E996, $E99D defb)
-($E99E, $E9AE string), ($E9AF, $E9B6 defb)
-($E9B7, $E9CA string), ($E9CB, $E9D2 defb)
-($E9D3, $E9E6 string), ($E9E7, $E9EE defb)
-($E9EF, $EA02 string), ($EA03, $EA09 defb)
-($EA0A, $EA14 string), ($EA15, $EA1C defb)
-($EA1D, $EA27 string), ($EA28, $EA2E defb)
-($EA2F, $EA3C string), ($EA3D, $EA44 defb)
-($EA45, $EA52 string), ($EA53, $EA59 defb)
-($EA5A, $EA6A string), ($EA6B, $EA71 defb)
-($EA72, $EA80 string), ($EA81, $EA87 defb)
-($EA88, $EA99 string), ($EA9A, $EAA0 defb)
-($EAA1, $EAB1 string), ($EAB2, $EAB4 defb)
-($EAB5, $EABF string), ($EAC0, $EAC0 defb)
-($EAC1, $EAD5 string), ($EAD6, $EAD6 defb)
-($EAD7, $EAFF string), ($EB00, $EB00 defb)
-($EB01, $EB16 string), ($EB17, $EB28 string)
-($EB29, $EB40 string), ($EB41, $EB41 defb)
-($EB42, $EB5B string), ($EB5C, $EB5C defb)
-($EB5D, $EB72 string), ($EB73, $EB73 defb)
-($EB74, $EB8A string), ($EB8B, $EB8B defb)
-($EB8C, $EB9E string), ($EB9F, $EB9F defb)
-($EBA0, $EBB2 defb), ($EBB3, $EBBD string)
-($EBBE, $EBC3 defb), ($EBC4, $EBCF string)
-($EBD0, $EBD5 defb), ($EBD6, $EBDE string)
-($EBDF, $EBE4 defb), ($EBE5, $EBEF string)
-($EBF0, $EBF5 defb), ($EBF6, $EC02 string)
-($EC03, $EC08 defb), ($EC09, $EC17 string)
-($EC18, $EC1D defb), ($EC1E, $EC34 string)
-($EC35, $EC3A defb), ($EC3B, $EC4D string)
-($EC4E, $EC5C defb), ($EC5D, $EC75 program)
-($EC76, $EC81 defb), ($EC82, $EC88 program)
-($EC89, $EC8F defb), ($EC90, $ECBA program)
-($ECBB, $ED58 defb), ($ED59, $FF7F defs)
-($FF80, $FF8A program), ($FF8B, $FF9D defb)
-($FF9E, $FFBF defs), ($FFC0, $FFD2 frontdor)
-($FFD3, $FFF7 defb), ($FFF8, $FFFF romhdr)
+($C9EE, $C9F0 defb), ($C9F1, $C9FB defb)
+($C9FC, $CACA program), ($CACB, $CACE defb)
+($CACF, $CB58 program), ($CB59, $CC09 defb)
+($CC0A, $CC12 defb), ($CC13, $CC35 defb)
+($CC36, $CC38 defb), ($CC39, $CD72 defb)
+($CD73, $CD83 string), ($CD84, $CD86 defb)
+($CD87, $CEEA program), ($CEEB, $CEFD string)
+($CEFE, $CEFF defb), ($CF00, $CF12 string)
+($CF13, $CF14 defb), ($CF15, $CF27 string)
+($CF28, $CF29 defb), ($CF2A, $CF3C string)
+($CF3D, $CF3E defb), ($CF3F, $CF51 string)
+($CF52, $CF63 defb), ($CF64, $CF6B string)
+($CF6C, $CF6F defb), ($CF70, $CF71 string)
+($CF72, $CF7C string), ($CF7D, $CF7D defb)
+($CF7E, $CF82 string), ($CF83, $CFD9 program)
+($CFDA, $CFE5 defb), ($CFE6, $D007 program)
+($D008, $D01D addrtable), ($D01E, $D179 program)
+($D17A, $D186 defb), ($D187, $D192 string)
+($D193, $D19C defb), ($D19D, $D511 program)
+($D512, $D518 string), ($D519, $D52A string)
+($D52B, $D54E string), ($D54F, $D755 program)
+($D756, $D765 defb), ($D766, $D788 string)
+($D789, $D7A4 string), ($D7A5, $D7A9 defb)
+($D7AA, $D808 program), ($D809, $D861 defb)
+($D862, $D874 program), ($D875, $D87F defb)
+($D880, $D9BF program), ($D9C0, $D9C3 defb)
+($D9C4, $DA04 program), ($DA05, $DA0E defb)
+($DA0F, $DA21 string), ($DA22, $DA22 defb)
+($DA23, $DA30 program), ($DA31, $DA40 defb)
+($DA41, $DA4B string), ($DA4C, $DA55 defb)
+($DA56, $DB0C program), ($DB0D, $DB16 defb)
+($DB17, $DB21 string), ($DB22, $DB24 defb)
+($DB25, $DE2A program), ($DE2B, $E202 defb)
+($E203, $E428 program), ($E429, $E432 defb)
+($E433, $E6D4 program), ($E6D5, $E6E0 string)
+($E6E1, $E6E7 program), ($E6E8, $E6EA defb)
+($E6EB, $E719 defb), ($E71A, $E721 string)
+($E722, $E72C defb), ($E72D, $E739 string)
+($E73A, $E740 defb), ($E741, $E751 string)
+($E752, $E758 defb), ($E759, $E769 string)
+($E76A, $E770 defb), ($E771, $E783 string)
+($E784, $E78B defb), ($E78C, $E79C string)
+($E79D, $E7A4 defb), ($E7A5, $E7AE string)
+($E7AF, $E7B6 defb), ($E7B7, $E7C8 string)
+($E7C9, $E7CE defb), ($E7CF, $E7DC string)
+($E7DD, $E7E3 defb), ($E7E4, $E7EC string)
+($E7ED, $E7F2 defb), ($E7F3, $E7FD string)
+($E7FE, $E803 defb), ($E804, $E80E string)
+($E80F, $E814 defb), ($E815, $E820 string)
+($E821, $E826 defb), ($E827, $E82F string)
+($E830, $E835 defb), ($E836, $E840 string)
+($E841, $E846 defb), ($E847, $E851 string)
+($E852, $E857 defb), ($E858, $E865 string)
+($E866, $E86B defb), ($E86C, $E878 string)
+($E879, $E87E defb), ($E87F, $E889 string)
+($E88A, $E88F defb), ($E890, $E898 string)
+($E899, $E89E defb), ($E89F, $E8AB string)
+($E8AC, $E8B1 defb), ($E8B2, $E8BC string)
+($E8BD, $E8D7 defb), ($E8D8, $E8E6 string)
+($E8E7, $E8F9 defb), ($E8FA, $E909 string)
+($E90A, $E90F defb), ($E910, $E91A string)
+($E91B, $E920 defb), ($E921, $E929 string)
+($E92A, $E931 defb), ($E932, $E93B string)
+($E93C, $E943 defb), ($E944, $E94D string)
+($E94E, $E953 defb), ($E954, $E963 string)
+($E964, $E969 defb), ($E96A, $E974 string)
+($E975, $E97C defb), ($E97D, $E985 string)
+($E986, $E98C defb), ($E98D, $E995 string)
+($E996, $E99D defb), ($E99E, $E9AE string)
+($E9AF, $E9B6 defb), ($E9B7, $E9CA string)
+($E9CB, $E9D2 defb), ($E9D3, $E9E6 string)
+($E9E7, $E9EE defb), ($E9EF, $EA02 string)
+($EA03, $EA09 defb), ($EA0A, $EA14 string)
+($EA15, $EA1C defb), ($EA1D, $EA27 string)
+($EA28, $EA2E defb), ($EA2F, $EA3C string)
+($EA3D, $EA44 defb), ($EA45, $EA52 string)
+($EA53, $EA59 defb), ($EA5A, $EA6A string)
+($EA6B, $EA71 defb), ($EA72, $EA80 string)
+($EA81, $EA87 defb), ($EA88, $EA99 string)
+($EA9A, $EAA0 defb), ($EAA1, $EAB1 string)
+($EAB2, $EAB4 defb), ($EAB5, $EABF string)
+($EAC0, $EAC0 defb), ($EAC1, $EAD5 string)
+($EAD6, $EAD6 defb), ($EAD7, $EAFF string)
+($EB00, $EB00 defb), ($EB01, $EB16 string)
+($EB17, $EB28 string), ($EB29, $EB40 string)
+($EB41, $EB41 defb), ($EB42, $EB5B string)
+($EB5C, $EB5C defb), ($EB5D, $EB72 string)
+($EB73, $EB73 defb), ($EB74, $EB8A string)
+($EB8B, $EB8B defb), ($EB8C, $EB9E string)
+($EB9F, $EB9F defb), ($EBA0, $EBB2 defb)
+($EBB3, $EBBD string), ($EBBE, $EBC3 defb)
+($EBC4, $EBCF string), ($EBD0, $EBD5 defb)
+($EBD6, $EBDE string), ($EBDF, $EBE4 defb)
+($EBE5, $EBEF string), ($EBF0, $EBF5 defb)
+($EBF6, $EC02 string), ($EC03, $EC08 defb)
+($EC09, $EC17 string), ($EC18, $EC1D defb)
+($EC1E, $EC34 string), ($EC35, $EC3A defb)
+($EC3B, $EC4D string), ($EC4E, $EC5C defb)
+($EC5D, $EC75 program), ($EC76, $EC81 defb)
+($EC82, $EC88 program), ($EC89, $EC8F defb)
+($EC90, $ECBA program), ($ECBB, $ED58 defb)
+($ED59, $FF7F defs), ($FF80, $FF8A program)
+($FF8B, $FF9D defb), ($FF9E, $FFBF defs)
+($FFC0, $FFD2 frontdor), ($FFD3, $FFF7 defb)
+($FFF8, $FFFF romhdr)
 }
 
 ; External Areas:
@@ -173,7 +175,7 @@ $C2E4, $C2EA
 $C2F0, $C2F6
 $C2FC, $C302
 $C308, $C30E
-$C312, $C31B wf_quit
+$C312 wf_os_error, $C31B wf_quit
 $C332, $C334
 $C3D8, $C3E6
 $C3EE show_found_word, $C3F6
@@ -199,7 +201,7 @@ $C6A0, $C6BF
 $C6CE, $C6D7
 $C6F4 end_of_search, $C712 sort_letters
 $C719, $C722
-$C777, $C799 far_redraw_text_window
+$C777 mark_menu_line, $C799 far_redraw_text_window
 $C7B1, $C7C5 draw_cursor_line
 $C7E7, $C7F7
 $C802, $C809
@@ -221,9 +223,9 @@ $CA36 highlight_block_on_row, $CA44
 $CA4F, $CA67
 $CA8A, $CA93
 $CAA5, $CAC0
-$CACF, $CAD6
+$CACF is_start_marker_line, $CAD6 is_end_marker_line
 $CADB, $CAE5
-$CAE8, $CAF9
+$CAE8 place_cursor, $CAF9
 $CB05 expand_word, $CB11
 $CB24, $CB34
 $CB40, $CB45
@@ -242,20 +244,20 @@ $CEA8, $CEB4 print_name_record
 $CEBF, $CECD
 $CED7 is_word_char_nz, $CEE5
 $CEE8, $CF70
-$CF8B, $CF8C
-$CF9A, $CFA2
+$CF8B print_hex_byte, $CF8C
+$CF9A print_hex_digit, $CFA2
 $CFA5 print_decimal, $CFAD
 $CFBB, $CFC8
 $CFCF, $CFD5
-$CFE6 far_call_dispatch, $D007
+$CFE6 far_call_dispatch, $D007 call_hl
 $D01E far_tab, $D029
 $D03C, $D04F
 $D052, $D068
 $D09C, $D0B3
 $D0B5, $D0BE
-$D0CF, $D0D5
+$D0CF is_block_start_line, $D0D5 test_block_start_line
 $D0DE, $D0ED
-$D0EF, $D0F5
+$D0EF is_block_end_line, $D0F5 test_block_end_line
 $D100 far_print_text, $D11F
 $D121, $D126
 $D13B, $D144
@@ -312,10 +314,10 @@ $D9AE, $D9B9
 $D9C4, $D9D8
 $D9DA, $D9E5
 $D9F6, $D9FE
-$DA23 input_merge_filename, $DA56
+$DA23 input_merge_filename, $DA56 split_at_cursor
 $DA68, $DA84
-$DAB7, $DACF
-$DAD1 check_free_memory, $DAE1
+$DAB7 compare_marker_with_cursor, $DACF
+$DAD1 check_free_memory, $DAE1 markers_after_new_line
 $DAF2, $DAF6
 $DB01, $DB06 select_window1
 $DB25 far_call_5_unused, $DB3E
@@ -327,7 +329,7 @@ $DBF5, $DC0B
 $DC12, $DC17
 $DC26, $DC4B
 $DC53, $DC5D
-$DC77, $DC87
+$DC77, $DC87 far5_user_dict_lookup
 $DC8E, $DC90
 $DCA8, $DCD2
 $DCF8, $DCFE wf_option_3_find_close_matches
@@ -358,7 +360,7 @@ $E36D, $E375 next_section_letters
 $E37E, $E39A prev_section_letters
 $E3A3, $E3BF draw_browse_page
 $E3C5, $E3D6
-$E3E3, $E3FC
+$E3E3 browse_os_error, $E3FC
 $E3FE, $E40C
 $E413, $E433 print_current_word
 $E43C, $E447 browse_next_word
@@ -370,14 +372,14 @@ $E4D3 browse_prev_word, $E4E0
 $E4E8, $E502
 $E508, $E51B
 $E537, $E540
-$E547, $E553
+$E547, $E553 dict_back_one_record
 $E556, $E567
 $E570, $E58D
 $E595, $E59B
-$E5AA, $E5B4
+$E5AA browse_reexpand, $E5B4
 $E5C3, $E5D9
 $E5DB no_user_word, $E5E5 next_full_word
-$E603, $E616
+$E603, $E616 copy_stem_to_buffer_a
 $E62E browse_seek_prefix, $E649
 $E653, $E669
 $E674, $E685
@@ -461,7 +463,7 @@ $EC5B WordFinder_cmd9_end, $EC5D open_dialog_centre
 $EC5F, $EC62 open_dialog_wide
 $EC67 open_dialog_mid, $EC6C open_dialog_wf
 $EC70, $EC71 open_dialog_right
-$EC74, $EC82
+$EC74, $EC82 clear_words_window
 $EC90 open_dialog_with_title, $EC91
 $EC9C, $ECAA
 $ECB5, $ED62
@@ -625,7 +627,7 @@ $8900
 	($C000,< "Spell-Master for the Cambridge Z88 - bank 63 ($3F, SPELL.63). Card header, front DOR, both application DORs, QuickEdit menu text,"
 		 "the WordFinder application and the routines QuickEdit calls through the far-call table."
 		 "Annotated disassembly made with DZasm (project spell63.clt). It assembles to bytes IDENTICAL to bank_files/spell63.bin (the original ROM bank with the bank-addressing fix: 7 bytes changed)."
-		 "Offsets $0000-$003A and $0196-$01D0 are the application DORs. Names and comments are inferred, not original. See NOTES.md.")
+		 "Offsets $0000-$003A and $0196-$01D0 are the application DORs. Names and comments are inferred, not original. See docs/notes.md.")
 	($C001,< "QuickEdit application DOR. Kept as raw bytes because DZasm V0.36 masks the topic, command and help pointers with $3FFF, but this card stores them as full $Cxxx addresses."
 		 "$C001 parent link 00 00 00; brother link 96 01 3F = offset $0196, bank $3F (the WordFinder DOR); son link 00 00 00."
 		 "$83 = application ROM DOR, length $2F. '@' = info section, length $12:"
@@ -634,7 +636,8 @@ $8900
 		 "'H' = help section, length $0C: topics $E6EB, commands $E728, application help $EAB5 (all bank $3F), tokens 00 00 00 (none)."
 		 "'N' = name section, length 10: QuickEdit, 0. Then $FF ends the DOR.")
 	($C03B,< "Copy of bank 62 read_dictionary_record (see there).")
-	($C070,< "Copy of bank 62 skip_to_next_letter_group.")
+	($C070,< "Copy of bank 62 skip_to_next_letter_group."
+		 "Only the unreachable far_call_5_unused code uses this copy, so in practice it is never run (tools/reach.py).")
 	($C087,< "Same routine as find_dictionary_section in bank 62.")
 	($C0BF,< "Same routine as in bank 62: bind one dictionary bank into segment 2 (see bank 62 for the description)."
 		 "BANK-ADDRESSING SITE 1 (patched, copy in this bank): ADD A,D / SUB $3F, where D = $38 + index. The ORIGINAL ROM had AND $C0 / OR D.")
@@ -650,6 +653,7 @@ $8900
 	($C267,< "WordFinder menu loop: reads keys. Keys 1 to 4 choose an option, Cursor up/down moves wf_menu_sel,"
 		 "Enter runs the selected option, Escape frees the pools and exits (OS_Bye).")
 	($C2C7,< "Handles a key typed in the WordFinder menu.")
+	($C312,< "OS_In error in the WordFinder menu: RC_Draw redraws the menu, RC_Quit leaves (falls into wf_quit).")
 	($C31B,< "RC_Quit: closes the three memory pools and leaves WordFinder with OS_Bye.")
 	($C3EE,< "Prints the found word (the two section letters, then buffer C) in 16-column slots, four to a 64-column row, using cursor_index and cursor_row (borrowed) as column and row."
 		 "After six rows: 'Press SPACE to continue'. Any key clears the window and goes on; an extended Escape stops the search (carry set).")
@@ -667,6 +671,7 @@ $8900
 	($C6F4,< "Shows 'Press SPACE to continue' and waits for a key before going back to the menu.")
 	($C709,< "$C709-$C711 are code left as data, and nothing calls them: SCF / RET, then PUSH AF / LD A,7 / OS_Out / POP AF / RET (a beep).")
 	($C712,< "Sorts the B letters at HL into alphabetical order (a simple exchange sort). Find anagrams sorts the typed word once, then each dictionary word of the same length, and compares.")
+	($C777,< "Same as mark_menu_line in bank 62: moves the pointer in the WordFinder menu.")
 	($C799,< "Far-call table entry 7."
 		 "Called by draw_text_window (bank 62), which redraw_screen calls. Draws the text in window 1: the cursor line from the edit buffer,"
 		 "then the rows above and below it by following the line records, then the End of text marker and blank rows."
@@ -691,6 +696,9 @@ $8900
 	($C9FC,< "Put the block markers in order: if both markers are set and the end comes before the start, swap start and end."
 		 "marker_flags bit 0 = start set, bit 1 = end set; the markers are a line number plus a column.")
 	($CA36,< "Highlight the part of the marked block that falls on the row just drawn, using the toggle-over-N sequence with reverse video.")
+	($CACF,< "Z if block_start_line equals cursor_line. HL and BC preserved.")
+	($CAD6,< "Z if block_end_line equals cursor_line. HL and BC preserved.")
+	($CAE8,< "Same as place_cursor in bank 62: cursor to column min(cursor_col_limit, cursor_index), row cursor_row.")
 	($CB05,< "Copy of bank 62 expand_word, with append_token inline (its own token table at $CC73).")
 	($CC73,< "Bank 63 copy of the 128-word token pointer table (bank 62: $C4A4).")
 	($CD87,< "Shows: the text filename (text_name_ptr), number of lines, free memory in K (NQ_Mfs, divided by 4: the result is in 256-byte pages), word count,"
@@ -701,15 +709,19 @@ $8900
 		 "Shows the Information window ('Currently editing', number of lines, memory, word count, user dictionary).")
 	($CEB4,< "Prints the filename kept in the record HL (bank B): text_name or user_dict_name. Prints 'None' if HL = 0.")
 	($CED7,< "NZ if A is a letter or an apostrophe, Z otherwise (the opposite sense to is_word_char in bank 62). Used to count words.")
+	($CF83,< "$CF83-$CF8A: pushes AF and BC and prints A as two hex digits (print_hex_byte). Nothing calls it: probably left from debugging.")
 	($CFA5,< "Prints HL in decimal, using the table of powers of ten at $CFDA (leading zeros suppressed). Borrows $1FBC and line_counter.")
 	($CFE6,< "Runs far-call routine number A: pops the index, looks it up in far_call_table, calls it, then returns to bank 62."
 		 "Entered from the stub at $7F80 with this bank bound into segment 3.")
+	($D007,< "JP (HL): far_call_dispatch does CALL call_hl to call the routine whose address is in HL.")
 	($D008,< "Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63."
 		 "Index 1 (find_next_match, $D54F) and index 5 (far_call_5_unused, $DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.")
 	($D01E,< "Tab stops are every 8 columns. If the characters up to the next stop are all spaces the cursor just moves over them (returns A = 1);"
 		 "otherwise enough spaces are inserted to reach the stop, and block markers to the right on this line move with the text. (Insert real tab, command $2D, inserts a $09 instead.)"
 		 "Far-call table entry 8."
 		 "Called from the QuickEdit handler for Tab (command $29).")
+	($D0CF,< "Same as is_block_start_line in bank 62.")
+	($D0EF,< "Same as is_block_end_line in bank 62.")
 	($D100,< "Enables Escape detection (OS_Esc SC_ENA), sends $05 '[' to the printer filter, then every line of the whole text followed by LF CR (through OS_Prt),"
 		 "then $05 ']' and disables Escape detection again (SC_DIS). An error from OS_Prt (for example Escape) beeps and ends the printout."
 		 "The $05 '[' and $05 ']' pairs appear to mark the start and end of the job for the printer filter. Tabs and control characters are sent as they are."
@@ -734,7 +746,7 @@ $8900
 		 "Found: carry clear, cursor_line and cursor_index at the start of the match (top_line and $1FE4 are borrowed for the line and column where the attempt started)."
 		 "Not found: carry set. The lines already searched are not walked back, so the cursor is left at the end of the text.")
 	($D5DB,< "Walks back from cursor_line to the line in top_line (where the current match attempt started) and makes it the cursor line.")
-	($D600,< "$D600-$D74F: copies of the bank 62 line-record routines, used by the far-called commands (see notes section 12, 'How the text is stored').")
+	($D600,< "$D600-$D74F: copies of the bank 62 line-record routines, used by the far-called commands (see notes section 8, 'How the text is stored').")
 	($D61A,< "Same as load_line_record in bank 62: copies the record at line_rec into the edit buffer and takes its links as prev_line and next_line."
 		 "It does not free the record: bank 63 has no take_line_record, and every caller follows it with free_line_record.")
 	($D756,< "$D756-$D765 (16 bytes) are code, left as data because nothing calls them: an unused copy of check_free_memory"
@@ -754,27 +766,32 @@ $8900
 		 "Far-call table entry 4."
 		 "Called from the QuickEdit handler for Merge text at cursor (command $27).")
 	($DA23,< "GN_Sip into buffer A (50 bytes, 15 columns shown).")
+	($DA56,< "Same as split_at_cursor in bank 62 (used by Merge text at cursor).")
 	($DAD1,< "Same routine as check_free_memory in bank 62: carry set when memory is nearly full.")
+	($DAE1,< "Same as markers_after_new_line in bank 62.")
 	($DB06,< "Prints a short sequence that selects window 1 again (1 H 1 ...), used before redrawing the text.")
 	($DB25,< "Far-call table entry 5. Nothing calls it: bank 62 never uses index 5 and nothing in this bank jumps here."
-		 "It and the routines only it uses ($DB25-$DCFD, about 470 bytes) look the word in buffer A up in the dictionary, positioning at the first word not before it,"
+		 "It and the routines only it uses ($DB25-$DCFD and skip_to_next_letter_group at $C070, 496 bytes in all) look the word in buffer A up in the dictionary, positioning at the first word not before it,"
 		 "and also consult the user dictionary (user_dict_ptr). Probably left over from an earlier design. The 'Opened file' string at $DB17 is not used either.")
+	($DC87,< "Part of the unreachable far_call_5_unused code.")
 	($DCFE,< "Option 3 uses the same test as Guess correct word (section_could_match, is_one_edit_away) over the whole ROM dictionary, without the user dictionary and without stopping for a key press."
 		 "Menu option 3: Find close matches (window title 'Find close matches').")
 	($DD8A,< "Same routine as is_one_edit_away in bank 62 (identical apart from the jump addresses): Z if the word is one letter different, missing, extra or swapped.")
 	($E203,< "Option 1 is the bank 62 Browse (browse_dictionary) almost instruction for instruction: same keys, same routines (names as in bank 62),"
 		 "except that it starts at 'AA' instead of the typed word and calls no_user_word where QuickEdit looks in the user dictionary."
 		 "Menu option 1: Browse through dictionary.")
+	($E3E3,< "OS_In error in Browse: RC_Quit leaves, RC_Draw redraws the Browse window.")
 	($E5DB,< "Stands in for the user dictionary lookups of the bank 62 Browse (L_F9DF, L_FADE): clears $1FB3 bit 1 and returns carry (no user word). WordFinder has no user dictionary.")
 	($E5E5,< "Same routine as next_full_word in bank 62: next_word_form, with the two section letters written just before buffer C.")
 	($E6EB,< "QuickEdit menu topics ('Blocks', 'Cursor', 'Edit', 'Files', 'SPELLING') - kept as raw bytes.")
-	($E728,< "QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See NOTES.md for the full table.")
+	($E728,< "QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See docs/commands.md for the full table.")
 	($EBAE,< "Menu commands for the Correction/spelling menu.")
 	($EC5D,< "Titled dialog x 25, 30 columns, full height (as open_dialog_centre in bank 62).")
 	($EC62,< "Titled dialog x 5, 70 columns, full height ('Words found').")
 	($EC67,< "Titled dialog x 18, 44 columns, full height.")
 	($EC6C,< "Titled dialog x 20, 40 columns, full height (the WordFinder option windows: Anagram, Find close matches, Crossword).")
 	($EC71,< "Titled dialog x 40, 35 columns, rows 1-7 (Browse).")
+	($EC82,< "Redefines window 3 as a plain wide window, clearing the 'Words found' dialog when a search is stopped.")
 	($EC90,< "Same routine as open_dialog_with_title in bank 62. In: HL = title, BC = window description.")
 	($FF80,< "STUB entered from bank 62 (far_call_bank63): copies the bank bound in segment 1 (this bank) into segment 3"
 		 "and jumps to far_call_dispatch.")

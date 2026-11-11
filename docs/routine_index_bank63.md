@@ -53,7 +53,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $C302 | L_C302 | 0 | Os_mcl |  | 3 |
 | $C308 | L_C308 | 0 | Os_mcl |  | 3 |
 | $C30E | L_C30E | 0 | Os_bye |  | 3 |
-| $C312 | L_C312 | 2 |  |  | 5 |
+| $C312 | wf_os_error | 2 |  |  | 5 |
 | $C31B | wf_quit | 0 | Os_bye, Os_mcl |  | 13 |
 | $C332 | L_C332 | 0 |  |  | 2 |
 | $C334 | L_C334 | 0 |  |  | 3 |
@@ -116,7 +116,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $C741 | L_C741 | 0 |  |  | 2 |
 | $C749 | L_C749 | 0 |  | Find close matches | 2 |
 | $C75C | L_C75C | 0 |  |  | 4 |
-| $C777 | L_C777 | 4 | Gn_sop, Os_out |  | 18 |
+| $C777 | mark_menu_line | 4 | Gn_sop, Os_out |  | 18 |
 | $C791 | L_C791 | 0 |  |  | 1 |
 | $C799 | far_redraw_text_window | 1 |  |  | 11 |
 | $C7B1 | L_C7B1 | 0 |  |  | 9 |
@@ -167,11 +167,11 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $CAA5 | L_CAA5 | 0 |  |  | 15 |
 | $CAC0 | L_CAC0 | 0 |  |  | 5 |
 | $CACB | str_toggle_over_n | 0 |  |  | 1 |
-| $CACF | L_CACF | 1 |  |  | 4 |
-| $CAD6 | L_CAD6 | 2 |  |  | 3 |
+| $CACF | is_start_marker_line | 1 |  |  | 4 |
+| $CAD6 | is_end_marker_line | 2 |  |  | 3 |
 | $CADB | L_CADB | 0 |  |  | 6 |
 | $CAE5 | L_CAE5 | 0 |  |  | 3 |
-| $CAE8 | L_CAE8 | 1 | Gn_sop |  | 9 |
+| $CAE8 | place_cursor | 1 | Gn_sop |  | 9 |
 | $CAF9 | L_CAF9 | 0 | Os_out |  | 8 |
 | $CB05 | expand_word | 4 |  |  | 6 |
 | $CB11 | L_CB11 | 0 |  |  | 11 |
@@ -221,9 +221,9 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $CF70 | L_CF70 | 0 |  |  | 2 |
 | $CF72 | L_CF72 | 0 |  | Information | 2 |
 | $CF7E | L_CF7E | 0 |  |  | 9 |
-| $CF8B | L_CF8B | 1 |  |  | 1 |
+| $CF8B | print_hex_byte | 1 |  |  | 1 |
 | $CF8C | L_CF8C | 0 |  |  | 7 |
-| $CF9A | L_CF9A | 1 |  |  | 4 |
+| $CF9A | print_hex_digit | 1 |  |  | 4 |
 | $CFA2 | L_CFA2 | 0 | Os_out |  | 3 |
 | $CFA5 | print_decimal | 3 |  |  | 3 |
 | $CFAD | L_CFAD | 0 |  |  | 11 |
@@ -233,7 +233,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $CFD5 | L_CFD5 | 0 |  |  | 2 |
 | $CFDA | L_CFDA | 0 |  |  | 2 |
 | $CFE6 | far_call_dispatch | 0 | Os_mgb, Os_mpb |  | 23 |
-| $D007 | L_D007 | 1 |  |  | 1 |
+| $D007 | call_hl | 1 |  |  | 1 |
 | $D008 | far_call_table | 0 |  |  | 11 |
 | $D01E | far_tab | 0 |  |  | 6 |
 | $D029 | L_D029 | 0 |  |  | 12 |
@@ -245,12 +245,12 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D0B3 | L_D0B3 | 0 |  |  | 2 |
 | $D0B5 | L_D0B5 | 0 |  |  | 4 |
 | $D0BE | L_D0BE | 0 |  |  | 11 |
-| $D0CF | L_D0CF | 1 |  |  | 4 |
-| $D0D5 | L_D0D5 | 1 |  |  | 4 |
+| $D0CF | is_block_start_line | 1 |  |  | 4 |
+| $D0D5 | test_block_start_line | 1 |  |  | 4 |
 | $D0DE | L_D0DE | 0 |  |  | 10 |
 | $D0ED | L_D0ED | 0 |  |  | 2 |
-| $D0EF | L_D0EF | 1 |  |  | 4 |
-| $D0F5 | L_D0F5 | 1 |  |  | 5 |
+| $D0EF | is_block_end_line | 1 |  |  | 4 |
+| $D0F5 | test_block_end_line | 1 |  |  | 5 |
 | $D100 | far_print_text | 0 | Gn_sop, Os_esc, Os_prt |  | 17 |
 | $D121 | L_D121 | 0 |  |  | 2 |
 | $D126 | L_D126 | 0 | Os_mpb |  | 12 |
@@ -332,7 +332,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $D617 | L_D617 | 0 |  |  | 3 |
 | $D61A | load_line_record | 8 |  |  | 13 |
 | $D640 | free_line_record | 8 |  |  | 3 |
-| $D645 | L_D645 | 1 | Os_mfr |  | 6 |
+| $D645 | free_record_size_c | 1 | Os_mfr |  | 6 |
 | $D651 | alloc_line_record | 2 | Os_mal, Os_mpb |  | 27 |
 | $D68A | L_D68A | 0 | Os_mpb |  | 15 |
 | $D6AD | L_D6AD | 0 | Os_mpb |  | 23 |
@@ -380,13 +380,13 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $DA23 | input_merge_filename | 1 | Gn_sip |  | 7 |
 | $DA31 | L_DA31 | 0 |  |  | 2 |
 | $DA41 | L_DA41 | 0 |  | 2JCLoading  | 3 |
-| $DA56 | L_DA56 | 1 |  |  | 8 |
+| $DA56 | split_at_cursor | 1 |  |  | 8 |
 | $DA68 | L_DA68 | 0 |  |  | 15 |
 | $DA84 | L_DA84 | 0 |  |  | 19 |
-| $DAB7 | L_DAB7 | 2 |  |  | 16 |
+| $DAB7 | compare_marker_with_cursor | 2 |  |  | 16 |
 | $DACF | L_DACF | 0 |  |  | 2 |
 | $DAD1 | check_free_memory | 1 | Os_nq |  | 9 |
-| $DAE1 | L_DAE1 | 1 |  |  | 9 |
+| $DAE1 | markers_after_new_line | 1 |  |  | 9 |
 | $DAF2 | L_DAF2 | 0 |  |  | 2 |
 | $DAF6 | L_DAF6 | 0 |  |  | 8 |
 | $DB01 | L_DB01 | 0 |  |  | 3 |
@@ -412,7 +412,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $DC53 | L_DC53 | 0 |  |  | 4 |
 | $DC5D | L_DC5D | 0 |  |  | 14 |
 | $DC77 | L_DC77 | 0 |  |  | 11 |
-| $DC87 | L_DC87 | 2 |  |  | 4 |
+| $DC87 | far5_user_dict_lookup | 2 |  |  | 4 |
 | $DC8E | L_DC8E | 0 |  |  | 2 |
 | $DC90 | L_DC90 | 0 | Os_mpb |  | 15 |
 | $DCA8 | L_DCA8 | 0 | Os_mpb |  | 25 |
@@ -474,7 +474,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $E3BF | draw_browse_page | 3 | Os_out |  | 4 |
 | $E3C5 | L_E3C5 | 0 | Os_out |  | 10 |
 | $E3D6 | L_E3D6 | 0 | Os_out |  | 9 |
-| $E3E3 | L_E3E3 | 2 | Gn_sop |  | 11 |
+| $E3E3 | browse_os_error | 2 | Gn_sop |  | 11 |
 | $E3FC | L_E3FC | 0 |  |  | 2 |
 | $E3FE | L_E3FE | 0 |  |  | 9 |
 | $E40C | L_E40C | 0 |  |  | 6 |
@@ -500,21 +500,21 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $E537 | L_E537 | 0 |  |  | 4 |
 | $E540 | L_E540 | 0 |  |  | 5 |
 | $E547 | L_E547 | 0 |  |  | 6 |
-| $E553 | L_E553 | 2 |  |  | 1 |
+| $E553 | dict_back_one_record | 2 |  |  | 1 |
 | $E556 | L_E556 | 0 |  |  | 10 |
 | $E567 | L_E567 | 0 |  |  | 4 |
 | $E570 | L_E570 | 0 |  |  | 13 |
 | $E58D | L_E58D | 0 |  |  | 3 |
 | $E595 | L_E595 | 0 |  |  | 4 |
 | $E59B | L_E59B | 0 |  |  | 8 |
-| $E5AA | L_E5AA | 1 |  |  | 5 |
+| $E5AA | browse_reexpand | 1 |  |  | 5 |
 | $E5B4 | L_E5B4 | 0 |  |  | 8 |
 | $E5C3 | L_E5C3 | 0 |  |  | 11 |
 | $E5D9 | L_E5D9 | 0 |  |  | 2 |
 | $E5DB | no_user_word | 2 |  |  | 5 |
 | $E5E5 | next_full_word | 6 |  |  | 16 |
 | $E603 | L_E603 | 0 |  |  | 9 |
-| $E616 | L_E616 | 2 |  |  | 12 |
+| $E616 | copy_stem_to_buffer_a | 2 |  |  | 12 |
 | $E62E | browse_seek_prefix | 2 | Os_mpb |  | 14 |
 | $E649 | L_E649 | 0 |  |  | 4 |
 | $E653 | L_E653 | 0 |  |  | 8 |
@@ -738,7 +738,7 @@ Every label in the source. 'callers' counts CALL instructions that name the labe
 | $EC6C | open_dialog_wf | 4 |  |  | 2 |
 | $EC71 | open_dialog_right | 1 |  |  | 1 |
 | $EC74 | L_EC74 | 0 |  |  | 3 |
-| $EC82 | L_EC82 | 1 | Gn_sop |  | 5 |
+| $EC82 | clear_words_window | 1 | Gn_sop |  | 5 |
 | $EC90 | open_dialog_with_title | 0 |  |  | 1 |
 | $EC91 | L_EC91 | 0 | Gn_sop |  | 7 |
 | $EC9C | L_EC9C | 0 | Gn_sop |  | 10 |

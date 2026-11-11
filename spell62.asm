@@ -36,7 +36,7 @@ ORG $C000
 L_C000:
 ; Spell-Master for the Cambridge Z88 - bank 62 ($3E, SPELL.62). Mostly the QuickEdit application (a text editor with spell checking).
 ; Annotated disassembly made with DZasm; the names, comments and constants are in the DZasm project (spell62.clt). It assembles to bytes IDENTICAL to bank_files/spell62.bin (the original ROM bank with the bank-addressing fix: 7 bytes changed).
-; Names and comments are inferred from what the code does, not original. See NOTES.md for the method, the evidence and what is still unknown.
+; Names and comments are inferred from what the code does, not original. See docs/notes.md for the method, the evidence and what is still unknown.
 ; Hex digits are written with a leading dollar sign; the equates used here are in spell_names.def.
 ; Application entry point (set in the QuickEdit DOR: entry $C000, segment 3 = bank $3E = SPELL.62).
 ; Immediately jumps to qe_start.
@@ -321,7 +321,7 @@ bind_dictionary_bank:
 ; (IX+1),(IX+2) = offset within that bank.
 ; OUT: dict_bank = absolute bank number bound into segment 2, dict_pos = offset.
 ; BANK-ADDRESSING SITE 1 (patched, as patters): the bank is worked out relative to the running bank: ADD A,D / SUB $3E, where D = $38 + index.
-; The ORIGINAL ROM had AND $C0 / OR D (the slot bits of the running bank OR the fixed number), which only works when the eight banks are the top of a slot. See NOTES.md 'Bank addressing'.
+; The ORIGINAL ROM had AND $C0 / OR D (the slot bits of the running bank OR the fixed number), which only works when the eight banks are the top of a slot. See docs/notes.md section 4.
         ld      a,(ix+0)
         srl     a
         srl     a
@@ -577,7 +577,7 @@ L_C383:
 ; The token strings: common groups of letters that the dictionary stores as a single byte ($80 to $FF) to save space.
 ; Each token starts with a letter that has bit 7 set, followed by the rest of its letters ('TION', then 3-letter tokens such as WAY, ITY,
 ; IES, MAN, IAN, ISM, FUL, IAL, ING, then 2-letter tokens). They are not only word endings: AR, OL, BL and so on are used as well.
-; See NOTES.md section 13 for the dictionary format.
+; See docs/notes.md section 2 and docs/dictionary.md for the dictionary format.
         defb    $d4,$49,$4f,$4e
 
 L_C38E:
@@ -1017,7 +1017,7 @@ L_C756:
         ld      b,a
         ld      (cursor_index),a
 L_C774:
-        call    L_DB2E
+        call    split_at_cursor
         jp      c,L_D0D6
         call    store_cursor_line
         jp      c,L_D0D6
@@ -1181,13 +1181,13 @@ cmd_delete_line:
 L_C89D:
         call    is_block_start_line
         jr      c,L_C8A9
-        call    L_E1DC
+        call    remove_start_marker
         jr      z,L_C8B1
         jr      L_C89D
 L_C8A9:
         call    is_block_end_line
         jr      c,L_C8B1
-        call    L_E1F1
+        call    shift_marker_flags
 L_C8B1:
         ld      hl,(next_line_ptr)
         ld      a,h
@@ -1208,7 +1208,7 @@ L_C8B1:
         inc     hl
         ld      (hl),b
         call    take_line_record
-        call    L_D1D7
+        call    markers_line_removed
         jp      L_CA13
 L_C8DC:
         ld      hl,(prev_line_ptr)
@@ -1246,7 +1246,7 @@ L_C915:
         jp      L_C5AF
 cmd_delete_character:
 ; Command handler: 'Delete character' - dispatch code $14
-        call    L_E1FA
+        call    drop_markers_at_cursor
         ld      a,(line_length)
         ld      b,a
         ld      a,(cursor_index)
@@ -1284,7 +1284,7 @@ L_C952:
         ld      (block_start_col),a
         jr      L_C96F
 L_C968:
-        call    L_E1DC
+        call    remove_start_marker
         jr      z,L_C988
         jr      L_C952
 L_C96F:
@@ -1299,7 +1299,7 @@ L_C96F:
         ld      (block_end_col),a
         jr      L_C988
 L_C985:
-        call    L_E1F1
+        call    shift_marker_flags
 L_C988:
         call    clamp_cursor_index
         ld      c,a
@@ -1346,7 +1346,7 @@ L_C9AD:
 L_C9D8:
         ld      a,(line_length)
         ld      (cursor_index),a
-        call    L_E1FA
+        call    drop_markers_at_cursor
         ld      a,(cursor_index)
         cp      $00
         jr      z,L_CA00
@@ -1362,9 +1362,9 @@ L_C9D8:
         dec     (hl)
         ld      a,(hl)
         ld      (cursor_index),a
-        call    L_E1FA
+        call    drop_markers_at_cursor
 L_CA00:
-        call    L_CA49
+        call    join_markers
         ld      a,(edit_flags)
         and     $F1
         or      $08
@@ -1400,9 +1400,10 @@ L_CA3C:
         oz      Os_out
         jp      qe_main_loop
 L_CA43:
-        call    L_CA49
+        call    join_markers
         jp      L_CA13
-L_CA49:
+join_markers:
+; Before the next line is joined onto the cursor line: a block marker on the next line moves up to this line, its column increased by line_length.
         ld      a,(next_line_bank)
         ld      b,a
         ld      c,$01
@@ -1439,7 +1440,7 @@ L_CA73:
         add     a,b
         ld      (block_end_col),a
 L_CA91:
-        call    L_D1D7
+        call    markers_line_removed
         ld      hl,(next_line_ptr)
         ld      a,(hl)
         sub     $07
@@ -1863,7 +1864,7 @@ L_CD97:
         call    alloc_line_record
         jp      c,show_no_room_error
         push    hl
-        call    L_D20C
+        call    markers_line_inserted
         ld      a,(marker_flags)
         and     $03
         jr      z,L_CDD4
@@ -2003,7 +2004,7 @@ L_CE78:
         add     a,h
         ld      (block_end_col),a
 L_CE99:
-        call    L_D1D7
+        call    markers_line_removed
         ld      a,(line_length)
         ld      c,a
         ld      b,$00
@@ -2288,7 +2289,7 @@ handle_os_error:
         cp      RC_Draw
         jr      z,L_D09F
         cp      RC_Quit
-        jr      z,L_D0B4
+        jr      z,quit_quickedit
         pop     af
         ret
 L_D09F:
@@ -2301,7 +2302,8 @@ L_D09F:
         call    redraw_screen
         pop     af
         ret
-L_D0B4:
+quit_quickedit:
+; RC_Quit: closes the three memory pools and leaves QuickEdit with OS_Bye.
         ld      ix,(pool_buffers)
         oz      Os_mcl
         ld      ix,(pool_main)
@@ -2311,6 +2313,7 @@ L_D0B4:
         ld      a,$00
         oz      Os_bye
 L_D0CA:
+; $D0CA-$D0D5 follow OS_Bye and nothing jumps to them, so they are never run (tools/reach.py). They look like the tail of a backwards scan.
         ld      a,c
         cp      $00
         jr      z,L_D0D5
@@ -2348,7 +2351,7 @@ draw_status_line:
         oz      Gn_sop
         ld      hl,(cursor_line)
         inc     hl
-        call    L_E80D
+        call    print_decimal
         ld      hl,str_status_row7
         oz      Gn_sop
         ld      a,(edit_flags)
@@ -2446,7 +2449,8 @@ cmd_print_out_text:
         ld      a,$0A
         call    far_call_bank63
         jp      return_to_editor
-L_D1D7:
+markers_line_removed:
+; A line has been removed above or at a marker: block_start_line and block_end_line after the cursor line go down by one.
         ld      a,(marker_flags)
         and     $01
         ret     z
@@ -2479,7 +2483,8 @@ L_D207:
         dec     hl
         ld      (block_end_line),hl
         ret
-L_D20C:
+markers_line_inserted:
+; A line has been inserted at the cursor line (word wrap): block_start_line and block_end_line after the cursor line go up by one.
         ld      a,(marker_flags)
         and     $01
         ret     z
@@ -2599,7 +2604,7 @@ cmd_check_marked_block:
         jp      z,qe_main_loop
         call    check_free_memory
         jp      c,L_D0D6
-        call    L_E171
+        call    order_block_markers
         ld      hl,L_D9A8
         oz      Gn_sop
         ld      hl,(cursor_line)
@@ -2659,7 +2664,7 @@ L_D325:
         ld      a,(edit_flags)
         and     $BF
         ld      (edit_flags),a
-        call    L_D506
+        call    open_correction_menu
         call    redefine_window1
         ld      a,(edit_flags)
         and     '@'
@@ -2761,7 +2766,7 @@ L_D401:
         ld      a,(edit_flags)
         and     $BF
         ld      (edit_flags),a
-        call    L_D506
+        call    open_correction_menu
         call    redefine_window1
         ld      a,(edit_flags)
         and     '@'
@@ -2811,7 +2816,8 @@ L_D467:
 L_D490:
         call    swap_word_lists
         jp      L_C5AF
-L_D496:
+show_check_context:
+; In the checking window: clears it and prints the part of the line around the word being checked, as much as fits in cursor_col_limit.
         ld      a,(line_buffer_bank)
         ld      b,a
         ld      c,$02
@@ -2877,7 +2883,8 @@ L_D4FF:
         ld      hl,L_D983
         oz      Gn_sop
         ret
-L_D506:
+open_correction_menu:
+; Shows the checking window and the 'Correction menu' dialog with its five options (str at $D9B2).
         ld      hl,dict_target_length
         inc     (hl)
         inc     (hl)
@@ -2895,7 +2902,7 @@ L_D506:
         ld      a,' '
         oz      Os_out
         oz      Os_out
-        call    L_D496
+        call    show_check_context
         oz      Gn_nln
         ld      hl,L_DA55
         call    open_dialog_default
@@ -2909,7 +2916,7 @@ L_D542:
         ld      a,' '
         oz      Os_out
         oz      Os_out
-        call    L_D496
+        call    show_check_context
         oz      Gn_nln
 L_D557:
         ld      hl,L_DA55
@@ -2922,15 +2929,15 @@ L_D557:
         ld      a,$00
         ld      (wf_menu_sel),a
         ld      c,'#'
-        call    L_DABC
+        call    mark_menu_line
 L_D575:
         oz      Os_in
-        call    c,L_DADE
+        call    c,quit_on_rc_quit
         jr      c,L_D575
         cp      $00
         jr      nz,L_D5CA
         oz      Os_in
-        call    c,L_DADE
+        call    c,quit_on_rc_quit
         jr      c,L_D575
         cp      $1B
         jr      nz,L_D597
@@ -2946,7 +2953,7 @@ L_D597:
         jr      nz,L_D575
         ld      a,(wf_menu_sel)
         ld      c,'#'
-        call    L_DABC
+        call    mark_menu_line
         dec     b
         jp      p,L_D5AD
         ld      b,$04
@@ -2954,12 +2961,12 @@ L_D5AD:
         ld      a,b
         ld      (wf_menu_sel),a
         ld      c,'#'
-        call    L_DABC
+        call    mark_menu_line
         jr      L_D575
 L_D5B8:
         ld      a,(wf_menu_sel)
         ld      c,'#'
-        call    L_DABC
+        call    mark_menu_line
         inc     b
         ld      a,b
         cp      $05
@@ -3082,7 +3089,7 @@ L_D692:
         oz      Gn_sip
         jr      nc,L_D6AE
         cp      'g'
-        jp      z,L_D0B4
+        jp      z,quit_quickedit
         cp      'f'
         jr      z,change_word
         jr      L_D6B6
@@ -3510,7 +3517,7 @@ cmd_check_this_word_or_escape:
         ld      a,(edit_flags)
         and     $BF
         ld      (edit_flags),a
-        call    L_D506
+        call    open_correction_menu
         call    redefine_window1
         ld      a,(scan_chars_left)
         ld      b,a
@@ -3626,7 +3633,8 @@ L_DAA7:
         ld      hl,(saved_word_ptr)
         oz      Os_mfr
         ret
-L_DABC:
+mark_menu_line:
+; In: A = menu line, C = character. Prints C at the start of that line in reverse video: used to move the '#' pointer in the Correction menu.
         ld      b,a
         ld      hl,str_cursor_to_prefix
         oz      Gn_sop
@@ -3645,12 +3653,13 @@ L_DABC:
 L_DAD6:
         defb    $01,$32,$2b,$52,$01,$32,$45,$00
 
-L_DADE:
+quit_on_rc_quit:
+; After an OS_In error: RC_Quit ('g') leaves QuickEdit; any other error returns.
         push    af
         cp      'g'
         jr      nz,L_DAE7
         pop     af
-        jp      L_D0B4
+        jp      quit_quickedit
 L_DAE7:
         cp      'f'
         jr      z,L_DAED
@@ -3677,10 +3686,11 @@ cmd_split_line:
         sub     b
         jp      z,qe_main_loop
         jp      c,qe_main_loop
-        call    L_DB2E
+        call    split_at_cursor
         jp      c,L_D0D6
         jp      L_CA13
-L_DB2E:
+split_at_cursor:
+; Moves the text from the cursor to the end of the line into a new line record after the cursor line (Split line, Enter, block commands), moving markers to match.
         call    clamp_cursor_index
         ld      b,a
         ld      a,(line_length)
@@ -3707,12 +3717,12 @@ L_DB52:
         ld      (next_line_ptr),hl
         ld      hl,(block_start_line)
         ld      a,(block_start_col)
-        call    L_DB85
+        call    compare_marker_with_cursor
         ld      (block_start_line),hl
         ld      (block_start_col),a
         ld      hl,(block_end_line)
         ld      a,(block_end_col)
-        call    L_DB85
+        call    compare_marker_with_cursor
         ld      (block_end_line),hl
         ld      (block_end_col),a
         ld      a,(cursor_index)
@@ -3720,7 +3730,8 @@ L_DB52:
         scf
         ccf
         ret
-L_DB85:
+compare_marker_with_cursor:
+; In: HL = a marker's line, A = its column. Used by split_at_cursor to decide whether the marker is after the split point.
         ld      d,a
         push    hl
         ld      bc,(cursor_line)
@@ -4081,7 +4092,8 @@ L_DE02:
         jr      nc,L_DE02
 L_DE12:
         call    show_no_room_error
-L_DE15:
+guess_cancelled:
+; Guess correct word ended without a choice: sets edit_flags bit 6, frees the guess list, rebinds the line buffer, A = 1.
         ld      a,(edit_flags)
         or      '@'
         ld      (edit_flags),a
@@ -4249,12 +4261,12 @@ L_DF3B:
         pop     hl
 L_DF49:
         oz      Os_in
-        call    c,L_E04F
+        call    c,guess_os_error
         jr      c,L_DF49
         cp      $00
         jr      nz,L_DFB7
         oz      Os_in
-        call    c,L_E04F
+        call    c,guess_os_error
         jr      c,L_DF49
         cp      $FF
         jr      z,L_DF72
@@ -4265,7 +4277,7 @@ L_DF49:
         cp      $1B
         jr      nz,L_DF49
         call    dialog_window_right
-        jp      L_DE15
+        jp      guess_cancelled
 L_DF72:
         ld      de,(temp_ptr)
         ld      a,d
@@ -4334,12 +4346,12 @@ L_DFDC:
         jp      nc,L_DF49
         push    af
         call    dialog_window_right
-        call    L_DE15
+        call    guess_cancelled
         pop     af
         ret
 L_DFEF:
         call    dialog_window_right
-        jp      L_DE15
+        jp      guess_cancelled
 free_guess_list:
 ; Frees every record of the guess list and clears guess_list_ptr.
         ld      hl,(guess_list_ptr)
@@ -4377,14 +4389,15 @@ free_guess_list:
 L_E035:
         ld      hl,L_E03E
         call    open_dialog_right
-        jp      L_DE15
+        jp      guess_cancelled
 
 L_E03E:
         defm    "No "
 L_E041:
         defm    "Guesses found"
         defb    $00
-L_E04F:
+guess_os_error:
+; OS_In error while the guesses are shown: RC_Quit leaves QuickEdit, RC_Draw redraws the guess list.
         push    af
         cp      'g'
         jr      z,L_E05D
@@ -4395,7 +4408,7 @@ L_E04F:
         jp      L_DEAE
 L_E05D:
         pop     af
-        jp      L_D0B4
+        jp      quit_quickedit
 L_E061:
         pop     af
         ret
@@ -4575,7 +4588,8 @@ cmd_remove_markers:
         ld      a,$00
         ld      (marker_flags),a
         jp      L_CA13
-L_E171:
+order_block_markers:
+; If both markers are set and the end comes before the start, swaps them (lines and columns). Same as order_block_markers in bank 63.
         ld      a,(marker_flags)
         and     $02
         ret     z
@@ -4606,10 +4620,11 @@ L_E18E:
 is_block_start_line:
 ; Carry clear if the start marker is set and is on the cursor line; carry set otherwise. BC preserved.
         push    bc
-        call    L_E1B1
+        call    test_block_start_line
         pop     bc
         ret
-L_E1B1:
+test_block_start_line:
+; is_block_start_line without preserving BC.
         ld      a,(marker_flags)
         cp      $01
         ret     c
@@ -4631,17 +4646,19 @@ L_E1C9:
 is_block_end_line:
 ; Carry clear if both markers are set and the end marker is on the cursor line; carry set otherwise. BC preserved.
         push    bc
-        call    L_E1D1
+        call    test_block_end_line
         pop     bc
         ret
-L_E1D1:
+test_block_end_line:
+; is_block_end_line without preserving BC.
         ld      a,(marker_flags)
         cp      $03
         ret     c
         ld      hl,(block_end_line)
         jr      L_E1BA
-L_E1DC:
-        call    L_E1F1
+remove_start_marker:
+; Removes the start marker: the end marker (if set) becomes the start marker. Z if no marker is left.
+        call    shift_marker_flags
         ret     z
         ld      hl,(block_end_line)
         ld      (block_start_line),hl
@@ -4650,12 +4667,14 @@ L_E1DC:
         ld      a,$01
         cp      $00
         ret
-L_E1F1:
+shift_marker_flags:
+; marker_flags shifted right by one bit (end marker flag becomes start marker flag).
         ld      a,(marker_flags)
         srl     a
         ld      (marker_flags),a
         ret
-L_E1FA:
+drop_markers_at_cursor:
+; Removes any block marker that is exactly at the cursor (used when the character there is deleted).
         ld      a,(marker_flags)
         and     $01
         ret     z
@@ -4667,7 +4686,7 @@ L_E200:
         ld      a,(block_start_col)
         cp      b
         jr      nz,L_E215
-        call    L_E1DC
+        call    remove_start_marker
         ret     z
         jr      L_E200
 L_E215:
@@ -4677,16 +4696,16 @@ L_E215:
         ld      b,a
         ld      a,(block_end_col)
         cp      b
-        call    z,L_E1F1
+        call    z,shift_marker_flags
         ret
 cmd_move_marked_block:
 ; Command handler: 'Move marked block' - dispatch code $21
-        call    L_E249
+        call    check_block_marked
         jr      c,L_E233
         jp      L_E62C
 cmd_copy_marked_block:
 ; Command handler: 'Copy marked block' - dispatch code $1F
-        call    L_E249
+        call    check_block_marked
         jp      nc,L_CA13
 L_E233:
         jp      nz,L_CA13
@@ -4701,7 +4720,8 @@ L_E23D:
         ld      a,$00
         cp      $01
         ret
-L_E249:
+check_block_marked:
+; Carry set (and Z) if no block is marked (end marker not set); otherwise continues with the block command.
         ld      a,(marker_flags)
         and     $02
         jr      nz,L_E256
@@ -4713,12 +4733,12 @@ L_E250:
 L_E256:
         call    check_free_memory
         jr      c,L_E250
-        call    L_E171
+        call    order_block_markers
         ld      bc,(cursor_line)
         ld      hl,(block_start_line)
         ld      a,(block_start_col)
         ld      d,a
-        call    L_E5A7
+        call    is_at_cursor
         jr      c,L_E272
         jr      nz,L_E280
         jr      z,L_E250
@@ -4726,14 +4746,14 @@ L_E272:
         ld      hl,(block_end_line)
         ld      a,(block_end_col)
         ld      d,a
-        call    L_E5A7
+        call    is_at_cursor
         jr      nc,L_E250
         jr      L_E28E
 L_E280:
         ld      hl,(block_end_line)
         ld      a,(block_end_col)
         ld      d,a
-        call    L_E5A7
+        call    is_at_cursor
         jr      c,L_E250
         jr      z,L_E250
 L_E28E:
@@ -4772,7 +4792,7 @@ L_E2BF:
         ld      (prev_line_bank),a
         jp      L_E2F5
 L_E2DD:
-        call    L_DB2E
+        call    split_at_cursor
         jp      c,L_E23D
         call    store_cursor_line
         jp      c,L_E23D
@@ -4835,7 +4855,7 @@ L_E35B:
         jp      c,L_E5A3
         call    store_cursor_line
         jp      c,L_E5A3
-        call    L_E4DC
+        call    markers_after_new_line
         ld      hl,(line_rec_ptr)
         ld      a,(line_rec_bank)
         ld      (prev_line_ptr),hl
@@ -4862,7 +4882,7 @@ L_E379:
         jp      c,L_E5A3
         call    store_cursor_line
         jp      c,L_E5A3
-        call    L_E4DC
+        call    markers_after_new_line
         ld      hl,(line_rec_ptr)
         ld      a,(line_rec_bank)
         ld      (prev_line_ptr),hl
@@ -4889,7 +4909,7 @@ L_E3E2:
         jp      c,L_E5A3
         call    store_cursor_line
         jp      c,L_E5A3
-        call    L_E4DC
+        call    markers_after_new_line
         call    inc_cursor_line
 L_E3F4:
         ld      a,(wf_menu_sel)
@@ -4897,7 +4917,7 @@ L_E3F4:
         jr      nz,L_E3FE
         call    dec_cursor_line
 L_E3FE:
-        call    L_E541
+        call    join_next_line
         call    store_cursor_line
         jp      c,L_E5A3
         pop     bc
@@ -4928,7 +4948,7 @@ L_E431:
         ld      a,(wf_menu_sel)
         cp      $01
         jr      z,L_E43B
-        call    L_E541
+        call    join_next_line
 L_E43B:
         pop     hl
         ld      (top_line),hl
@@ -4995,7 +5015,7 @@ L_E486:
 L_E4B6:
         call    store_cursor_line
         jp      c,L_E5A3
-        call    L_E4DC
+        call    markers_after_new_line
         call    inc_cursor_line
         jp      L_E3F4
 L_E4C5:
@@ -5010,7 +5030,8 @@ L_E4CB:
         or      l
         jr      nz,L_E4CB
         jp      L_E318
-L_E4DC:
+markers_after_new_line:
+; As markers_line_inserted, used by the block commands.
         ld      bc,(cursor_line)
         ld      hl,(block_start_line)
         ld      a,b
@@ -5036,7 +5057,8 @@ L_E4FC:
         inc     hl
         ld      (block_end_line),hl
         ret
-L_E501:
+join_markers_b:
+; As join_markers, used by join_next_line.
         ld      hl,(block_start_line)
         ld      bc,(cursor_line)
         inc     bc
@@ -5075,9 +5097,10 @@ L_E53C:
         dec     hl
         ld      (block_end_line),hl
         ret
-L_E541:
+join_next_line:
+; Takes the line at line_rec as the cursor line and appends the next line to it if the result stays below 240 characters, moving markers to match.
         call    take_line_record
-        call    L_E501
+        call    join_markers_b
         ld      hl,(next_line_ptr)
         ld      a,h
         or      l
@@ -5131,7 +5154,8 @@ L_E583:
 L_E5A3:
         pop     hl
         jp      L_E23D
-L_E5A7:
+is_at_cursor:
+; Z if line HL equals line BC and column D equals cursor_index.
         ld      a,h
         cp      b
         ret     nz
@@ -5175,7 +5199,7 @@ cmd_delete_marked_block:
         ld      a,(marker_flags)
         and     $02
         jp      z,L_E236
-        call    L_E171
+        call    order_block_markers
         ld      hl,(block_end_line)
         ld      bc,(block_start_line)
         scf
@@ -5194,7 +5218,7 @@ L_E602:
         oz      Gn_sop
 L_E60E:
         oz      Os_in
-        call    c,L_E7ED
+        call    c,delete_block_os_error
         jr      c,L_E60E
         cp      $00
         jr      z,L_E60E
@@ -5422,7 +5446,8 @@ L_E7CB:
 L_E7D3:
         defm    $0a, $01, "2JCAre you sure ? (Y/N)", $00
 
-L_E7ED:
+delete_block_os_error:
+; OS_In error during Delete marked block's 'Are you sure' question: RC_Quit leaves, RC_Draw asks again.
         push    af
         cp      'g'
         jr      z,L_E7F8
@@ -5433,7 +5458,7 @@ L_E7ED:
 L_E7F8:
         pop     af
         pop     hl
-        jp      L_D0B4
+        jp      quit_quickedit
 L_E7FD:
         pop     af
         pop     hl
@@ -5444,7 +5469,8 @@ cmd_information:
         call    far_call_bank63
         call    redefine_window1
         jp      L_CA13
-L_E80D:
+print_decimal:
+; Prints HL in decimal (leading zeros suppressed), using the table of powers of ten at $E842. Same as print_decimal in bank 63. Used for the line number in the status panel.
         ld      (temp_ptr),hl
         ld      d,$00
         ld      hl,L_E842
@@ -5668,7 +5694,7 @@ L_EC73:
         call    input_to_buffer_a
         jr      nc,L_EC89
         cp      'g'
-        jp      z,L_D0B4
+        jp      z,quit_quickedit
         cp      'f'
         jr      z,save_or_export
         jr      L_EC92
@@ -5876,7 +5902,7 @@ L_EE02:
         cp      'f'
         jr      z,cmd_load_text
         cp      'g'
-        jp      z,L_D0B4
+        jp      z,quit_quickedit
 L_EE16:
         cp      $1B
         jp      z,return_to_editor
@@ -6082,7 +6108,7 @@ L_EFB3:
         jp      return_to_editor
 L_EFBE:
         cp      'g'
-        jp      z,L_D0B4
+        jp      z,quit_quickedit
         jp      return_to_editor
 
 
@@ -6259,7 +6285,7 @@ L_F177:
         call    input_to_buffer_a
         jr      nc,L_F18B
         cp      'g'
-        jp      z,L_D0B4
+        jp      z,quit_quickedit
         cp      'f'
         jr      z,L_F16F
 L_F18B:
@@ -6282,7 +6308,7 @@ L_F198:
         ld      hl,(line_rec_ptr)
         ld      (next_line_bank),a
         ld      (next_line_ptr),hl
-        call    L_E171
+        call    order_block_markers
         ld      hl,(cursor_line)
         ld      bc,(block_start_line)
         scf
@@ -6394,7 +6420,7 @@ open_output_file:
         oz      Gn_sop
 L_F29F:
         oz      Os_in
-        call    c,L_F2C9
+        call    c,save_os_error
         jr      c,L_F29F
         cp      $00
         jr      z,L_F29F
@@ -6414,10 +6440,11 @@ L_F2B0:
 L_F2C7:
         scf
         ret
-L_F2C9:
+save_os_error:
+; OS_In error during the 'Overwrite text?' question: RC_Quit leaves, RC_Draw redraws the question.
         push    af
         cp      'g'
-        jp      z,L_D0B4
+        jp      z,quit_quickedit
         cp      'f'
         jr      nz,L_F2DF
         ld      hl,L_F153
@@ -6455,7 +6482,7 @@ L_F33F:
         oz      Gn_sip
         jr      nc,L_F35D
         cp      'g'
-        jp      z,L_D0B4
+        jp      z,quit_quickedit
         cp      'f'
         jr      z,cmd_change_name
 L_F35D:
@@ -6532,14 +6559,14 @@ L_F3E0:
         call    toggle_reverse
 L_F3E9:
         oz      Os_in
-        call    c,L_F586
+        call    c,browse_os_error
         jr      c,L_F3E9
         cp      $00
         jr      nz,L_F42F
         ld      a,$00
         ld      (wf_menu_sel),a
         oz      Os_in
-        call    c,L_F586
+        call    c,browse_os_error
         jr      c,L_F3E9
         cp      $FF
         jr      nz,L_F410
@@ -6752,10 +6779,11 @@ L_F579:
         dec     a
         jr      nz,L_F579
         ret
-L_F586:
+browse_os_error:
+; OS_In error in Browse: RC_Quit leaves, RC_Draw redraws the Browse window.
         push    af
         cp      'g'
-        jp      z,L_D0B4
+        jp      z,quit_quickedit
         cp      'f'
         jr      nz,L_F59F
         ld      hl,L_F880
@@ -6815,7 +6843,7 @@ L_F5DF:
 browse_next_word:
 ; Moves to the next word for Browse: the next ending of the current stem, or the next record, with any user dictionary word that falls in between (L_F9DF).
 ; browse_pos keeps the dictionary position of the current word. $1FB3 bit 1 is set while the current word comes from the user dictionary.
-        call    L_F7B9
+        call    copy_stem_to_buffer_a
         ld      a,(dict_word_flags)
         cp      $00
         jr      z,L_F60B
@@ -6842,7 +6870,7 @@ L_F619:
         ld      (dict_word_flags),a
         call    next_full_word
         jr      c,L_F635
-        call    L_F9DF
+        call    browse_user_next
         jr      c,L_F62E
         ld      a,$00
         ld      (dict_word_flags),a
@@ -6884,7 +6912,7 @@ L_F663:
         jr      L_F619
 browse_prev_word:
 ; Moves to the previous word for Browse (previous ending, or back one record from browse_pos), with any user dictionary word in between (L_FADE).
-        call    L_F7B9
+        call    copy_stem_to_buffer_a
         ld      a,(dict_word_flags)
         cp      $00
         jr      z,L_F6AB
@@ -6915,19 +6943,19 @@ L_F6A5:
 L_F6AB:
         ld      hl,(browse_pos)
         ld      (dict_pos),hl
-        call    L_F6F6
+        call    dict_back_one_record
         ld      a,(misc_flags)
         and     $02
         jr      nz,L_F6BE
-        call    L_F6F6
+        call    dict_back_one_record
 L_F6BE:
-        call    L_F74D
+        call    browse_reexpand
         ld      a,$00
         ld      (dict_word_flags),a
         call    next_full_word
         ld      hl,(dict_pos)
         ld      (browse_pos),hl
-        call    L_FADE
+        call    browse_user_prev
         jr      c,L_F6DA
         ld      a,$00
         ld      (dict_word_flags),a
@@ -6950,7 +6978,8 @@ L_F6EA:
         jr      c,L_F6EA
         ld      (dict_ending_ptr),hl
         jp      L_F5FC
-L_F6F6:
+dict_back_one_record:
+; Moves dict_pos back to the start of the previous dictionary record (the first byte below $10). Carry set if that is the start of the section ($0F).
         ld      hl,(dict_pos)
 L_F6F9:
         dec     hl
@@ -7000,7 +7029,8 @@ L_F73E:
         ld      (dict_pos),hl
         ld      (browse_pos),hl
         ret
-L_F74D:
+browse_reexpand:
+; Records are packed against the word before them, so to show the previous word Browse goes back to the start of the section and reads forward until it reaches browse_pos again.
         ld      hl,(dict_pos)
         ld      (browse_pos),hl
         ld      a,(hl)
@@ -7064,7 +7094,8 @@ L_F7A6:
         ld      (dict_stem_length),a
         pop     af
         ret
-L_F7B9:
+copy_stem_to_buffer_a:
+; Copies the current word's stem (buffer C - 2, dict_stem_length letters) to buffer A and sets dict_target_length to its length.
         ld      hl,(ptr_buffer_c)
         dec     hl
         dec     hl
@@ -7394,7 +7425,8 @@ L_F9C7:
         dec     hl
         ld      (hl),a
         ret
-L_F9DF:
+browse_user_next:
+; Browse: finds a user dictionary word that comes between the current dictionary word and the next one. Carry set if there is none (or no user dictionary).
         ld      a,(misc_flags)
         and     $FD
         ld      (misc_flags),a
@@ -7405,7 +7437,7 @@ L_F9DF:
         scf
         ret
 L_F9F0:
-        call    L_FB53
+        call    compare_word_with_stem
         jp      c,L_FA4B
         ld      hl,(ptr_buffer_a)
         ld      a,(hl)
@@ -7524,7 +7556,8 @@ L_FAC7:
         ld      c,$01
         oz      Os_mpb
         jp      L_FA1A
-L_FADE:
+browse_user_prev:
+; Browse: as browse_user_next, going backwards.
         ld      a,(misc_flags)
         and     $FD
         ld      (misc_flags),a
@@ -7535,7 +7568,7 @@ L_FADE:
         scf
         ret
 L_FAEF:
-        call    L_FB53
+        call    compare_word_with_stem
         jr      z,L_FAC5
         jp      nc,L_FA77
         ld      a,'A'
@@ -7580,7 +7613,8 @@ L_FB2F:
         call    word_list_compare
         jr      nc,L_FB2D
         jp      L_FA1A
-L_FB53:
+compare_word_with_stem:
+; Compares the current dictionary word (buffer C - 2, dict_stem_length) with buffer A (dict_target_length): Z = equal, NZ at the first difference.
         ld      de,(ptr_buffer_c)
         dec     de
         dec     de

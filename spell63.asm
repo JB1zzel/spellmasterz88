@@ -40,7 +40,7 @@ QuickEdit_entry:
 ; Spell-Master for the Cambridge Z88 - bank 63 ($3F, SPELL.63). Card header, front DOR, both application DORs, QuickEdit menu text,
 ; the WordFinder application and the routines QuickEdit calls through the far-call table.
 ; Annotated disassembly made with DZasm (project spell63.clt). It assembles to bytes IDENTICAL to bank_files/spell63.bin (the original ROM bank with the bank-addressing fix: 7 bytes changed).
-; Offsets $0000-$003A and $0196-$01D0 are the application DORs. Names and comments are inferred, not original. See NOTES.md.
+; Offsets $0000-$003A and $0196-$01D0 are the application DORs. Names and comments are inferred, not original. See docs/notes.md.
         defb    $00
 
 applDor_QuickEdit:
@@ -99,6 +99,7 @@ L_C06E:
         ret
 skip_to_next_letter_group:
 ; Copy of bank 62 skip_to_next_letter_group.
+; Only the unreachable far_call_5_unused code uses this copy, so in practice it is never run (tools/reach.py).
         ld      hl,(dict_pos)
 L_C073:
         ld      a,(hl)
@@ -326,17 +327,17 @@ wf_show_menu:
         ld      a,$00
         ld      (wf_menu_sel),a
         ld      c,'('
-        call    L_C777
+        call    mark_menu_line
 wf_menu_loop:
 ; WordFinder menu loop: reads keys. Keys 1 to 4 choose an option, Cursor up/down moves wf_menu_sel,
 ; Enter runs the selected option, Escape frees the pools and exits (OS_Bye).
         oz      Os_in
-        call    c,L_C312
+        call    c,wf_os_error
         jr      c,wf_menu_loop
         cp      $00
         jr      nz,wf_menu_key
         oz      Os_in
-        call    c,L_C312
+        call    c,wf_os_error
         jr      c,wf_menu_loop
         cp      $1B
         jr      z,L_C2B1
@@ -344,7 +345,7 @@ wf_menu_loop:
         jr      nz,L_C291
         ld      a,(wf_menu_sel)
         ld      c,'('
-        call    L_C777
+        call    mark_menu_line
         dec     b
         jp      p,L_C2A5
         ld      b,$03
@@ -354,7 +355,7 @@ L_C291:
         jr      nz,wf_menu_loop
         ld      a,(wf_menu_sel)
         ld      c,'('
-        call    L_C777
+        call    mark_menu_line
         inc     b
         ld      a,b
         cp      $04
@@ -363,7 +364,7 @@ L_C291:
 L_C2A5:
         ld      a,b
         ld      c,'('
-        call    L_C777
+        call    mark_menu_line
         ld      a,b
         ld      (wf_menu_sel),a
         jr      wf_menu_loop
@@ -418,7 +419,8 @@ L_C308:
 L_C30E:
         ld      a,$07
         oz      Os_bye
-L_C312:
+wf_os_error:
+; OS_In error in the WordFinder menu: RC_Draw redraws the menu, RC_Quit leaves (falls into wf_quit).
         push    af
         cp      'f'
         jr      z,L_C334
@@ -539,7 +541,7 @@ L_C448:
         jr      c,L_C469
         cp      $1B
         jr      nz,L_C469
-        call    L_EC82
+        call    clear_words_window
         scf
         ret
 L_C469:
@@ -936,7 +938,8 @@ L_C75C:
         defb    $22,$21,$3a,$20,$00,$fe,$27,$c8
         defb    $e6,$df,$fe,$41,$d8,$fe,$5a,$28
         defb    $01,$d0,$bf,$c9
-L_C777:
+mark_menu_line:
+; Same as mark_menu_line in bank 62: moves the pointer in the WordFinder menu.
         ld      b,a
         ld      hl,str_cursor_to_prefix_b
         oz      Gn_sop
@@ -1294,16 +1297,14 @@ reverse_off:
 
 str_reverse_off:
         defb    $01,$32,$2d
+
 L_C9F1:
-        ld      d,d
-        nop
+        defb    $52,$00
 str_reverse_on:
-        ld      bc,$2B32
-        ld      d,d
-        nop
+        defb    $01,$32,$2b,$52,$00
 str_cursor_to_prefix:
-        ld      bc,$4033
-        nop
+        defb    $01
+        defb    $33,$40,$00
 order_block_markers:
 ; Put the block markers in order: if both markers are set and the end comes before the start, swap start and end.
 ; marker_flags bit 0 = start set, bit 1 = end set; the markers are a line number plus a column.
@@ -1341,10 +1342,10 @@ highlight_block_on_row:
         ret     z
         cp      $03
         jr      nz,L_CA44
-        call    L_CAD6
+        call    is_end_marker_line
         ret     c
 L_CA44:
-        call    L_CACF
+        call    is_start_marker_line
         jr      nc,L_CA67
         ld      a,(marker_flags)
         and     $02
@@ -1394,7 +1395,7 @@ L_CA93:
         oz      Os_out
         jp      reverse_off
 L_CAA5:
-        call    L_CAD6
+        call    is_end_marker_line
         jr      nz,L_CAC0
         ld      a,(block_end_col)
         sub     c
@@ -1419,12 +1420,14 @@ L_CAC0:
 
 str_toggle_over_n:
         defb    $01,$32,$41,$00
-L_CACF:
+is_start_marker_line:
+; Z if block_start_line equals cursor_line. HL and BC preserved.
         push    hl
         push    bc
         ld      hl,(block_start_line)
         jr      L_CADB
-L_CAD6:
+is_end_marker_line:
+; Z if block_end_line equals cursor_line. HL and BC preserved.
         push    hl
         push    bc
         ld      hl,(block_end_line)
@@ -1439,7 +1442,8 @@ L_CAE5:
         pop     bc
         pop     hl
         ret
-L_CAE8:
+place_cursor:
+; Same as place_cursor in bank 62: cursor to column min(cursor_col_limit, cursor_index), row cursor_row.
         ld      hl,str_cursor_to_prefix
         oz      Gn_sop
         ld      a,(cursor_col_limit)
@@ -1536,23 +1540,20 @@ L_CB52:
         defb    $45,$d3,$45,$d4,$41,$cc,$4c,$d2
         defb    $4f,$c3,$45,$c4,$45,$d3,$49,$cc
         defb    $41
-L_CC0A:
-        call    L_D645
-        ld      b,l
-L_CC0E:
-        push    de
-        ld      d,e
-        adc     a,'I'
-        ret
 
+L_CC0A:
+        defb    $cd,$45,$d6,$45
+L_CC0E:
+        defb    $d5,$53,$ce,$49
+        defb    $c9
         defb    $41,$ce,$44,$c5,$54,$d3,$53,$d4
         defb    $4f,$ce,$41,$cf,$55,$c3,$48,$d4
         defb    $52,$c7,$45,$d0,$45,$c5,$4c,$c9
         defb    $4c,$cc,$4f,$ce,$53,$ce,$43,$cd
         defb    $41,$c3,$41
-L_CC36:
-        jp      L_D454
 
+L_CC36:
+        defb    $c3,$54,$d4
         defb    $48,$c8,$45,$cc,$59,$c4,$49,$cf
         defb    $4c,$d5,$52,$c1,$43,$cd,$49,$cf
         defb    $4f,$c5,$41,$c3,$4b,$c1,$53,$d2
@@ -1820,33 +1821,32 @@ L_CF64:
 L_CF6D:
         defb    $4e,$6f,$6e
 L_CF70:
-        ld      h,l
-        nop
+        defm    "e", $00
 
 L_CF72:
         defm    "Information"
-        nop
+        defb    $00
 L_CF7E:
-        ld      bc,$5832
-        inc     sp
-        nop
+        defm    $01, "2X3", $00
+
+; $CF83-$CF8A: pushes AF and BC and prints A as two hex digits (print_hex_byte). Nothing calls it: probably left from debugging.
         push    af
         push    bc
-        call    L_CF8B
+        call    print_hex_byte
         pop     bc
         pop     af
         ret
-L_CF8B:
+print_hex_byte:
         ld      b,a
 L_CF8C:
         srl     a
         srl     a
         srl     a
         srl     a
-        call    L_CF9A
+        call    print_hex_digit
         ld      a,b
         and     $0F
-L_CF9A:
+print_hex_digit:
         add     a,'0'
         cp      ':'
         jr      c,L_CFA2
@@ -1909,7 +1909,7 @@ far_call_dispatch:
         ld      b,(hl)
         ld      h,b
         ld      l,a
-        call    L_D007
+        call    call_hl
         push    af
         push    hl
         push    bc
@@ -1919,7 +1919,8 @@ far_call_dispatch:
         ld      c,$01
         oz      Os_mpb
         jp      $7F8B
-L_D007:
+call_hl:
+; JP (HL): far_call_dispatch does CALL call_hl to call the routine whose address is in HL.
         jp      (hl)
 
 far_call_table:
@@ -2014,7 +2015,7 @@ L_D068:
         ld      a,(marker_flags)
         and     $03
         jr      z,L_D0B3
-        call    L_D0CF
+        call    is_block_start_line
         jr      c,L_D09C
         ld      a,(cursor_index)
         ld      b,a
@@ -2027,7 +2028,7 @@ L_D068:
         add     a,d
         ld      (block_start_col),a
 L_D09C:
-        call    L_D0EF
+        call    is_block_end_line
         jr      c,L_D0B3
         ld      a,(cursor_index)
         ld      b,a
@@ -2059,12 +2060,13 @@ L_D0BE:
         ld      (cursor_index),a
         ld      a,$02
         ret
-L_D0CF:
+is_block_start_line:
+; Same as is_block_start_line in bank 62.
         push    bc
-        call    L_D0D5
+        call    test_block_start_line
         pop     bc
         ret
-L_D0D5:
+test_block_start_line:
         ld      a,(marker_flags)
         cp      $01
         ret     c
@@ -2083,12 +2085,13 @@ L_D0DE:
 L_D0ED:
         scf
         ret
-L_D0EF:
+is_block_end_line:
+; Same as is_block_end_line in bank 62.
         push    bc
-        call    L_D0F5
+        call    test_block_end_line
         pop     bc
         ret
-L_D0F5:
+test_block_end_line:
         ld      a,(marker_flags)
         cp      $03
         ret     c
@@ -2390,7 +2393,7 @@ L_D32C:
         call    far_redraw_text_window
         ld      hl,L_D766
         oz      Gn_sop
-        call    L_CAE8
+        call    place_cursor
 L_D345:
         oz      Os_in
         jr      nc,L_D354
@@ -2770,7 +2773,7 @@ L_D5EB:
         call    free_line_record
         ret
 store_cursor_line:
-; $D600-$D74F: copies of the bank 62 line-record routines, used by the far-called commands (see notes section 12, 'How the text is stored').
+; $D600-$D74F: copies of the bank 62 line-record routines, used by the far-called commands (see notes section 8, 'How the text is stored').
         ld      a,(line_length)
         call    alloc_line_record
         ret     c
@@ -3195,7 +3198,7 @@ L_D939:
         jp      c,L_D9B9
         ld      (file_handle),ix
         call    select_window1
-        call    L_DA56
+        call    split_at_cursor
         call    store_cursor_line
         ld      hl,(line_rec_ptr)
         ld      a,(line_rec_bank)
@@ -3226,7 +3229,7 @@ L_D97D:
         jr      c,L_D97D
 L_D996:
         call    store_cursor_line
-        call    L_DAE1
+        call    markers_after_new_line
         call    inc_cursor_line
         ld      hl,(line_rec_ptr)
         ld      a,(line_rec_bank)
@@ -3308,7 +3311,8 @@ L_DA41:
         defm    "2JCLoading "
         defb    $01,$33,$2d,$52,$46,$01,$32,$4a
         defb    $4e,$00
-L_DA56:
+split_at_cursor:
+; Same as split_at_cursor in bank 62 (used by Merge text at cursor).
         ld      a,(cursor_index)
         ld      b,a
         ld      a,(line_length)
@@ -3340,12 +3344,12 @@ L_DA84:
         ld      (next_line_ptr),hl
         ld      hl,(block_start_line)
         ld      a,(block_start_col)
-        call    L_DAB7
+        call    compare_marker_with_cursor
         ld      (block_start_line),hl
         ld      (block_start_col),a
         ld      hl,(block_end_line)
         ld      a,(block_end_col)
-        call    L_DAB7
+        call    compare_marker_with_cursor
         ld      (block_end_line),hl
         ld      (block_end_col),a
         ld      a,(cursor_index)
@@ -3353,7 +3357,7 @@ L_DA84:
         scf
         ccf
         ret
-L_DAB7:
+compare_marker_with_cursor:
         ld      d,a
         push    hl
         ld      bc,(cursor_line)
@@ -3383,7 +3387,8 @@ check_free_memory:
         ld      a,b
         cp      $05
         ret
-L_DAE1:
+markers_after_new_line:
+; Same as markers_after_new_line in bank 62.
         ld      bc,(cursor_line)
         ld      hl,(block_start_line)
         ld      a,b
@@ -3424,7 +3429,7 @@ L_DB17:
         defb    $0d,$0a,$00
 far_call_5_unused:
 ; Far-call table entry 5. Nothing calls it: bank 62 never uses index 5 and nothing in this bank jumps here.
-; It and the routines only it uses ($DB25-$DCFD, about 470 bytes) look the word in buffer A up in the dictionary, positioning at the first word not before it,
+; It and the routines only it uses ($DB25-$DCFD and skip_to_next_letter_group at $C070, 496 bytes in all) look the word in buffer A up in the dictionary, positioning at the first word not before it,
 ; and also consult the user dictionary (user_dict_ptr). Probably left over from an earlier design. The 'Opened file' string at $DB17 is not used either.
         ld      a,$00
         ld      (misc_flags),a
@@ -3443,7 +3448,7 @@ L_DB3E:
         jr      c,L_DB3E
         ld      a,$00
         ld      (dict_word_flags),a
-        call    L_DC87
+        call    far5_user_dict_lookup
         ret     nc
         call    next_full_word
         ret
@@ -3473,7 +3478,7 @@ L_DB74:
         ld      (dict_pos),hl
         ld      a,$00
         ld      (dict_word_flags),a
-        call    L_DC87
+        call    far5_user_dict_lookup
         ret
 L_DB88:
         ld      a,(dict_word_length)
@@ -3622,7 +3627,8 @@ L_DC77:
         scf
         ccf
         ret
-L_DC87:
+far5_user_dict_lookup:
+; Part of the unreachable far_call_5_unused code.
         ld      hl,(user_dict_ptr)
         ld      a,h
         or      l
@@ -4037,14 +4043,14 @@ L_E23D:
         call    toggle_reverse
 L_E246:
         oz      Os_in
-        call    c,L_E3E3
+        call    c,browse_os_error
         jr      c,L_E246
         cp      $00
         jr      nz,L_E28C
         ld      a,$00
         ld      (wf_menu_sel),a
         oz      Os_in
-        call    c,L_E3E3
+        call    c,browse_os_error
         jr      c,L_E246
         cp      $FF
         jr      nz,L_E26D
@@ -4254,7 +4260,8 @@ L_E3D6:
         dec     a
         jr      nz,L_E3D6
         ret
-L_E3E3:
+browse_os_error:
+; OS_In error in Browse: RC_Quit leaves, RC_Draw redraws the Browse window.
         push    af
         cp      'g'
         jp      z,L_C3D8
@@ -4314,7 +4321,7 @@ L_E43C:
         oz      Os_out
         ret
 browse_next_word:
-        call    L_E616
+        call    copy_stem_to_buffer_a
         ld      a,(dict_word_flags)
         cp      $00
         jr      z,L_E468
@@ -4382,7 +4389,7 @@ L_E4C0:
         ld      (browse_pos),hl
         jr      L_E476
 browse_prev_word:
-        call    L_E616
+        call    copy_stem_to_buffer_a
         ld      a,(dict_word_flags)
         cp      $00
         jr      z,L_E508
@@ -4413,13 +4420,13 @@ L_E502:
 L_E508:
         ld      hl,(browse_pos)
         ld      (dict_pos),hl
-        call    L_E553
+        call    dict_back_one_record
         ld      a,(misc_flags)
         and     $02
         jr      nz,L_E51B
-        call    L_E553
+        call    dict_back_one_record
 L_E51B:
-        call    L_E5AA
+        call    browse_reexpand
         ld      a,$00
         ld      (dict_word_flags),a
         call    next_full_word
@@ -4448,7 +4455,7 @@ L_E547:
         jr      c,L_E547
         ld      (dict_ending_ptr),hl
         jp      L_E459
-L_E553:
+dict_back_one_record:
         ld      hl,(dict_pos)
 L_E556:
         dec     hl
@@ -4498,7 +4505,7 @@ L_E59B:
         ld      (dict_pos),hl
         ld      (browse_pos),hl
         ret
-L_E5AA:
+browse_reexpand:
         ld      hl,(dict_pos)
         ld      (browse_pos),hl
         ld      a,(hl)
@@ -4563,7 +4570,7 @@ L_E603:
         ld      (dict_stem_length),a
         pop     af
         ret
-L_E616:
+copy_stem_to_buffer_a:
         ld      hl,(ptr_buffer_c)
         dec     hl
         dec     hl
@@ -4719,7 +4726,7 @@ L_E71A:
 QuickEdit_tpc5_end:
         defb    $0e,$00
 QuickEdit_commands:
-; QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See NOTES.md for the full table.
+; QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See docs/commands.md for the full table.
         defb    $00
 QuickEdit_cmd1:
         defb    $13
@@ -5206,7 +5213,8 @@ L_EC74:
 
         defb    $01,$e5,$ec,$18,$15,$21,$21,$ed
         defb    $e7,$09,$3a,$c9
-L_EC82:
+clear_words_window:
+; Redefines window 3 as a plain wide window, clearing the 'Words found' dialog when a search is stopped.
         ld      hl,L_ED3D
         oz      Gn_sop
         ret

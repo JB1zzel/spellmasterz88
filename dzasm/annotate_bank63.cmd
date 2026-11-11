@@ -6,6 +6,12 @@ dm defm D52B D54E
 dm defm D766 D788
 dm defm E6D5 E6E0
 dm defm EB17 EB28
+dm defm CF7E CF82
+dm defb C9F1 C9FB
+dm defb CC0A CC12
+dm defb CC36 CC38
+dm defm CF70 CF71
+dm defb CF7D CF7D
 dm defb C001 C03A
 dm defb C196 C1D0
 rem C001 < QuickEdit application DOR. Kept as raw bytes because DZasm V0.36 masks the topic, command and help pointers with $3FFF, but this card stores them as full $Cxxx addresses.
@@ -23,7 +29,7 @@ rem C196 < 'H' = help section: topics $EBA0, commands $EBAE, application help $E
 rem C000 < Spell-Master for the Cambridge Z88 - bank 63 ($3F, SPELL.63). Card header, front DOR, both application DORs, QuickEdit menu text,
 rem C000 < the WordFinder application and the routines QuickEdit calls through the far-call table.
 rem C000 < Annotated disassembly made with DZasm (project spell63.clt). It assembles to bytes IDENTICAL to bank_files/spell63.bin (the original ROM bank with the bank-addressing fix: 7 bytes changed).
-rem C000 < Offsets $0000-$003A and $0196-$01D0 are the application DORs. Names and comments are inferred, not original. See NOTES.md.
+rem C000 < Offsets $0000-$003A and $0196-$01D0 are the application DORs. Names and comments are inferred, not original. See docs/notes.md.
 dc 1F82 dict_pos
 dc 1F84 dict_bank
 dc 1F85 dict_target_length
@@ -95,7 +101,7 @@ dl C0EB next_word_form
 rem C0EB < Same routine as next_word_form in bank 62: the next accepted word form in buffer C (next ending, or next record expanded). Carry set at the end of the section.
 dl E5E5 next_full_word
 rem E5E5 < Same routine as next_full_word in bank 62: next_word_form, with the two section letters written just before buffer C.
-rem D600 < $D600-$D74F: copies of the bank 62 line-record routines, used by the far-called commands (see notes section 12, 'How the text is stored').
+rem D600 < $D600-$D74F: copies of the bank 62 line-record routines, used by the far-called commands (see notes section 8, 'How the text is stored').
 dl D600 store_cursor_line
 dl D61A load_line_record
 rem D61A < Same as load_line_record in bank 62: copies the record at line_rec into the edit buffer and takes its links as prev_line and next_line.
@@ -208,8 +214,43 @@ rem D01E < Tab stops are every 8 columns. If the characters up to the next stop 
 rem D01E < otherwise enough spaces are inserted to reach the stop, and block markers to the right on this line move with the text. (Insert real tab, command $2D, inserts a $09 instead.)
 dl DB25 far_call_5_unused
 rem DB25 < Far-call table entry 5. Nothing calls it: bank 62 never uses index 5 and nothing in this bank jumps here.
-rem DB25 < It and the routines only it uses ($DB25-$DCFD, about 470 bytes) look the word in buffer A up in the dictionary, positioning at the first word not before it,
+rem DB25 < It and the routines only it uses ($DB25-$DCFD and skip_to_next_letter_group at $C070, 496 bytes in all) look the word in buffer A up in the dictionary, positioning at the first word not before it,
 rem DB25 < and also consult the user dictionary (user_dict_ptr). Probably left over from an earlier design. The 'Opened file' string at $DB17 is not used either.
+dl C312 wf_os_error
+rem C312 < OS_In error in the WordFinder menu: RC_Draw redraws the menu, RC_Quit leaves (falls into wf_quit).
+dl C777 mark_menu_line
+rem C777 < Same as mark_menu_line in bank 62: moves the pointer in the WordFinder menu.
+dl CACF is_start_marker_line
+rem CACF < Z if block_start_line equals cursor_line. HL and BC preserved.
+dl CAD6 is_end_marker_line
+rem CAD6 < Z if block_end_line equals cursor_line. HL and BC preserved.
+dl CAE8 place_cursor
+rem CAE8 < Same as place_cursor in bank 62: cursor to column min(cursor_col_limit, cursor_index), row cursor_row.
+rem CF83 < $CF83-$CF8A: pushes AF and BC and prints A as two hex digits (print_hex_byte). Nothing calls it: probably left from debugging.
+dl CF8B print_hex_byte
+dl CF9A print_hex_digit
+dl D007 call_hl
+rem D007 < JP (HL): far_call_dispatch does CALL call_hl to call the routine whose address is in HL.
+dl D0CF is_block_start_line
+rem D0CF < Same as is_block_start_line in bank 62.
+dl D0D5 test_block_start_line
+dl D0EF is_block_end_line
+rem D0EF < Same as is_block_end_line in bank 62.
+dl D0F5 test_block_end_line
+dl DA56 split_at_cursor
+rem DA56 < Same as split_at_cursor in bank 62 (used by Merge text at cursor).
+dl DAB7 compare_marker_with_cursor
+dl DAE1 markers_after_new_line
+rem DAE1 < Same as markers_after_new_line in bank 62.
+dl DC87 far5_user_dict_lookup
+rem DC87 < Part of the unreachable far_call_5_unused code.
+dl E3E3 browse_os_error
+rem E3E3 < OS_In error in Browse: RC_Quit leaves, RC_Draw redraws the Browse window.
+dl E553 dict_back_one_record
+dl E5AA browse_reexpand
+dl E616 copy_stem_to_buffer_a
+dl EC82 clear_words_window
+rem EC82 < Redefines window 3 as a plain wide window, clearing the 'Words found' dialog when a search is stopped.
 dl D008 far_call_table
 rem D008 < Far-call table: 11 words, indexed by the value in A when QuickEdit (bank 62) calls far_call_bank63.
 rem D008 < Index 1 (find_next_match, $D54F) and index 5 (far_call_5_unused, $DB25) are not used by any caller in bank 62; find_next_match is called directly inside this bank.
@@ -249,6 +290,7 @@ dl C03B read_dictionary_record
 rem C03B < Copy of bank 62 read_dictionary_record (see there).
 dl C070 skip_to_next_letter_group
 rem C070 < Copy of bank 62 skip_to_next_letter_group.
+rem C070 < Only the unreachable far_call_5_unused code uses this copy, so in practice it is never run (tools/reach.py).
 dl CB05 expand_word
 rem CB05 < Copy of bank 62 expand_word, with append_token inline (its own token table at $CC73).
 dl CC73 token_pointer_table
@@ -283,7 +325,7 @@ rem FF8B < STUB used on the way back: re-binds bank 62 into segment 3, restores 
 rem FF8B < BANK-ADDRESSING SITE 3 (patched): bank 62 is the bank before bank 63, so DEC A replaces the original AND $C0 / OR $3E. Shown here as raw bytes:
 rem FF8B < $0E,$01 LD C,1 / $E7,$5A OS_Mgb / $78 LD A,B / $3D DEC A / $00,$00,$00 NOPs (ORIGINAL: $E6,$C0 AND $C0 / $F6,$3E OR $3E) / $47 LD B,A / $0E,$03 LD C,3 / $E7,$5D OS_Mpb / POPs / RET.
 rem E6EB < QuickEdit menu topics ('Blocks', 'Cursor', 'Edit', 'Files', 'SPELLING') - kept as raw bytes.
-rem E728 < QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See NOTES.md for the full table.
+rem E728 < QuickEdit menu commands: 46 commands, each [length][code][key bytes][0][name][0][length]. See docs/commands.md for the full table.
 rem EBAE < Menu commands for the Correction/spelling menu.
 dl C7C5 draw_cursor_line
 dl C948 put_text_char

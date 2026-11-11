@@ -14,7 +14,7 @@ the index and the tables it needs are in spell62.bin). Output goes to standard o
   --stats    counts only
   --section  only the section for a two-letter prefix, e.g. --section AA
 
-The format is described in NOTES.md (section 13) of the annotated source.
+The format is described in docs/dictionary.md and docs/notes.md (section 2).
 """
 import sys, os, collections
 

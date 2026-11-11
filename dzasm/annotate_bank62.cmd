@@ -9,7 +9,7 @@ dm defm F880 F88B
 dm defm FE75 FE96
 rem C000 < Spell-Master for the Cambridge Z88 - bank 62 ($3E, SPELL.62). Mostly the QuickEdit application (a text editor with spell checking).
 rem C000 < Annotated disassembly made with DZasm; the names, comments and constants are in the DZasm project (spell62.clt). It assembles to bytes IDENTICAL to bank_files/spell62.bin (the original ROM bank with the bank-addressing fix: 7 bytes changed).
-rem C000 < Names and comments are inferred from what the code does, not original. See NOTES.md for the method, the evidence and what is still unknown.
+rem C000 < Names and comments are inferred from what the code does, not original. See docs/notes.md for the method, the evidence and what is still unknown.
 rem C000 < Hex digits are written with a leading dollar sign; the equates used here are in spell_names.def.
 dc 1F82 dict_pos
 dc 1F84 dict_bank
@@ -255,6 +255,73 @@ rem F16F < Save marked block writes only the marked text, from the start marker 
 de CA63 "block_start_line+1"
 de CA81 "block_end_line+1"
 de E14D "cursor_line+1"
+dl D0B4 quit_quickedit
+rem D0B4 < RC_Quit: closes the three memory pools and leaves QuickEdit with OS_Bye.
+dl CA49 join_markers
+rem CA49 < Before the next line is joined onto the cursor line: a block marker on the next line moves up to this line, its column increased by line_length.
+dl D1D7 markers_line_removed
+rem D1D7 < A line has been removed above or at a marker: block_start_line and block_end_line after the cursor line go down by one.
+dl D20C markers_line_inserted
+rem D20C < A line has been inserted at the cursor line (word wrap): block_start_line and block_end_line after the cursor line go up by one.
+dl E4DC markers_after_new_line
+rem E4DC < As markers_line_inserted, used by the block commands.
+dl E501 join_markers_b
+rem E501 < As join_markers, used by join_next_line.
+dl E541 join_next_line
+rem E541 < Takes the line at line_rec as the cursor line and appends the next line to it if the result stays below 240 characters, moving markers to match.
+dl D496 show_check_context
+rem D496 < In the checking window: clears it and prints the part of the line around the word being checked, as much as fits in cursor_col_limit.
+dl D506 open_correction_menu
+rem D506 < Shows the checking window and the 'Correction menu' dialog with its five options (str at $D9B2).
+dl DABC mark_menu_line
+rem DABC < In: A = menu line, C = character. Prints C at the start of that line in reverse video: used to move the '#' pointer in the Correction menu.
+dl DADE quit_on_rc_quit
+rem DADE < After an OS_In error: RC_Quit ('g') leaves QuickEdit; any other error returns.
+dl DB2E split_at_cursor
+rem DB2E < Moves the text from the cursor to the end of the line into a new line record after the cursor line (Split line, Enter, block commands), moving markers to match.
+dl DB85 compare_marker_with_cursor
+rem DB85 < In: HL = a marker's line, A = its column. Used by split_at_cursor to decide whether the marker is after the split point.
+dl DE15 guess_cancelled
+rem DE15 < Guess correct word ended without a choice: sets edit_flags bit 6, frees the guess list, rebinds the line buffer, A = 1.
+dl E04F guess_os_error
+rem E04F < OS_In error while the guesses are shown: RC_Quit leaves QuickEdit, RC_Draw redraws the guess list.
+dl E171 order_block_markers
+rem E171 < If both markers are set and the end comes before the start, swaps them (lines and columns). Same as order_block_markers in bank 63.
+dl E1B1 test_block_start_line
+rem E1B1 < is_block_start_line without preserving BC.
+dl E1D1 test_block_end_line
+rem E1D1 < is_block_end_line without preserving BC.
+dl E1DC remove_start_marker
+rem E1DC < Removes the start marker: the end marker (if set) becomes the start marker. Z if no marker is left.
+dl E1F1 shift_marker_flags
+rem E1F1 < marker_flags shifted right by one bit (end marker flag becomes start marker flag).
+dl E1FA drop_markers_at_cursor
+rem E1FA < Removes any block marker that is exactly at the cursor (used when the character there is deleted).
+dl E249 check_block_marked
+rem E249 < Carry set (and Z) if no block is marked (end marker not set); otherwise continues with the block command.
+dl E5A7 is_at_cursor
+rem E5A7 < Z if line HL equals line BC and column D equals cursor_index.
+dl E7ED delete_block_os_error
+rem E7ED < OS_In error during Delete marked block's 'Are you sure' question: RC_Quit leaves, RC_Draw asks again.
+dl E80D print_decimal
+rem E80D < Prints HL in decimal (leading zeros suppressed), using the table of powers of ten at $E842. Same as print_decimal in bank 63. Used for the line number in the status panel.
+dl F2C9 save_os_error
+rem F2C9 < OS_In error during the 'Overwrite text?' question: RC_Quit leaves, RC_Draw redraws the question.
+dl F586 browse_os_error
+rem F586 < OS_In error in Browse: RC_Quit leaves, RC_Draw redraws the Browse window.
+dl F6F6 dict_back_one_record
+rem F6F6 < Moves dict_pos back to the start of the previous dictionary record (the first byte below $10). Carry set if that is the start of the section ($0F).
+dl F74D browse_reexpand
+rem F74D < Records are packed against the word before them, so to show the previous word Browse goes back to the start of the section and reads forward until it reaches browse_pos again.
+dl F7B9 copy_stem_to_buffer_a
+rem F7B9 < Copies the current word's stem (buffer C - 2, dict_stem_length letters) to buffer A and sets dict_target_length to its length.
+dl F9DF browse_user_next
+rem F9DF < Browse: finds a user dictionary word that comes between the current dictionary word and the next one. Carry set if there is none (or no user dictionary).
+dl FADE browse_user_prev
+rem FADE < Browse: as browse_user_next, going backwards.
+dl FB53 compare_word_with_stem
+rem FB53 < Compares the current dictionary word (buffer C - 2, dict_stem_length) with buffer A (dict_target_length): Z = equal, NZ at the first difference.
+rem D0CA < $D0CA-$D0D5 follow OS_Bye and nothing jumps to them, so they are never run (tools/reach.py). They look like the tail of a backwards scan.
 dl D922 is_word_char
 rem D922 < Z set if A is a letter or an apostrophe. A letter is returned in upper case (AND $DF); an apostrophe is returned unchanged.
 rem FE15 < Load user dictionary: each run of word characters (is_word_char, at most 64) is one word; any other byte ends it. Words of fewer than 3 characters are skipped.
@@ -381,7 +448,7 @@ rem C1B6 < IN: IX -> a 3-byte dictionary index entry. Bits 7-5 of (IX+0) select 
 rem C1B6 <     (IX+1),(IX+2) = offset within that bank.
 rem C1B6 < OUT: dict_bank = absolute bank number bound into segment 2, dict_pos = offset.
 rem C1B6 < BANK-ADDRESSING SITE 1 (patched, as patters): the bank is worked out relative to the running bank: ADD A,D / SUB $3E, where D = $38 + index.
-rem C1B6 < The ORIGINAL ROM had AND $C0 / OR D (the slot bits of the running bank OR the fixed number), which only works when the eight banks are the top of a slot. See NOTES.md 'Bank addressing'.
+rem C1B6 < The ORIGINAL ROM had AND $C0 / OR D (the slot bits of the running bank OR the fixed number), which only works when the eight banks are the top of a slot. See docs/notes.md section 4.
 dl C1E2 qe_start
 rem C1E2 < QuickEdit start-up: creates memory pools (OS_Mop), allocates buffers (OS_Mal), sets the error handler,
 rem C1E2 < clears working variables, draws the window, then enters qe_main_loop.
@@ -404,7 +471,7 @@ rem C355 < token begins (a byte with bit 7 set). Used by expand_word to turn a p
 rem C38A < The token strings: common groups of letters that the dictionary stores as a single byte ($80 to $FF) to save space.
 rem C38A < Each token starts with a letter that has bit 7 set, followed by the rest of its letters ('TION', then 3-letter tokens such as WAY, ITY,
 rem C38A < IES, MAN, IAN, ISM, FUL, IAL, ING, then 2-letter tokens). They are not only word endings: AR, OL, BL and so on are used as well.
-rem C38A < See NOTES.md section 13 for the dictionary format.
+rem C38A < See docs/notes.md section 2 and docs/dictionary.md for the dictionary format.
 dl C4A4 token_pointer_table
 rem C4A4 < 128 words: token number -> address of its string. Token 0 (TION) has four letters, tokens 1 to 35 three letters, 36 to 121 two letters;
 rem C4A4 < 122 to 127 are not used.
